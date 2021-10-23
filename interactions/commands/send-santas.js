@@ -1,8 +1,8 @@
-const { readFile } = require("fs");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const {MessageEmbed, MessageButton} = require("discord.js");
 
 module.exports = {
+    name: 'send-santas',
 	data: new SlashCommandBuilder()
 		.setName('send-santas')
 		.setDescription('Sends recipients name/id to santas'),
@@ -22,26 +22,26 @@ module.exports = {
             }
         });
 
-        links.foreach(link =>{
-            client.users.fetch(link.RecieverID, false).then((user) => {
+        links.forEach(link =>{
+            client.users.fetch(link.SenderID, false).then((user) => {
 
                 let embed = new MessageEmbed()
                 .setColor('#FD8612')
                 .setTitle(  `You have been assigned ${link.SSReciever.Members.DisplayName} as your recipient`)
       
-                .addFlieds(
+                .addFields(
                     { name: 'Address', value: link.SSReciever.Address  },
                     { name: 'Store links', value: link.SSReciever.StoreLinks}
                 )
                 .setTimestamp()
-                .addComponnents(
-                    new MessageButton()
-                        .setCustomId('confirm')
-                        .setLabel('I have acknowledged my recipient and will have my present ready on time.')
-                )
+                // .addComponents(
+                //     new MessageButton()
+                //         .setCustomId('confirm')
+                //         .setLabel('I have acknowledged my recipient and will have my present ready on time.')
+                // )
                 .setFooter('FlamingPalm Secret Santa', 'https://flamingpalm.com/images/FlamingPalmLogoSmall.png');
-    
-                user.send(embed);
+                 
+                user.send( {embeds: [embed], ephemeral: false});
                });
         })
         

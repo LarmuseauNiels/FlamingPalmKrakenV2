@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
-	name:'sendToReciever',
+	name:'send-to-reciever',
 	data: new SlashCommandBuilder()
 		.setName('send-to-reciever')
 		.setDescription('Sends a message to who you are buying a gift for'),

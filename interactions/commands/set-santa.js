@@ -1,23 +1,26 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { writeFile } = require('fs');
 
 
 
 module.exports = {
+	name: 'set-santa',
 	data: new SlashCommandBuilder()
 		.setName('set-santa')
 		.setDescription('Tell recievers who they are giving a gift to.'),
 	async execute(interaction) {
+		await interaction.deferReply();
+
         const reciever = await client.prisma.sSReciever.findMany({})
 		const senders = await client.prisma.sSSender.findMany({})
 
 
-        console.log(attachUser(reciever, senders))
-		await interaction.reply({content:"logged to console", ephemeral:true})
+      	var result = await attachUser(reciever, senders)
+		await interaction.editReply({content: "Success", ephemeral:true})
 	},   
 
     isGuild : true
 };
+
 
 async function attachUser (recievers, senders) {
 	val = []
@@ -28,7 +31,7 @@ async function attachUser (recievers, senders) {
 		val.push(recievers[key].ID)
 	}
 
-	shuffle(val)
+	await shuffle(val)
 
 	for(var reciever in recievers){
 		for(var sender in val){
@@ -46,7 +49,7 @@ async function attachUser (recievers, senders) {
 							continue
 						}
 						added.push(recievers[reciever].ID)
-						output.push(recievers[reciever].ID + ", " + senders[obj].ID)
+						output.push({SenderID: recievers[reciever].ID,RecieverID:senders[obj].ID })
 						val.splice(sender, 1);
 					}
 				}
@@ -54,13 +57,15 @@ async function attachUser (recievers, senders) {
 		}
 	}	
 	
-	console.log(output)
+	//console.log(output)
 
 	//124214124, 12423523465
 	//412412123, 31231312321
 	let results = await client.prisma.sSLink.createMany({
-		data: output.map(line => {return {SenderID: line[0], ReceiverID: line[1]}})
+		data: output
 	})
+
+	return results
 }
 
 
