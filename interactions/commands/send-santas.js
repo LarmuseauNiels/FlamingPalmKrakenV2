@@ -14,7 +14,7 @@ module.exports = {
         // })
         let links = await client.prisma.sSLink.findMany( {
             include:{
-                SSReciever: {
+                SSReceiver: {
                     include: {
                         Members: true
                     }
@@ -27,11 +27,11 @@ module.exports = {
 
                 let embed = new MessageEmbed()
                 .setColor('#FD8612')
-                .setTitle(  `You have been assigned ${link.SSReciever.Members.DisplayName} as your recipient`)
+                .setTitle(  `You have been assigned ${link.SSReceiver.Members.DisplayName} as your recipient`)
       
                 .addFields(
-                    { name: 'Address', value: link.SSReciever.Address  },
-                    { name: 'Store links', value: link.SSReciever.StoreLinks}
+                    { name: 'Address', value: link.SSReceiver.Address  },
+                    { name: 'Store links', value: link.SSReceiver.StoreLinks}
                 )
                 .setTimestamp()
                 // .addComponents(
