@@ -1,46 +1,49 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
-
-
 module.exports = {
-	name: 'set-santa',
+	name: 'admin-set-santas',
 	data: new SlashCommandBuilder()
-		.setName('set-santa')
-		.setDescription('Tell receivers who they are giving a gift to.'),
+		.setName('admin-set-santas')
+		.setDescription('Tell receivers who they are giving a gift to.')
+		.setDefaultPermission(false),
 	async execute(interaction) {
 		await interaction.deferReply();
 
         const receiver = await client.prisma.sSReceiver.findMany({})
 		const senders = await client.prisma.sSSender.findMany({})
 
-
-      	var result = await attachUser(receiver, senders)
+      	let result = await attachUser(receiver, senders)
 		await interaction.editReply({content: "Success", ephemeral:true})
-	},   
-
+	},
+	permissions: [
+		{
+			id: '178435947816419328',
+			type: 'USER',
+			permission: true,
+		},
+	],
     isGuild : true
 };
 
-
 async function attachUser (receivers, senders) {
-	val = []
-	added=[]
-	output=[]
+	let val = []
+	let added = []
+	let output = []
 
-    for (var key in receivers){
+    for (let key in receivers){
 		val.push(receivers[key].ID)
 	}
 
 	await shuffle(val)
 
-	for(var receiver in receivers){
-		for(var sender in val){
+	for(let receiver in receivers){
+		for(let sender in val){
 			if (receivers[receiver].ID == val[sender]){
 				console.log("Skipped")
 				continue
 			}
 	
-			for(var obj in senders){
+			for(let obj in senders){
 				if(senders[obj].ID==val[sender]){
 					if((senders[obj].HasINTER == 1 && receivers[receiver].RequiresINTER == 1)  || (senders[obj].HasEU == 1 && receivers[receiver].RequiresEU == 1)){
 						

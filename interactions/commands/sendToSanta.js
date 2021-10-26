@@ -13,9 +13,13 @@ module.exports = {
         client.prisma.sSLink.findUnique( {
             where: {ReceiverID: interaction.user.id}
         }).then( link => {
+            if (link == null) {
+                interaction.reply({ content: "Failure, you do not have a secret santa", ephemeral: true });
+                return;
+            }
             client.users.fetch(link.SenderID, false).then((user) => {
                 user.send('Message from your receiver: ' + message);
-                interaction.reply({ content: "successfully send message to "+ user.username, ephemeral: false });
+                interaction.reply({ content: "successfully send message to santa", ephemeral: false });
                });
         });
 	},

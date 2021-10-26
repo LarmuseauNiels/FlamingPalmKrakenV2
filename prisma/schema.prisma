@@ -67,8 +67,9 @@ model RewardItem {
 
 model SSLink {
   SenderID   String     @unique(map: "SSLink_SenderID_uindex") @db.VarChar(25)
-  ReceiverID String     @unique(map: "SSLink_ReceiverID_uindex") @db.VarChar(25)
-  SSReceiver SSReceiver @relation(fields: [ReceiverID], references: [ID], onUpdate: Restrict, map: "SSReceiver")
+  ReceiverID String     @unique(map: "SSLink_RecieverID_uindex") @db.VarChar(25)
+  confirmed  Boolean?   @default(false)
+  SSReceiver SSReceiver @relation(fields: [ReceiverID], references: [ID], onUpdate: Restrict, map: "SSReciever")
   SSSender   SSSender   @relation(fields: [SenderID], references: [ID], onUpdate: Restrict, map: "SSSender")
 }
 
