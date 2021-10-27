@@ -18,7 +18,7 @@ module.exports = {
                 interaction.reply({ content: "Failure, you do not have a gift receiver", ephemeral: true });
                 return;
             }
-            client.users.fetch(link.ReceieverID, false).then((user) => {
+            client.users.fetch(link.ReceiverID, false).then((user) => {
                 user.send('message from Santa: ' + message );
                 interaction.reply({ content: "successfully send message to "+ user.username, ephemeral: false });
                });
