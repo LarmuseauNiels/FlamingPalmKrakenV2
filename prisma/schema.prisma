@@ -44,12 +44,13 @@ model Points {
 }
 
 model Reward {
-  RewardID    Int          @id @default(autoincrement())
-  Title       String       @db.VarChar(125)
-  Description String       @db.VarChar(255)
-  Price       Int
-  imageurl    String       @db.VarChar(255)
-  RewardItem  RewardItem[]
+  RewardID     Int          @id @default(autoincrement())
+  Title        String       @db.VarChar(125)
+  Description  String       @db.VarChar(255)
+  Price        Int
+  imageurl     String       @db.VarChar(255)
+  nonSalePrice Int?
+  RewardItem   RewardItem[]
 }
 
 model RewardItem {
