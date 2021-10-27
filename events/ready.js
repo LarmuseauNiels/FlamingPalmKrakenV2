@@ -11,7 +11,7 @@ module.exports = {
 		require("../modules/statistics.js")(client);
 		require("../modules/webapi.js")(client);
 		client.guilds.cache.get("530537522355240961")?.commands.fetch().then(commands => commands.forEach(command =>{
-			let permissions = client.commands.get(command.name).permissions;
+			let permissions = client.commands.get(command.name)?.permissions;
 			if (permissions != null){
 				command.permissions.set( { permissions });
 			}
