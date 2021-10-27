@@ -9,8 +9,8 @@ module.exports = {
             .setTitle(  `${GuildMember.user.username} joined`)
             .setAuthor(`${GuildMember.user.username}`, 'https://cdn.discordapp.com/avatars/'+GuildMember.user.id+'/'+GuildMember.user.avatar)
             .addFields(
-                { name: 'ID', value: `${GuildMember.id}`,inline: false  },
-                { name: 'name + discriminator', value: `${GuildMember.user.username}#${GuildMember.user.discriminator}`,inline: false  },
+                { name: 'ID ', value: `${GuildMember.id}`,inline: false  },
+                { name: 'name & discriminator', value: `${GuildMember.user.username}#${GuildMember.user.discriminator}`,inline: false  },
                 { name: 'account created', value: `${GuildMember.user.createdAt}`,inline: false  },
             )
             .setTimestamp()
