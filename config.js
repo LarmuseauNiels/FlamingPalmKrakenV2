@@ -3,7 +3,7 @@ const fs = require('fs')
 if (fs.existsSync('./privateconfig.json')) {
     const privateconfig = require('./privateconfig.json');
     module.exports = {
-        clientId: "534686392589221898",
+        clientId: "294470823627063296",
         token: privateconfig.token,
         DBHOST: privateconfig.DBHOST,
         DBPASS: privateconfig.DBPASS

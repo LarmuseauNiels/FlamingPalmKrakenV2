@@ -19,7 +19,7 @@ model Members {
   avatar         String?          @db.VarChar(255)
   PointHistory   PointHistory[]
   Points         Points?
-  SSReciever     SSReciever?
+  SSReceiver     SSReceiver?
   SSSender       SSSender?
   VoiceConnected VoiceConnected[]
   i_Island       i_Island?
@@ -44,12 +44,13 @@ model Points {
 }
 
 model Reward {
-  RewardID    Int          @id @default(autoincrement())
-  Title       String       @db.VarChar(125)
-  Description String       @db.VarChar(255)
-  Price       Int
-  imageurl    String       @db.VarChar(255)
-  RewardItem  RewardItem[]
+  RewardID     Int          @id @default(autoincrement())
+  Title        String       @db.VarChar(125)
+  Description  String       @db.VarChar(255)
+  Price        Int
+  imageurl     String       @db.VarChar(255)
+  nonSalePrice Int?
+  RewardItem   RewardItem[]
 }
 
 model RewardItem {
@@ -66,24 +67,11 @@ model RewardItem {
 }
 
 model SSLink {
-  SenderID   String     @db.VarChar(25)
-  RecieverID String     @db.VarChar(25)
-  SSReciever SSReciever @relation(fields: [RecieverID], references: [ID], onUpdate: Restrict, map: "SSReciever")
+  SenderID   String     @unique(map: "SSLink_SenderID_uindex") @db.VarChar(25)
+  ReceiverID String     @unique(map: "SSLink_RecieverID_uindex") @db.VarChar(25)
+  confirmed  Boolean?   @default(false)
+  SSReceiver SSReceiver @relation(fields: [ReceiverID], references: [ID], onUpdate: Restrict, map: "SSReciever")
   SSSender   SSSender   @relation(fields: [SenderID], references: [ID], onUpdate: Restrict, map: "SSSender")
-
-  @@id([SenderID, RecieverID])
-  @@index([RecieverID], map: "SSReciever")
-}
-
-model SSReciever {
-  ID             String   @id @db.VarChar(25)
-  Address        String   @db.Text
-  StoreLinks     String   @db.Text
-  RequiresEU     Boolean
-  RequiresPaypal Boolean
-  RequiresINTER  Boolean
-  Members        Members  @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "ID")
-  SSLink         SSLink[]
 }
 
 model SSSender {
@@ -91,15 +79,16 @@ model SSSender {
   HasEU     Boolean
   HasPaypal Boolean
   HasINTER  Boolean
+  IsSend    Boolean? @default(false)
   Members   Members  @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "sssenderID")
-  SSLink    SSLink[]
+  SSLink    SSLink?
 }
 
 model VoiceConnected {
   ID        String   @db.VarChar(25)
   TimeStamp DateTime @default(now()) @db.Timestamp(0)
   ChannelID String   @db.VarChar(25)
-  Channel   Channel  @relation(fields: [ChannelID], references: [ID], onUpdate: Restrict, map: "VoiceConnected_Channel_ID_fk")
+  Channel   Channel  @relation(fields: [ChannelID], references: [ID], onDelete: Cascade, map: "VoiceConnected_Channel_ID_fk")
   Members   Members  @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "VoiceConnected_ibfk_1")
 
   @@id([ID, TimeStamp, ChannelID])
@@ -177,4 +166,16 @@ model i_Unit_Island {
 
   @@id([IslandID, UnitID])
   @@index([UnitID], map: "UnitID")
+}
+
+model SSReceiver {
+  ID             String   @id @db.VarChar(25)
+  Address        String   @db.Text
+  StoreLinks     String   @db.Text
+  RequiresEU     Boolean
+  RequiresPaypal Boolean
+  RequiresINTER  Boolean
+  IsReceived     Boolean? @default(false)
+  Members        Members  @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "ID")
+  SSLink         SSLink?
 }

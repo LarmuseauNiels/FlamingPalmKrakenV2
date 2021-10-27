@@ -29,8 +29,8 @@ module.exports = {
 	},
     permissions: [
         {
-            id: '530540184115085324',
-            type: 'ROLE',
+            id: '178435947816419328',
+            type: 'USER',
             permission: true,
         },
     ],

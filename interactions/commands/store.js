@@ -18,11 +18,13 @@ module.exports = {
             .setTimestamp()
             .setFooter('Work in progress flamingpalm store', 'https://flamingpalm.com/images/FlamingPalmLogoSmall.png');
         let rewards = await client.prisma.reward.findMany({
-            include:{RewardItem: true}
+            include:{RewardItem: true},
+            orderBy:{Price:'asc'}
         })
         rewards.forEach(reward =>{
             let stock = reward.RewardItem.filter(x =>  x.RedeemedBy == "").length;
-            embed.addField(reward.Title, `${reward.Description }\n ${stock} key${stock == 1?'':'s'} in stock\n**${reward.Price}:palm_tree:**` , false);
+            if (reward.nonSalePrice != null)  embed.addField(reward.Title, `${reward.Description }\n ${stock} key${stock == 1?'':'s'} in stock\n**~~${reward.nonSalePrice}~~ ${reward.Price}:palm_tree:**` , false);
+            else embed.addField(reward.Title, `${reward.Description }\n ${stock} key${stock == 1?'':'s'} in stock\n**${reward.Price}:palm_tree:**` , false);
         })
         let row = new MessageActionRow()
             .addComponents(
