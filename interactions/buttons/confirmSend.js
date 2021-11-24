@@ -1,7 +1,7 @@
 const {MessageActionRow, MessageButton} = require("discord.js");
 
 module.exports = {
-    name: 'confirmSanta',
+    name: 'confirmSend',
     async execute(interaction) {
         await client.prisma.sSSender.update({
             where:{SenderID: interaction.user.id},
