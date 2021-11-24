@@ -7,13 +7,23 @@ module.exports = {
         .setName('admin-santa-info')
         .setDescription('gets progress info of secret santa'),
     async execute(interaction) {
-        let links = await client.prisma.sSLink.findMany();
+        let links = await client.prisma.sSLink.findMany({
+            include:{
+                SSReceiver: {
+                    include: {Members: true }
+                },
+                SSSender: {
+                    include: {Members: true }
+                }
+            }
+        });
         let embed = new MessageEmbed()
             .setColor('#FD8612')
             .setTitle(  `Progress info secret santa`)
             .addFields(
                 { name: 'Read and confirmed', value: `${links.filter(x => x.confirmed === true).length} out of ${links.length} confirmed`  },
-                //{ name: 'Store links', value: link.SSReceiver.StoreLinks}
+                { name: 'confirmed send', value: `${links.filter(x => x.SSSender.IsSend === true).length} out of ${links.length} send`  }
+
             )
             .setFooter('FlamingPalm Secret Santa', 'https://flamingpalm.com/images/FlamingPalmLogoSmall.png')
             .setTimestamp();
