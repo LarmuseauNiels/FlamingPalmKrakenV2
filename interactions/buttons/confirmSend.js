@@ -4,7 +4,7 @@ module.exports = {
     name: 'confirmSend',
     async execute(interaction) {
         await client.prisma.sSSender.update({
-            where:{SenderID: interaction.user.id},
+            where:{ID: interaction.user.id},
             data: {IsSend: true}
         })
 
