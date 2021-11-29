@@ -8,20 +8,16 @@ module.exports = {
         .setDescription('Sends admin-santa-confirmation')
         .setDefaultPermission(false),
     async execute(interaction) {
-        let links = await client.prisma.sSLink.findMany( {
-            include:{
-                SSReceiver: {
-                    include: {Members: true }
-                }
-            }
+        let links = await client.prisma.sSSender.findMany({
+            where: {IsSend: 0}
         });
         links.forEach(link =>{
-            client.users.fetch(link.SenderID, false).then((user) => {
+            client.users.fetch(link.ID, false).then((user) => {
                 let embed = new MessageEmbed()
                     .setColor('#FD8612')
                     .setTitle(  `Confirm send`)
                     .addFields(
-                        { name: 'message', value: "Please confirm after you have ordered a gift"  }
+                        { name: 'message', value: "This is a reminder to order your receiver a gift. If you have already done so press the button below. "  }
                     )
                     .setFooter('FlamingPalm Secret Santa', 'https://flamingpalm.com/images/FlamingPalmLogoSmall.png')
                     .setTimestamp();
