@@ -15,10 +15,12 @@ module.exports = {
 		client.guilds.fetch('530537522355240961').then(guild =>
 		guild.channels.fetch().then(channels => {
 			let text = "";
+			console.log(trackedChannels);
 			channels.forEach(channel => {
 				if (channel.isVoice()) {
-					text = text + channel.name ;
-					if (trackedChannels.includes(channel.id)) text = text + "%";
+					text = text + channel.id ;
+
+					if (trackedChannels.some(tchan => tchan.ID === channel.id )) text = text + "%";
 					text = text + "  ";
 				}
 
