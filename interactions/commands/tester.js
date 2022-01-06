@@ -7,6 +7,7 @@ module.exports = {
         .setName('tester')
         .setDescription('testingcommand'),
     async execute(interaction) {
+		var trackedChannels;
 		await client.prisma.channel.findMany({select: {
 				ID: true
 			}}).then(channel =>trackedChannels = channel);
