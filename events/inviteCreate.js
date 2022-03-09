@@ -1,5 +1,4 @@
-const {Collection} = require("discord.js");
-client.invites.set(invite.guild.id, await invite.guild.fetchInvites());
+
 module.exports = {
     name: 'inviteCreate',
     execute(invite) {
