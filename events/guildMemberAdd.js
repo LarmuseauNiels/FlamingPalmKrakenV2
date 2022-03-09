@@ -19,9 +19,11 @@ module.exports = {
         // just a test
         const cachedInvites = client.invites.get(GuildMember.guild.id);
         GuildMember.guild.invites.fetch().then(newInvites => {
+            console.log("got invites")
             client.invites.set(GuildMember.guild.id, newInvites);
             const usedInvite = newInvites.find(invite => cachedInvites.get(invite.code).uses < invite.uses);
             const { code, uses, inviter, channel } = usedInvite;
+            console.log(usedInvite);
             client.logChannel.send("was invited by: "+inviter.tag);
         });
     },
