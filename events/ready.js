@@ -25,7 +25,7 @@ module.exports = {
 		for(const guild of client.guilds.cache.values()) {
 			// Here we are getting all invites for the guild
 			// Using our client.invites collection we created, we are saving all invites to the cache by guild id.
-			guild.fetchInvites()
+			guild.invites.fetch()
 				.then(invite => client.invites.set(guild.id, invite))
 					.catch(error => console.log(error));
 		};

@@ -4,7 +4,7 @@ module.exports = {
     name: 'guildMemberAdd',
     execute(GuildMember) {
         const cachedInvites = client.invites.get(member.guild.id);
-        GuildMember.guild.fetchInvites().then(newInvites => {
+        GuildMember.guild.invites.fetch().then(newInvites => {
             client.invites.set(member.guild.id, newInvites);
             const usedInvite = newInvites.find(invite => cachedInvites.get(invite.code).uses < invite.uses);
             const { code, uses, inviter, channel } = usedInvite;
