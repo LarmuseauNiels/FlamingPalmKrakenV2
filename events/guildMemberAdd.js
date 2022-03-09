@@ -3,14 +3,7 @@ const { MessageEmbed,MessageActionRow, MessageButton } = require('discord.js');
 module.exports = {
     name: 'guildMemberAdd',
     execute(GuildMember) {
-        // just a test
-        const cachedInvites = client.invites.get(member.guild.id);
-        GuildMember.guild.invites.fetch().then(newInvites => {
-            client.invites.set(member.guild.id, newInvites);
-            const usedInvite = newInvites.find(invite => cachedInvites.get(invite.code).uses < invite.uses);
-            const { code, uses, inviter, channel } = usedInvite;
-            client.logChannel.send("was invited by: "+inviter.tag);
-        });
+
 
         let embed = new MessageEmbed()
             .setColor('#FD8612')
@@ -23,5 +16,13 @@ module.exports = {
             )
             .setTimestamp()
         client.logChannel.send({embeds: [embed]})
+        // just a test
+        const cachedInvites = client.invites.get(member.guild.id);
+        GuildMember.guild.invites.fetch().then(newInvites => {
+            client.invites.set(member.guild.id, newInvites);
+            const usedInvite = newInvites.find(invite => cachedInvites.get(invite.code).uses < invite.uses);
+            const { code, uses, inviter, channel } = usedInvite;
+            client.logChannel.send("was invited by: "+inviter.tag);
+        });
     },
 };
