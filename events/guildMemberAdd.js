@@ -22,8 +22,11 @@ module.exports = {
             console.log("got invites")
             client.invites.set(GuildMember.guild.id, newInvites);
             const usedInvite = newInvites.find(invite => cachedInvites.get(invite.code).uses < invite.uses);
+            console.log(client.invites);
+            console.log(cachedInvites);
+            console.log(newInvites);
             console.log(usedInvite);
-            client.logChannel.send("was invited by: "+usedInvite.inviter.tag);
+            //client.logChannel.send("was invited by: "+usedInvite.inviter.tag);
         });
     },
 };
