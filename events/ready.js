@@ -1,3 +1,5 @@
+const { Collection } = require("discord.js");
+
 module.exports = {
 	name: 'ready',
 	once: true,
@@ -16,5 +18,16 @@ module.exports = {
 				command.permissions.set( { permissions });
 			}
 		}));
+		// Collection is an enhanced Map which we are going to save our invites to.
+		const guildInvites = new Collection();
+		client.invites = guildInvites;
+		// Next, we are going to fetch invites for every guild and add them to our map.
+		for(const guild of client.guilds.cache.values()) {
+			// Here we are getting all invites for the guild
+			// Using our client.invites collection we created, we are saving all invites to the cache by guild id.
+			guild.fetchInvites()
+				.then(invite => client.invites.set(guild.id, invite))
+					.catch(error => console.log(error));
+		};
 	},
 };

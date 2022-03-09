@@ -7,20 +7,21 @@ module.exports = {
         .setName('tester')
         .setDescription('testingcommand'),
     async execute(interaction) {
-		var trackedChannels;
+		var knownChannels;
 		await client.prisma.channel.findMany({select: {
 				ID: true
-			}}).then(channel =>trackedChannels = channel);
-
+			}}).then(channel =>knownChannels = channel);
 		client.guilds.fetch('530537522355240961').then(guild =>
 		guild.channels.fetch().then(channels => {
-			let text = "";
-			console.log(trackedChannels);
 			channels.forEach(channel => {
 				if (channel.isVoice()) {
-					text = text + channel.id ;
+					if (!knownChannels.some(tchan => tchan.ID === channel.id )) {
+						client.prisma.channel.create({
+							ID: channel.id,
+							ChannelName: channel.name
+						});
+					}
 
-					if (trackedChannels.some(tchan => tchan.ID === channel.id )) text = text + "%";
 					text = text + "  ";
 				}
 
