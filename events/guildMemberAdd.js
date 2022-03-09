@@ -26,7 +26,7 @@ module.exports = {
             console.log(cachedInvites);
             console.log(newInvites);
             console.log(usedInvite);
-            //client.logChannel.send("was invited by: "+usedInvite.inviter.tag);
+            client.logChannel.send(JSON.stringify(cachedInvites) + "\r\n" + JSON.stringify(newInvites));
         });
     },
 };
