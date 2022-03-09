@@ -18,6 +18,8 @@ module.exports = {
         client.logChannel.send({embeds: [embed]})
         // just a test
         const cachedInvites = client.invites.get(GuildMember.guild.id);
+        client.logChannel.send(JSON.stringify(cachedInvites) );
+
         GuildMember.guild.invites.fetch().then(newInvites => {
             console.log("got invites")
             client.invites.set(GuildMember.guild.id, newInvites);
@@ -26,7 +28,7 @@ module.exports = {
             console.log(cachedInvites);
             console.log(newInvites);
             console.log(usedInvite);
-            client.logChannel.send(JSON.stringify(cachedInvites) + "\r\n" + JSON.stringify(newInvites));
+            client.logChannel.send(JSON.stringify(usedInvite) + "\r\n" + JSON.stringify(newInvites));
         });
     },
 };
