@@ -3,6 +3,7 @@ const { MessageEmbed,MessageActionRow, MessageButton } = require('discord.js');
 module.exports = {
     name: 'guildMemberAdd',
     execute(GuildMember) {
+        // just a test
         const cachedInvites = client.invites.get(member.guild.id);
         GuildMember.guild.invites.fetch().then(newInvites => {
             client.invites.set(member.guild.id, newInvites);
