@@ -23,7 +23,7 @@ module.exports = {
         })
         rewards.forEach(reward =>{
             let stock = reward.RewardItem.filter(x =>  x.RedeemedBy == "").length;
-            if (reward.nonSalePrice != null)  embed.addField(reward.Title, `${reward.Description }\n ${stock} key${stock == 1?'':'s'} in stock\n**~~${reward.nonSalePrice}~~ ${reward.Price}:palm_tree:**` , false);
+            if (stock == 0)  embed.addField(reward.Title, `out of stock` , true);
             else embed.addField(reward.Title, `**${reward.Price}:palm_tree:**` , true);//${reward.Description }\n ${stock} key${stock == 1?'':'s'} in stock\n
         })
         let row = new MessageActionRow()
