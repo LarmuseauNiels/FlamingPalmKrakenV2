@@ -21,7 +21,17 @@ module.exports = {
                     { name: 'link code', value: `${usedInvite.code}`,inline: false  },
                     { name: 'inviter', value: `${usedInvite.inviter.username}`,inline: false  },
                 )
-                .setTimestamp()
+                .setTimestamp();
+            try {
+                client.prisma.refferals.create({
+                    data: {
+                        userid: GuildMember.id,
+                        refferer: usedInvite.inviter.id
+                    }
+                });
+            } catch (error) {
+                console.error(error);
+            }
             client.logChannel.send({embeds: [embed]})
         });
     },

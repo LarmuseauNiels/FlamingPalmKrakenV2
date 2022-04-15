@@ -14,15 +14,17 @@ model Channel {
 }
 
 model Members {
-  ID             String           @id @db.VarChar(25)
-  DisplayName    String?          @db.VarChar(255)
-  avatar         String?          @db.VarChar(255)
-  PointHistory   PointHistory[]
-  Points         Points?
-  SSReceiver     SSReceiver?
-  SSSender       SSSender?
-  VoiceConnected VoiceConnected[]
-  i_Island       i_Island?
+  ID                                    String           @id @db.VarChar(25)
+  DisplayName                           String?          @db.VarChar(255)
+  avatar                                String?          @db.VarChar(255)
+  PointHistory                          PointHistory[]
+  Points                                Points?
+  Refferals_MembersToRefferals_refferer Refferals[]      @relation("MembersToRefferals_refferer")
+  Refferals_MembersToRefferals_userid   Refferals[]      @relation("MembersToRefferals_userid")
+  SSReceiver                            SSReceiver?
+  SSSender                              SSSender?
+  VoiceConnected                        VoiceConnected[]
+  i_Island                              i_Island?
 }
 
 model PointHistory {
@@ -33,6 +35,7 @@ model PointHistory {
   comment   String   @db.VarChar(255)
   Members   Members  @relation(fields: [userid], references: [ID], onUpdate: Restrict, map: "PointHistory_ibfk_1")
 
+  @@index([TimeStamp], map: "PointHistory_TimeStamp_index")
   @@index([userid], map: "userid")
 }
 
@@ -50,7 +53,10 @@ model Reward {
   Price        Int
   imageurl     String       @db.VarChar(255)
   nonSalePrice Int?
+  visible      Boolean      @default(true)
   RewardItem   RewardItem[]
+
+  @@index([Price], map: "Reward_Price_index")
 }
 
 model RewardItem {
@@ -70,8 +76,8 @@ model SSLink {
   SenderID   String     @unique(map: "SSLink_SenderID_uindex") @db.VarChar(25)
   ReceiverID String     @unique(map: "SSLink_RecieverID_uindex") @db.VarChar(25)
   confirmed  Boolean?   @default(false)
-  SSReceiver SSReceiver @relation(fields: [ReceiverID], references: [ID], onUpdate: Restrict, map: "SSReciever")
-  SSSender   SSSender   @relation(fields: [SenderID], references: [ID], onUpdate: Restrict, map: "SSSender")
+  SSReceiver SSReceiver @relation(fields: [ReceiverID], references: [ID], onUpdate: Restrict, map: "SSLink_SSReceiver_ID_fk")
+  SSSender   SSSender   @relation(fields: [SenderID], references: [ID], onUpdate: Restrict, map: "SSLink_SSSender_ID_fk")
 }
 
 model SSSender {
@@ -80,7 +86,7 @@ model SSSender {
   HasPaypal Boolean
   HasINTER  Boolean
   IsSend    Boolean? @default(false)
-  Members   Members  @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "sssenderID")
+  Members   Members  @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "SSSender_Members_ID_fk")
   SSLink    SSLink?
 }
 
@@ -176,6 +182,19 @@ model SSReceiver {
   RequiresPaypal Boolean
   RequiresINTER  Boolean
   IsReceived     Boolean? @default(false)
-  Members        Members  @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "ID")
+  Members        Members  @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "SSReceiver_Members_ID_fk")
   SSLink         SSLink?
+}
+
+model Refferals {
+  userid                              String   @db.VarChar(25)
+  refferer                            String   @db.VarChar(25)
+  IsValid                             Boolean? @default(false)
+  RegularRewarded                     Boolean? @default(false)
+  MemberRewarded                      Boolean? @default(false)
+  Members_MembersToRefferals_refferer Members  @relation("MembersToRefferals_refferer", fields: [refferer], references: [ID], onUpdate: Restrict, map: "Refferals_Members_ID_fk_2")
+  Members_MembersToRefferals_userid   Members  @relation("MembersToRefferals_userid", fields: [userid], references: [ID], onUpdate: Restrict, map: "Refferals_Members_ID_fk")
+
+  @@id([userid, refferer])
+  @@index([refferer], map: "Refferals_Members_ID_fk_2")
 }
