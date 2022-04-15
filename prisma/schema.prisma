@@ -187,13 +187,14 @@ model SSReceiver {
 }
 
 model Refferals {
-  userid                              String   @db.VarChar(25)
-  refferer                            String   @db.VarChar(25)
-  IsValid                             Boolean? @default(false)
-  RegularRewarded                     Boolean? @default(false)
-  MemberRewarded                      Boolean? @default(false)
-  Members_MembersToRefferals_refferer Members  @relation("MembersToRefferals_refferer", fields: [refferer], references: [ID], onUpdate: Restrict, map: "Refferals_Members_ID_fk_2")
-  Members_MembersToRefferals_userid   Members  @relation("MembersToRefferals_userid", fields: [userid], references: [ID], onUpdate: Restrict, map: "Refferals_Members_ID_fk")
+  userid                              String    @db.VarChar(25)
+  refferer                            String    @db.VarChar(25)
+  IsValid                             DateTime? @db.DateTime(0)
+  RegularRewarded                     DateTime? @db.DateTime(0)
+  MemberRewarded                      DateTime? @db.DateTime(0)
+  CreatedTimestamp                    DateTime? @default(now()) @db.DateTime(0)
+  Members_MembersToRefferals_refferer Members   @relation("MembersToRefferals_refferer", fields: [refferer], references: [ID], onUpdate: Restrict, map: "Refferals_Members_ID_fk_2")
+  Members_MembersToRefferals_userid   Members   @relation("MembersToRefferals_userid", fields: [userid], references: [ID], onUpdate: Restrict, map: "Refferals_Members_ID_fk")
 
   @@id([userid, refferer])
   @@index([refferer], map: "Refferals_Members_ID_fk_2")
