@@ -23,11 +23,14 @@ module.exports = async function (client) {
                     channel.members.forEach(member => {
                         let q = knownuserCache.find(ku => ku.ID == member.user.id);
                         if(q == undefined){
-                            client.prisma.members.create({
-                                select: {
-                                    ID: true
+                            client.prisma.members.upsert({
+                                where: {ID: member.user.id},
+                                select: {ID: true},
+                                update: {
+                                    DisplayName: member.user.username,
+                                    avatar: member.user.avatar
                                 },
-                                data: {
+                                create: {
                                     ID: member.user.id,
                                     DisplayName: member.user.username,
                                     avatar: member.user.avatar

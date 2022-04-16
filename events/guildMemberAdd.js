@@ -25,8 +25,36 @@ module.exports = {
             try {
                 client.prisma.refferals.create({
                     data: {
-                        userid: GuildMember.id,
-                        refferer: usedInvite.inviter.id
+                        userid: {
+                            upsert: {
+                                where: {ID: GuildMember.id},
+                                select: {ID: true},
+                                update: {
+                                    DisplayName: GuildMember.user.username,
+                                    avatar: GuildMember.user.avatar
+                                },
+                                create: {
+                                    ID: GuildMember.id,
+                                    DisplayName: GuildMember.username,
+                                    avatar: GuildMember.avatar
+                                }
+                            }
+                        },
+                        refferer: {
+                            upsert: {
+                                where: {ID: usedInvite.inviter.id},
+                                select: {ID: true},
+                                update: {
+                                    DisplayName: usedInvite.inviter.username,
+                                    avatar: usedInvite.inviter.avatar
+                                },
+                                create: {
+                                    ID: usedInvite.inviter.id,
+                                    DisplayName: usedInvite.inviter.username,
+                                    avatar: usedInvite.inviter.avatar
+                                }
+                            }
+                        }
                     }
                 });
             } catch (error) {
