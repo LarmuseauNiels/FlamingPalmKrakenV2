@@ -23,7 +23,7 @@ module.exports = {
                 )
                 .setTimestamp();
                 try{
-                    await client.prisma.members.upsert({
+                    let user = await client.prisma.members.upsert({
                         where: {ID: GuildMember.id},
                         update: {
                             DisplayName: GuildMember.user.username,
@@ -31,11 +31,11 @@ module.exports = {
                         },
                         create: {
                             ID: GuildMember.id,
-                            DisplayName: GuildMember.username,
-                            avatar: GuildMember.avatar
+                            DisplayName: GuildMember.user.username,
+                            avatar: GuildMember.user.avatar
                         }
                     });
-                    await client.prisma.members.upsert({
+                    let referrer = await client.prisma.members.upsert({
                         where: {ID: usedInvite.inviter.id},
                         update: {
                             DisplayName: usedInvite.inviter.username,
@@ -50,9 +50,9 @@ module.exports = {
 
                     await client.prisma.refferals.create({
                         data: {
-                            userid: GuildMember.id,
-                            refferer: usedInvite.inviter.id
-                        }
+                            userid: user,
+                            refferer: referrer
+                        },
                     });
                 } catch(error){
                     console.log(error);
