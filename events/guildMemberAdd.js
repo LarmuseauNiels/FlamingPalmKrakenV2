@@ -23,13 +23,8 @@ module.exports = {
                 )
                 .setTimestamp();
                 try{
-                    let user = await client.prisma.members.upsert({
-                        where: {ID: GuildMember.id},
-                        update: {
-                            DisplayName: GuildMember.user.username,
-                            avatar: GuildMember.user.avatar
-                        },
-                        create: {
+                    let user = await client.prisma.members.create({
+                        data: {
                             ID: GuildMember.id,
                             DisplayName: GuildMember.user.username,
                             avatar: GuildMember.user.avatar
