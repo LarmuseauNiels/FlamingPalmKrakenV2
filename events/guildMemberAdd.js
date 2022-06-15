@@ -45,8 +45,8 @@ module.exports = {
 
                     await client.prisma.refferals.create({
                         data: {
-                            userid: user,
-                            refferer: referrer
+                            userid: GuildMember.id,
+                            refferer: usedInvite.inviter.id
                         },
                     });
                 } catch(error){
