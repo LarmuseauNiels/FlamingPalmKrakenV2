@@ -1,25 +1,35 @@
 // Require the necessary discord.js classes
 const fs = require('fs');
-const { Client,Collection, Intents } = require('discord.js');
+const { Client, GatewayIntentBits, Partials,Collection } = require('discord.js');
 const { token,DBHOST,DBPASS } = require('./config.js');
 
 const { PrismaClient } = require( '@prisma/client');
 const mysql = require('mysql');
 const Islander = require('./islander/islander.js')
 
-
-
 class ClientDecorator extends Client{
     constructor(){
         super({
             intents: [
-                GatewayIntentBits.GUILDS, GatewayIntentBits.GUILD_MEMBERS, GatewayIntentBits.GUILD_BANS,
-                GatewayIntentBits.GUILD_EMOJIS_AND_STICKERS, GatewayIntentBits.GUILD_INTEGRATIONS, GatewayIntentBits.GUILD_WEBHOOKS,
-                GatewayIntentBits.GUILD_INVITES, GatewayIntentBits.GUILD_VOICE_STATES, GatewayIntentBits.GUILD_PRESENCES,
-                GatewayIntentBits.GUILD_MESSAGES, GatewayIntentBits.GUILD_MESSAGE_REACTIONS, GatewayIntentBits.GUILD_MESSAGE_TYPING,
-                GatewayIntentBits.DIRECT_MESSAGES, GatewayIntentBits.DIRECT_MESSAGE_REACTIONS, GatewayIntentBits.DIRECT_MESSAGE_TYPING,
+                GatewayIntentBits.Guilds,
+                GatewayIntentBits.GuildMembers,
+                GatewayIntentBits.GuildBans,
+                GatewayIntentBits.GuildEmojisAndStickers,
+                GatewayIntentBits.GuildIntegrations,
+                GatewayIntentBits.GuildWebhooks,
+                GatewayIntentBits.GuildInvites,
+                GatewayIntentBits.GuildVoiceStates,
+                GatewayIntentBits.GuildPresences,
+                GatewayIntentBits.GuildMessages,
+                GatewayIntentBits.GuildMessageReactions,
+                GatewayIntentBits.GuildMessageTyping,
+                GatewayIntentBits.DirectMessages,
+                GatewayIntentBits.DirectMessageReactions,
+                GatewayIntentBits.DirectMessageTyping,
+                GatewayIntentBits.MessageContent,
+                GatewayIntentBits.GuildScheduledEvents
             ],
-            partials: [Partials.MESSAGE, Partials.CHANNEL, Partials.REACTION]
+            partials: [Partials.Message, Partials.Channel, Partials.Reaction]
          });
          this.DBconnection = mysql.createPool({
             connectionLimit : 10,
