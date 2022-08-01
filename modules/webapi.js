@@ -181,6 +181,13 @@ module.exports = function (client) {
         });
     })
 
+    app.get('/events', function (req, res) {
+        client.guilds.fetch("530537522355240961").then(guild => {
+            var events = guild.scheduledEvents.fetch();
+            res.send(JSON.stringify(events))
+        });
+    })
+
     
     app.listen(3000)
 }
