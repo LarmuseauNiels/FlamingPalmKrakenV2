@@ -13,13 +13,13 @@ class ClientDecorator extends Client{
     constructor(){
         super({
             intents: [
-                Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_BANS,
-                Intents.FLAGS.GUILD_EMOJIS_AND_STICKERS, Intents.FLAGS.GUILD_INTEGRATIONS, Intents.FLAGS.GUILD_WEBHOOKS,
-                Intents.FLAGS.GUILD_INVITES, Intents.FLAGS.GUILD_VOICE_STATES, Intents.FLAGS.GUILD_PRESENCES,
-                Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Intents.FLAGS.GUILD_MESSAGE_TYPING,
-                Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.DIRECT_MESSAGE_REACTIONS, Intents.FLAGS.DIRECT_MESSAGE_TYPING,
+                GatewayIntentBits.GUILDS, GatewayIntentBits.GUILD_MEMBERS, GatewayIntentBits.GUILD_BANS,
+                GatewayIntentBits.GUILD_EMOJIS_AND_STICKERS, GatewayIntentBits.GUILD_INTEGRATIONS, GatewayIntentBits.GUILD_WEBHOOKS,
+                GatewayIntentBits.GUILD_INVITES, GatewayIntentBits.GUILD_VOICE_STATES, GatewayIntentBits.GUILD_PRESENCES,
+                GatewayIntentBits.GUILD_MESSAGES, GatewayIntentBits.GUILD_MESSAGE_REACTIONS, GatewayIntentBits.GUILD_MESSAGE_TYPING,
+                GatewayIntentBits.DIRECT_MESSAGES, GatewayIntentBits.DIRECT_MESSAGE_REACTIONS, GatewayIntentBits.DIRECT_MESSAGE_TYPING,
             ],
-            partials: ['MESSAGE', 'CHANNEL', 'REACTION']
+            partials: [Partials.MESSAGE, Partials.CHANNEL, Partials.REACTION]
          });
          this.DBconnection = mysql.createPool({
             connectionLimit : 10,

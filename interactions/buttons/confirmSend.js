@@ -13,7 +13,7 @@ module.exports = {
                 new MessageButton()
                     .setCustomId('confirmSend')
                     .setLabel('Confirmed')
-                    .setStyle('SUCCESS')
+                    .setStyle(ButtonStyle.Success)
                     .setDisabled(true));
 
         interaction.update({components: [row]});
