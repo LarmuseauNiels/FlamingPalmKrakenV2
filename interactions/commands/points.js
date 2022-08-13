@@ -30,7 +30,7 @@ module.exports = {
             .setTimestamp()
             .setFooter( {text: 'Niels2398 FPG kraken bot',iconURL: 'https://flamingpalm.com/images/FlamingPalmLogoSmall.png'});
          member.PointHistory.forEach(h =>{
-             embed.addField(`${h.points>0?'+':''} ${h.points}:palm_tree:`, `${h.comment == ""?'no comment':h.comment}`, false);
+             embed.addFields([`${h.points>0?'+':''} ${h.points}:palm_tree:`, `${h.comment == ""?'no comment':h.comment}`], false);
          })
         console.log(member);
         interaction.reply({embeds: [embed], ephemeral: true});
