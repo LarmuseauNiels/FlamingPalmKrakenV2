@@ -182,16 +182,12 @@ module.exports = function (client) {
     })
 
     app.get('/events', function (req, res) {
-        console.log(client.guilds)
          client.guilds.fetch("530537522355240961").then(guild => {
-             console.log("guild= "+ guild)
             guild.scheduledEvents.fetch().then(events => {
-                console.log("guild= "+ events)
                 res.send(JSON.stringify(events))
             });
         });
     })
-
     
     app.listen(3000)
 }

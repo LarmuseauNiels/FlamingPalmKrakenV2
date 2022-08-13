@@ -1,6 +1,6 @@
 const {SlashCommandBuilder} = require('discord.js');
-const {MessageEmbed} = require("discord.js");
-//const { MessageEmbed,MessageActionRow, MessageButton } = require('discord.js');
+const {EmbedBuilder} = require("discord.js");
+//const { EmbedBuilder,ActionRowBuilder, ButtonBuilder } = require('discord.js');
 
 module.exports = {
     name: 'points',
@@ -19,7 +19,7 @@ module.exports = {
             }
         });
 
-        let embed = new MessageEmbed()
+        let embed = new EmbedBuilder()
             .setColor('#FD8612')
             .setTitle(  `You have ${member.Points.TotalPoints} :palm_tree:`)
             .setAuthor(member.DisplayName, 'https://cdn.discordapp.com/avatars/'+member.ID+'/'+interaction.user.avatar, 'https://flamingpalm.com')

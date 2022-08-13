@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-//const { MessageEmbed } = require('discord.js');
+//const { EmbedBuilder } = require('discord.js');
 
 module.exports = {
 	name:'spawn',

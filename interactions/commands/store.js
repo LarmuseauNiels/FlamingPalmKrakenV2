@@ -1,4 +1,4 @@
-const { MessageEmbed,MessageActionRow, MessageButton,SlashCommandBuilder } = require('discord.js');
+const { EmbedBuilder,ActionRowBuilder, ButtonBuilder,SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     name: 'store',
@@ -6,7 +6,7 @@ module.exports = {
         .setName('store')
         .setDescription('shows the flamingpalm points store'),
     async execute(interaction) {
-        let embed = new MessageEmbed()
+        let embed = new EmbedBuilder()
             .setColor('#FD8612')
             .setTitle("Store")
             .setAuthor(interaction.user.username, 'https://cdn.discordapp.com/avatars/' + interaction.user.id + '/' + interaction.user.avatar, 'https://flamingpalm.com')
@@ -25,9 +25,9 @@ module.exports = {
             if (stock == 0)  embed.addField(reward.Title, `out of stock` , true);
             else embed.addField(reward.Title, `**${reward.Price}:palm_tree:**` , true);//${reward.Description }\n ${stock} key${stock == 1?'':'s'} in stock\n
         })
-        let row = new MessageActionRow()
+        let row = new ActionRowBuilder()
             .addComponents(
-                new MessageButton()
+                new ButtonBuilder()
                     .setURL('https://flamingpalm.com/members')
                     .setLabel('Redeem on website')
                     .setStyle('LINK'));

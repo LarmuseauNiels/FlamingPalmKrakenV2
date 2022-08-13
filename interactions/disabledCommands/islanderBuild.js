@@ -1,34 +1,34 @@
-const {MessageActionRow, MessageButton, MessageSelectMenu} = require("discord.js");
+const {ActionRowBuilder, ButtonBuilder, MessageSelectMenu} = require("discord.js");
 module.exports = {
     name: "islanderBuild",
     async execute(interaction) {
         let response = await client.islander.GetBuildable(interaction.user.id)
 
-        let row1 = new MessageActionRow()
+        let row1 = new ActionRowBuilder()
             .addComponents(
-                new MessageButton()
+                new ButtonBuilder()
                     .setCustomId('islanderBuild')
                     .setLabel('Build')
                     .setStyle('SECONDARY'),
-                new MessageButton()
+                new ButtonBuilder()
                     .setCustomId('islanderUpgrade')
                     .setLabel('Upgrade')
                     .setStyle('SECONDARY'),
-                new MessageButton()
+                new ButtonBuilder()
                     .setCustomId('islanderBuyUnits')
                     .setLabel('Buy units')
                     .setStyle('SECONDARY'),
-                new MessageButton()
+                new ButtonBuilder()
                     .setCustomId('islanderBuyShips')
                     .setLabel('Buy ships')
                     .setStyle('SECONDARY'),
-                new MessageButton()
+                new ButtonBuilder()
                     .setCustomId('islanderExpedition')
                     .setLabel('Start expedition')
                     .setStyle('SECONDARY')
             );
 
-        const row = new MessageActionRow()
+        const row = new ActionRowBuilder()
             .addComponents(
                 new MessageSelectMenu()
                     .setCustomId('select')

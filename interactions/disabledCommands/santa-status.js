@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const {MessageEmbed, MessageButton, MessageActionRow} = require("discord.js");
+const {EmbedBuilder, ButtonBuilder, ActionRowBuilder} = require("discord.js");
 
 module.exports = {
     name: 'admin-santa-confirmation',
@@ -13,7 +13,7 @@ module.exports = {
         });
         links.forEach(link =>{
             client.users.fetch(link.ID, false).then((user) => {
-                let embed = new MessageEmbed()
+                let embed = new EmbedBuilder()
                     .setColor('#FD8612')
                     .setTitle(  `Confirm send`)
                     .addFields(
@@ -21,9 +21,9 @@ module.exports = {
                     )
                     .setFooter('FlamingPalm Secret Santa', 'https://flamingpalm.com/images/FlamingPalmLogoSmall.png')
                     .setTimestamp();
-                let row = new MessageActionRow()
+                let row = new ActionRowBuilder()
                     .addComponents(
-                        new MessageButton()
+                        new ButtonBuilder()
                             .setCustomId('confirmSend')
                             .setLabel('I have ordered my gift receiver a gift')
                             .setStyle('PRIMARY'));

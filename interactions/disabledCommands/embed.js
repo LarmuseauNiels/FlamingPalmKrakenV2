@@ -7,7 +7,7 @@ module.exports = {
         .setDefaultPermission(false),
 	async execute(interaction) {
         
-        const exampleEmbed = new MessageEmbed()
+        const exampleEmbed = new EmbedBuilder()
         .setColor('#0099ff')
         .setTitle('Some title')
         .setURL('https://discord.js.org/')

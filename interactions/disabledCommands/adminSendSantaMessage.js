@@ -1,6 +1,6 @@
 const {SlashCommandBuilder} = require('@discordjs/builders');
-const {MessageEmbed, MessageActionRow, MessageButton} = require("discord.js");
-//const { MessageEmbed,MessageActionRow, MessageButton } = require('discord.js');
+const {EmbedBuilder, ActionRowBuilder, ButtonBuilder} = require("discord.js");
+//const { EmbedBuilder,ActionRowBuilder, ButtonBuilder } = require('discord.js');
 
 module.exports = {
     name: 'admin-send-santa-message',
@@ -22,7 +22,7 @@ module.exports = {
 		});
 		links.forEach(link =>{
 			client.users.fetch(link.SenderID, false).then((user) => {
-				let embed = new MessageEmbed()
+				let embed = new EmbedBuilder()
 					.setColor('#FD8612')
 					.setTitle(  `Organizational message`)
 					.addFields(

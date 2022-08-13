@@ -1,4 +1,4 @@
-const { MessageEmbed,MessageActionRow, MessageButton } = require('discord.js');
+const { EmbedBuilder,ActionRowBuilder, ButtonBuilder } = require('discord.js');
 
 module.exports = {
     name: 'guildMemberAdd',
@@ -10,7 +10,7 @@ module.exports = {
         GuildMember.guild.invites.fetch().then(async(newInvites) =>  {
             console.log("got invites")
             const usedInvite = newInvites.find(invite => oldinvites.find(i => i.code == invite.code).uses < invite.uses);
-            let embed = new MessageEmbed()
+            let embed = new EmbedBuilder()
                 .setColor('#FD8612')
                 .setTitle(  `${GuildMember.user.username} joined`)
                 .setAuthor(`${GuildMember.user.username}`, 'https://cdn.discordapp.com/avatars/'+GuildMember.user.id+'/'+GuildMember.user.avatar)

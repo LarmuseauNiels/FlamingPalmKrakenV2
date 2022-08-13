@@ -1,5 +1,5 @@
 const {SlashCommandBuilder} = require('@discordjs/builders');
-const {MessageEmbed} = require("discord.js");
+const {EmbedBuilder} = require("discord.js");
 
 module.exports = {
     name: 'admin-santa-info',
@@ -17,7 +17,7 @@ module.exports = {
                 }
             }
         });
-        let embed = new MessageEmbed()
+        let embed = new EmbedBuilder()
             .setColor('#FD8612')
             .setTitle(  `Progress info secret santa`)
             .addFields(

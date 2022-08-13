@@ -1,10 +1,10 @@
-const { MessageEmbed,MessageActionRow, MessageButton } = require('discord.js');
+const { EmbedBuilder,ActionRowBuilder, ButtonBuilder } = require('discord.js');
 
 module.exports = {
     name: 'guildMemberRemove',
     execute(GuildMember) {
 
-        let embed = new MessageEmbed()
+        let embed = new EmbedBuilder()
             .setColor('#FD8612')
             .setTitle(  `${GuildMember.user.username} left`)
             .setAuthor(`${GuildMember.user.username}`, 'https://cdn.discordapp.com/avatars/'+GuildMember.user.id+'/'+GuildMember.user.avatar)

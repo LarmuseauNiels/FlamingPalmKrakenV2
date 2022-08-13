@@ -1,4 +1,4 @@
-const {MessageActionRow, MessageButton} = require("discord.js");
+const {ActionRowBuilder, ButtonBuilder} = require("discord.js");
 
 module.exports = {
     name: 'confirmSend',
@@ -8,9 +8,9 @@ module.exports = {
             data: {IsSend: true}
         })
 
-        let row = new MessageActionRow()
+        let row = new ActionRowBuilder()
             .addComponents(
-                new MessageButton()
+                new ButtonBuilder()
                     .setCustomId('confirmSend')
                     .setLabel('Confirmed')
                     .setStyle(ButtonStyle.Success)
