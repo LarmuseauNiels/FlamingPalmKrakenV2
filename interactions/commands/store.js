@@ -22,8 +22,8 @@ module.exports = {
         })
         rewards.forEach(reward =>{
             let stock = reward.RewardItem.filter(x =>  x.RedeemedBy == "").length;
-            if (stock == 0)  embed.addField(reward.Title, `out of stock` , true);
-            else embed.addField(reward.Title, `**${reward.Price}:palm_tree:**` , true);//${reward.Description }\n ${stock} key${stock == 1?'':'s'} in stock\n
+            if (stock == 0)  embed.addFields({name: reward.Title, value:`out of stock`, inline:true });
+            else embed.addFields({name: reward.Title, value: `**${reward.Price}:palm_tree:**`, inline:true });//${reward.Description }\n ${stock} key${stock == 1?'':'s'} in stock\n
         })
         let row = new ActionRowBuilder()
             .addComponents(
