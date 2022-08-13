@@ -19,6 +19,7 @@ module.exports = {
             }
         });
 
+
         let embed = new EmbedBuilder()
             .setColor('#FD8612')
             .setTitle(  `You have ${member.Points.TotalPoints} :palm_tree:`)
