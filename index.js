@@ -42,6 +42,8 @@ class ClientDecorator extends Client{
         this.prisma = new PrismaClient()
         this.logChannel;
         this.islander = new Islander(this);
+        this.events = null;
+        this.cachUpdated;
     }
     log(loggText){
         console.log(loggText);

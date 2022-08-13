@@ -16,6 +16,17 @@ module.exports = async function (client) {
     cron.schedule('30 0,15,30,45 * * * *', () => {
          client.log('running statistics tracking cron job');
          try {
+             client.guilds.fetch("530537522355240961").then(guild => {
+                 guild.scheduledEvents.fetch().then(events => {
+                     client.events = events;
+                     client.cachUpdated = Date.now();
+                 });
+             });
+         }
+         catch (e) {
+            console.log(e);
+         }
+         try {
             trackedChannels.forEach(trackedChannel =>{
                 let channelID = trackedChannel.ID;
                 client.channels.fetch(channelID).then(channel =>{
