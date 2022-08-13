@@ -1,4 +1,4 @@
-const { EmbedBuilder,ActionRowBuilder, ButtonBuilder,SlashCommandBuilder } = require('discord.js');
+const { EmbedBuilder,ActionRowBuilder, ButtonBuilder,SlashCommandBuilder,ButtonStyle } = require('discord.js');
 
 module.exports = {
     name: 'store',
@@ -30,7 +30,7 @@ module.exports = {
                 new ButtonBuilder()
                     .setURL('https://flamingpalm.com/members')
                     .setLabel('Redeem on website')
-                    .setStyle('LINK'));
+                    .setStyle(ButtonStyle.Link));
         interaction.reply({embeds: [embed],components: [row], ephemeral: false});
     },
     isGuild: true
