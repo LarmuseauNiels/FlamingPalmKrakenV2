@@ -7,7 +7,7 @@ module.exports = {
         let embed = new EmbedBuilder()
             .setColor('#FD8612')
             .setTitle(  `${GuildMember.user.username} left`)
-            .setAuthor(`${GuildMember.user.username}`, 'https://cdn.discordapp.com/avatars/'+GuildMember.user.id+'/'+GuildMember.user.avatar)
+            .setAuthor({name: `${GuildMember.user.username}`,iconURL: 'https://cdn.discordapp.com/avatars/'+GuildMember.user.id+'/'+GuildMember.user.avatar})
             .addFields(
                 { name: 'ID', value: `${GuildMember.id}`,inline: false  },
                 { name: 'name + discriminator', value: `${GuildMember.user.username}#${GuildMember.user.discriminator}`,inline: false  },
