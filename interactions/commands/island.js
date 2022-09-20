@@ -25,12 +25,12 @@ module.exports = {
 		const canvas = Canvas.createCanvas(950, 650);
 		const ctx = canvas.getContext('2d');
 
-		const island = await Canvas.loadImage('../sprites/starting.png');
-		const header = await Canvas.loadImage('../sprites/buttonLong_brown.png');
-		const foodIcon = await Canvas.loadImage('../sprites/food.png');
-		const dudeIcon = await Canvas.loadImage('../sprites/dude.png');
-		const stoneIcon = await Canvas.loadImage('../sprites/stone.png');
-		const woodIcon = await Canvas.loadImage('../sprites/wood.png');
+		const island = await Canvas.loadImage('sprites/starting.png');
+		const header = await Canvas.loadImage('sprites/buttonLong_brown.png');
+		const foodIcon = await Canvas.loadImage('sprites/food.png');
+		const dudeIcon = await Canvas.loadImage('sprites/dude.png');
+		const stoneIcon = await Canvas.loadImage('sprites/stone.png');
+		const woodIcon = await Canvas.loadImage('sprites/wood.png');
 
 		ctx.drawImage(island, -4, -180, 1000, 1000);
 		ctx.drawImage(header, 80, 10, 190, 49);
