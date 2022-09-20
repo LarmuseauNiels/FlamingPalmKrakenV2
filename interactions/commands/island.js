@@ -48,7 +48,7 @@ module.exports = {
 
 		const attachment = new AttachmentBuilder(canvas.toBuffer('image/png'), { name: 'island.png' });
 
-		interaction.reply({ embeds: [embed] ,files: [attachment]  , ephemeral: true });
+		interaction.reply({ files: [attachment]  , ephemeral: false });
             //interaction.followUp({ embeds: [hiddenEmbed] , components: [row] ,ephemeral: true });
         // },error =>{
 		// 	 console.log(error);
