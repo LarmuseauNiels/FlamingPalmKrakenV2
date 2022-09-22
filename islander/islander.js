@@ -131,10 +131,10 @@ class Islander {
 		ctx.drawImage(foodIcon, 270, 10, 50, 50);
 		ctx.drawImage(woodIcon, 480, 2, 70, 70);
 		ctx.drawImage(stoneIcon, 705, 10, 50, 50);
-		addText(ctx, "0", 160, 42);
-		addText(ctx, "0", 375, 42);
-		addText(ctx, "0", 595, 42);
-		addText(ctx, "0", 810, 42);
+		addText(ctx, island.Currency, 160, 42);
+		addText(ctx, island.Food, 375, 42);
+		addText(ctx, island.Wood, 595, 42);
+		addText(ctx, island.Stone, 810, 42);
 
 		return new AttachmentBuilder(canvas.toBuffer('image/png'), { name: 'island.png' });
 	}
