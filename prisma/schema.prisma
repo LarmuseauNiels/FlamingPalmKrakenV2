@@ -125,7 +125,7 @@ model i_Building_Island {
 
 model i_Island {
   ID                String              @id @db.VarChar(25)
-  Wood              Int                 @default(50) @db.UnsignedInt
+  Wood              Int                 @default(0) @db.UnsignedInt
   Stone             Int                 @default(0) @db.UnsignedInt
   Currency          Int                 @default(0) @db.UnsignedInt
   Food              Int                 @default(0) @db.UnsignedInt
