@@ -19,8 +19,9 @@ module.exports = {
             interaction.reply({ content: 'You are still gathering, please wait', ephemeral: true });
         }
         else{
-            let now = new Date().getTime();
-            client.islander.userCooldowns.set(interaction.user.id,  now.setHours(now.getHours() + 2));
+            let now = new Date();
+            now.setHours(now.getHours() + 4);
+            client.islander.userCooldowns.set(interaction.user.id,  now);
             if (interaction.options.getString('resource') == 'wood'){
                 client.islander.AddWood(interaction.user.id,10).then(wood => {
                     interaction.reply({ content: 'You gather 10 wood', ephemeral: true });
