@@ -17,10 +17,10 @@ module.exports = {
 
 
             //interaction.followUp({ embeds: [hiddenEmbed] , components: [row] ,ephemeral: true });
-		 }).catch(err => {
-			console.log(err);
+		 },err => {
+			console.log('error island 01' + err);
 			interaction.reply({ content: 'You do not have an island yet.', ephemeral: true });
-		 });
+		});
 	},
     isGuild: true,
 };
