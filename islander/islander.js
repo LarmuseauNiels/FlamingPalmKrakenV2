@@ -110,7 +110,7 @@ class Islander {
 	}
 
 	async GetImage(memberID, island){
-
+		console.log(island);
 		let memberIsland = island;
 		let canvas = Canvas.createCanvas(950, 650);
 		let ctx = canvas.getContext('2d');
