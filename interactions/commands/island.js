@@ -13,7 +13,7 @@ module.exports = {
 				.setTitle(  "Island")
 			var text = '';
 			if (island == null){
-				client.islander.SpawnIsland(member)
+				client.islander.SpawnIsland(member.ID)
 				text = 'Welcome to Islander, you have started alone on your empty island' +
 					'  You should now use /gather wood to gather your some wood and use /build to make a campfire!';
 			}
