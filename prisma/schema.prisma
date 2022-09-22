@@ -154,6 +154,9 @@ model i_BuildingLevel {
   imagename         String              @default("") @db.VarChar(255)
   imagePosY         Int                 @default(0) @db.MediumInt
   imagePosX         Int                 @default(0) @db.MediumInt
+  ProdWood          Int?                @default(0)
+  ProdFood          Int?                @default(0)
+  ProdStone         Int?                @default(0)
   i_Building        i_Building          @relation(fields: [BuildingID], references: [ID], onDelete: Cascade, map: "i_BuildingLevel_ibfk_1")
   i_Building_Island i_Building_Island[]
 
