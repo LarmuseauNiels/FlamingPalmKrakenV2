@@ -11,10 +11,15 @@ module.exports = {
             const embed = new EmbedBuilder()
             .setColor('#FD8612')
 				.setTitle(  "Island")
+			var text = '';
+			if (island == null){
+				client.islander.SpawnIsland(member)
+				text = 'Welcome to Islander, you have started alone on your empty island' +
+					'  You should now use /gather wood to gather your some wood and use /build to make a campfire!';
+			}
 			client.islander.GetImage(interaction.user.id,island).then(image => {
-				interaction.reply({ files: [image]  , ephemeral: false });
+				interaction.reply({ content: text, files: [image] , ephemeral: false });
 			})
-
 
             //interaction.followUp({ embeds: [hiddenEmbed] , components: [row] ,ephemeral: true });
 		 },err => {

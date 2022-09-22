@@ -6,6 +6,7 @@ const {AttachmentBuilder} = require("discord.js");
 class Islander {
 	constructor(client){
 		this.client = client;
+		this.userCooldowns = new Map();
 	}
 	GetMemberIsland( memberID){
 		return new Promise(async function(resolve,reject) {
@@ -65,6 +66,46 @@ class Islander {
 			})
 			buildings = buildings.filter(x => x.Level == (member.i_Island.i_Building_Island.find(q => q.BuildingID == x.BuildingID).level)+1)
 			resolve({ m: member,b: buildings});
+		});
+	}
+
+	AddWood(memberID, amount){
+		return new Promise(async function(resolve) {
+			let island = await client.prisma.i_Island.update({
+				where:{
+					ID: memberID
+				},
+				data:{
+					Wood: {increment: amount}
+				}
+			});
+			resolve(island);
+		});
+	}
+	AddFood(memberID, amount){
+		return new Promise(async function(resolve) {
+			let island = await client.prisma.i_Island.update({
+				where:{
+					ID: memberID
+				},
+				data:{
+					Food: {increment: amount}
+				}
+			});
+			resolve(island);
+		});
+	}
+	AddStone(memberID, amount){
+		return new Promise(async function(resolve) {
+			let island = await client.prisma.i_Island.update({
+				where:{
+					ID: memberID
+				},
+				data:{
+					Stone: {increment: amount}
+				}
+			});
+			resolve(island);
 		});
 	}
 
