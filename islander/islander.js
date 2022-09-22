@@ -95,7 +95,7 @@ class Islander {
 		addText(ctx, "0", 595, 42);
 		addText(ctx, "0", 810, 42);
 
-		const attachment = new AttachmentBuilder(canvas.toBuffer('image/png'), { name: 'island.png' });
+		return new AttachmentBuilder(canvas.toBuffer('image/png'), { name: 'island.png' });
 	}
 
 	GameTick(){
