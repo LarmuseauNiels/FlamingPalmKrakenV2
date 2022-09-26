@@ -20,25 +20,21 @@ module.exports = {
 			let row = new ActionRowBuilder()
 				.addComponents(
 					new ButtonBuilder()
-						.setCustomId('islanderBuild')
-						.setLabel('Build')
+						.setCustomId('islanderGather')
+						.setLabel('Gather')
 						.setStyle(ButtonStyle.Secondary),
 					new ButtonBuilder()
-						.setCustomId('islanderUpgrade')
-						.setLabel('Upgrade')
+						.setCustomId('islanderBuild')
+						.setLabel('Building')
 						.setStyle(ButtonStyle.Secondary),
 					new ButtonBuilder()
 						.setCustomId('islanderBuyUnits')
-						.setLabel('Buy units')
-						.setStyle(ButtonStyle.Secondary),
-					new ButtonBuilder()
-						.setCustomId('islanderBuyShips')
-						.setLabel('Buy ships')
-						.setStyle(ButtonStyle.Secondary),
+						.setLabel('Units')
+						.setStyle(ButtonStyle.disabled),
 					new ButtonBuilder()
 						.setCustomId('islanderExpedition')
-						.setLabel('Start expedition')
-						.setStyle(ButtonStyle.Secondary)
+						.setLabel('Expeditions')
+						.setStyle(ButtonStyle.disabled)
 				);
 
 			client.islander.GetImage(interaction.user.id,island).then(image => {
