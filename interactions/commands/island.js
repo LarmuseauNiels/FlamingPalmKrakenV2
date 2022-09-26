@@ -25,7 +25,7 @@ module.exports = {
 						.setStyle(ButtonStyle.Secondary),
 					new ButtonBuilder()
 						.setCustomId('islanderBuild')
-						.setLabel('Building')
+						.setLabel('Buildings')
 						.setStyle(ButtonStyle.Secondary),
 					new ButtonBuilder()
 						.setCustomId('islanderBuyUnits')
