@@ -20,7 +20,7 @@ module.exports = {
 			let row = new ActionRowBuilder()
 				.addComponents(
 					new ButtonBuilder()
-						.setCustomId('islanderGather')
+						.setCustomId('gather')
 						.setLabel('Gather')
 						.setStyle(ButtonStyle.Secondary),
 					new ButtonBuilder()
