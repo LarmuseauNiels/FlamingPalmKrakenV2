@@ -43,7 +43,7 @@ module.exports = {
 
 			client.islander.GetImage(interaction.user.id,island).then(image => {
 				interaction.reply({ content: text, files: [image] , ephemeral: false }).then(() => {
-					interaction.followUp({ content: 'menu', components: [row] ,ephemeral: true });
+					interaction.followUp({ components: [row] ,ephemeral: true });
 				});
 				//
 			})
