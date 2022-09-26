@@ -17,33 +17,33 @@ module.exports = {
 				text = 'Welcome to Islander, you have started alone on your empty island' +
 					'  You should now use /gather wood to gather your some wood and use /build to make a campfire!';
 			}
+			let row = new ActionRowBuilder()
+				.addComponents(
+					new ButtonBuilder()
+						.setCustomId('islanderBuild')
+						.setLabel('Build')
+						.setStyle(ButtonStyle.Secondary),
+					new ButtonBuilder()
+						.setCustomId('islanderUpgrade')
+						.setLabel('Upgrade')
+						.setStyle(ButtonStyle.Secondary),
+					new ButtonBuilder()
+						.setCustomId('islanderBuyUnits')
+						.setLabel('Buy units')
+						.setStyle(ButtonStyle.Secondary),
+					new ButtonBuilder()
+						.setCustomId('islanderBuyShips')
+						.setLabel('Buy ships')
+						.setStyle(ButtonStyle.Secondary),
+					new ButtonBuilder()
+						.setCustomId('islanderExpedition')
+						.setLabel('Start expedition')
+						.setStyle(ButtonStyle.Secondary)
+				);
+
 			client.islander.GetImage(interaction.user.id,island).then(image => {
 				interaction.reply({ content: text, files: [image] , ephemeral: false });
-
-				let row = new ActionRowBuilder()
-					.addComponents(
-						new ButtonBuilder()
-							.setCustomId('islanderBuild')
-							.setLabel('Build')
-							.setStyle(ButtonStyle.Secondary),
-						new ButtonBuilder()
-							.setCustomId('islanderUpgrade')
-							.setLabel('Upgrade')
-							.setStyle(ButtonStyle.Secondary),
-						new ButtonBuilder()
-							.setCustomId('islanderBuyUnits')
-							.setLabel('Buy units')
-							.setStyle(ButtonStyle.Secondary),
-						new ButtonBuilder()
-							.setCustomId('islanderBuyShips')
-							.setLabel('Buy ships')
-							.setStyle(ButtonStyle.Secondary),
-						new ButtonBuilder()
-							.setCustomId('islanderExpedition')
-							.setLabel('Start expedition')
-							.setStyle(ButtonStyle.Secondary)
-					);
-				interaction.followUp({ components: [row] ,ephemeral: true });
+				interaction.followUp({ content: 'menu', components: [row] ,ephemeral: true });
 			})
 
             //interaction.followUp({ embeds: [hiddenEmbed] , components: [row] ,ephemeral: true });
