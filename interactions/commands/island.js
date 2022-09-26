@@ -1,4 +1,4 @@
-const { EmbedBuilder,AttachmentBuilder,SlashCommandBuilder } = require('discord.js');
+const { EmbedBuilder,AttachmentBuilder,SlashCommandBuilder, ActionRowBuilder, ButtonBuilder} = require('discord.js');
 
 module.exports = {
 	name: 'island',
@@ -19,6 +19,31 @@ module.exports = {
 			}
 			client.islander.GetImage(interaction.user.id,island).then(image => {
 				interaction.reply({ content: text, files: [image] , ephemeral: false });
+
+				let row = new ActionRowBuilder()
+					.addComponents(
+						new ButtonBuilder()
+							.setCustomId('islanderBuild')
+							.setLabel('Build')
+							.setStyle('SECONDARY'),
+						new ButtonBuilder()
+							.setCustomId('islanderUpgrade')
+							.setLabel('Upgrade')
+							.setStyle('SECONDARY'),
+						new ButtonBuilder()
+							.setCustomId('islanderBuyUnits')
+							.setLabel('Buy units')
+							.setStyle('SECONDARY'),
+						new ButtonBuilder()
+							.setCustomId('islanderBuyShips')
+							.setLabel('Buy ships')
+							.setStyle('SECONDARY'),
+						new ButtonBuilder()
+							.setCustomId('islanderExpedition')
+							.setLabel('Start expedition')
+							.setStyle('SECONDARY')
+					);
+				interaction.followUp({ components: [row] ,ephemeral: true });
 			})
 
             //interaction.followUp({ embeds: [hiddenEmbed] , components: [row] ,ephemeral: true });
