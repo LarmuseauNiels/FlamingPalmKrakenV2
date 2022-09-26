@@ -1,4 +1,4 @@
-const { EmbedBuilder,AttachmentBuilder,SlashCommandBuilder, ActionRowBuilder, ButtonBuilder} = require('discord.js');
+const { EmbedBuilder,AttachmentBuilder,SlashCommandBuilder, ActionRowBuilder, ButtonBuilder,ButtonStyle} = require('discord.js');
 
 module.exports = {
 	name: 'island',
@@ -25,23 +25,23 @@ module.exports = {
 						new ButtonBuilder()
 							.setCustomId('islanderBuild')
 							.setLabel('Build')
-							.setStyle('SECONDARY'),
+							.setStyle(ButtonStyle.Secondary),
 						new ButtonBuilder()
 							.setCustomId('islanderUpgrade')
 							.setLabel('Upgrade')
-							.setStyle('SECONDARY'),
+							.setStyle(ButtonStyle.Secondary),
 						new ButtonBuilder()
 							.setCustomId('islanderBuyUnits')
 							.setLabel('Buy units')
-							.setStyle('SECONDARY'),
+							.setStyle(ButtonStyle.Secondary),
 						new ButtonBuilder()
 							.setCustomId('islanderBuyShips')
 							.setLabel('Buy ships')
-							.setStyle('SECONDARY'),
+							.setStyle(ButtonStyle.Secondary),
 						new ButtonBuilder()
 							.setCustomId('islanderExpedition')
 							.setLabel('Start expedition')
-							.setStyle('SECONDARY')
+							.setStyle(ButtonStyle.Secondary)
 					);
 				interaction.followUp({ components: [row] ,ephemeral: true });
 			})
