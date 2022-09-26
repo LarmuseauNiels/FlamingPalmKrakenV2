@@ -30,22 +30,19 @@ module.exports = {
 					new ButtonBuilder()
 						.setCustomId('islanderBuyUnits')
 						.setLabel('Units')
-						.setStyle(ButtonStyle.disabled),
+						.setStyle(ButtonStyle.Secondary)
+						.setDisabled(true),
 					new ButtonBuilder()
 						.setCustomId('islanderExpedition')
 						.setLabel('Expeditions')
-						.setStyle(ButtonStyle.disabled)
+						.setStyle(ButtonStyle.Secondary)
+						.setDisabled(true)
 				);
 
 			client.islander.GetImage(interaction.user.id,island).then(image => {
-				interaction.reply({ content: text, files: [image],components: [row] , ephemeral: false }).then(() => {
-					//interaction.followUp({  ,ephemeral: true });
-				});
-				//
+				interaction.reply({ content: text, files: [image],components: [row] , ephemeral: false });
 			})
-
-            //interaction.followUp({ embeds: [hiddenEmbed] , components: [row] ,ephemeral: true });
-		 },err => {
+			},err => {
 			console.log('error island 01' + err);
 			interaction.reply({ content: 'You do not have an island yet.', ephemeral: true });
 		});
