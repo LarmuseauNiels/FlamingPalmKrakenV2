@@ -7,19 +7,16 @@ module.exports = {
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('gatherWood')
-                    .setLabel('Wood')
-                    .setStyle(ButtonStyle.Secondary)
-                    .setEmoji(':wood:'),
+                    .setLabel('🪵')
+                    .setStyle(ButtonStyle.Secondary),
                 new ButtonBuilder()
                     .setCustomId('gatherFood')
-                    .setLabel('Food')
-                    .setStyle(ButtonStyle.Secondary)
-                    .setEmoji(':poultry_leg:'),
+                    .setLabel('🍖')
+                    .setStyle(ButtonStyle.Secondary),
                 new ButtonBuilder()
                     .setCustomId('gatherStone')
-                    .setLabel('Stone')
+                    .setLabel('🧱')
                     .setStyle(ButtonStyle.Secondary)
-                    .setEmoji(':bricks:')
             );
             interaction.reply({ components: [row] , ephemeral: true });
     }
