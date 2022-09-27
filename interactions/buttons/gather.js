@@ -7,15 +7,15 @@ module.exports = {
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('gatherWood')
-                    .setLabel('Wood')
+                    .setLabel(':wood:')
                     .setStyle(ButtonStyle.Secondary),
                 new ButtonBuilder()
                     .setCustomId('gatherFood')
-                    .setLabel('Food')
+                    .setLabel(':meat_on_bone:')
                     .setStyle(ButtonStyle.Secondary),
                 new ButtonBuilder()
                     .setCustomId('gatherStone')
-                    .setLabel('Stone')
+                    .setLabel(':bricks:')
                     .setStyle(ButtonStyle.Secondary)
             );
             interaction.reply({ components: [row] , ephemeral: true });
