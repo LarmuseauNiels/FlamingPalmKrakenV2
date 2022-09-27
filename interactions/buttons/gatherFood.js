@@ -4,8 +4,12 @@ module.exports = {
     name: 'gatherFood',
     async execute(interaction) {
         if (client.islander.userCooldowns.has(interaction.user.id) && client.islander.userCooldowns.get(interaction.user.id) > Date.now()){
-            let timeLeft = client.islander.userCooldowns.get(interaction.user.id) - Date.now();
-            interaction.reply({ content: 'You are still gathering, please wait' , ephemeral: true });
+            let timespan =Math.floor((client.islander.userCooldowns.get(interaction.user.id) - Date.now()) /60000)
+            let hours = Math.floor(timespan / 60)
+            let min = timespan % 60
+            let text = hours == 0? min + ' minutes': hours + ' hours and ' + min + ' minutes';
+            
+            interaction.reply({ content: 'You are still gathering for ' + text , ephemeral: true });
         }
         else{
             let now = new Date();
