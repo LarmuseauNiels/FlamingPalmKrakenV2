@@ -16,7 +16,6 @@ module.exports = {
     client.islander.GetMemberIsland(interaction.user.id).then(
       (member) => {
         let island = member.i_Island;
-        const embed = new EmbedBuilder().setColor("#FD8612").setTitle("Island");
         var text = "";
         if (island == null) {
           client.islander.SpawnIsland(member.ID);
@@ -30,7 +29,7 @@ module.exports = {
             .setLabel("Gather")
             .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
-            .setCustomId("islanderBuild")
+            .setCustomId("build")
             .setLabel("Buildings")
             .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
