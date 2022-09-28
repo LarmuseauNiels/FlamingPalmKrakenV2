@@ -14,9 +14,9 @@ module.exports = {
                 )
               );
           })
-          .catch((err) => client.log(err));
+          .catch((err) => global.client.log(err));
       } catch (e) {
-        client.log(e);
+        global.client.log(e);
       }
     }
   },

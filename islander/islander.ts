@@ -4,8 +4,9 @@ const Canvas = require("@napi-rs/canvas");
 const { AttachmentBuilder } = require("discord.js");
 
 class Islander {
-  constructor(client) {
-    this.client = client;
+  private userCooldowns: Map<any, any>;
+
+  constructor() {
     this.userCooldowns = new Map();
     //start game clock
     //cron.schedule('0 * 0 ? * * *',() => this.GameTick());
@@ -13,7 +14,7 @@ class Islander {
 
   GetMemberIsland(memberID) {
     return new Promise(async function (resolve, reject) {
-      client.prisma.members
+      global.client.prisma.members
         .findUnique({
           where: {
             ID: memberID,
@@ -37,7 +38,7 @@ class Islander {
 
   SpawnIsland(memberID) {
     return new Promise(async function (resolve, reject) {
-      let island = await client.prisma.i_Island.create({
+      let island = await global.client.prisma.i_Island.create({
         data: {
           ID: memberID,
         },
@@ -48,8 +49,8 @@ class Islander {
 
   GetBuildable(memberID) {
     return new Promise(async function (resolve, reject) {
-      let member = await client.islander.GetMemberIsland(memberID);
-      let buildings = await client.prisma.i_BuildingLevel.findMany({
+      let member = await global.client.islander.GetMemberIsland(memberID);
+      let buildings = await global.client.prisma.i_BuildingLevel.findMany({
         where: {
           TClevel: { lte: member.i_Island.i_Building_Island[0].level + 1 },
           Level: 1,
@@ -64,8 +65,8 @@ class Islander {
 
   GetUpgradable(memberID) {
     return new Promise(async function (resolve, reject) {
-      let member = await client.islander.GetMemberIsland(memberID);
-      let buildings = await client.prisma.i_BuildingLevel.findMany({
+      let member = await global.client.islander.GetMemberIsland(memberID);
+      let buildings = await global.client.prisma.i_BuildingLevel.findMany({
         where: {
           //TClevel:{lte: member.i_Island.i_Building_Island[0].level},
           BuildingID: {
@@ -87,7 +88,7 @@ class Islander {
 
   AddWood(memberID, amount) {
     return new Promise(async function (resolve) {
-      let island = await client.prisma.i_Island.update({
+      let island = await global.client.prisma.i_Island.update({
         where: {
           ID: memberID,
         },
@@ -101,7 +102,7 @@ class Islander {
 
   AddFood(memberID, amount) {
     return new Promise(async function (resolve) {
-      let island = await client.prisma.i_Island.update({
+      let island = await global.client.prisma.i_Island.update({
         where: {
           ID: memberID,
         },
@@ -115,7 +116,7 @@ class Islander {
 
   AddStone(memberID, amount) {
     return new Promise(async function (resolve) {
-      let island = await client.prisma.i_Island.update({
+      let island = await global.client.prisma.i_Island.update({
         where: {
           ID: memberID,
         },
@@ -163,11 +164,11 @@ class Islander {
 
   GameTick() {
     /*
-                let islands = this.client.prisma.i_Island.findMany();
-                islands.forEach(island => {
-                    
-                });
-                */
+                                                                                        let islands = this.client.prisma.i_Island.findMany();
+                                                                                        islands.forEach(island => {
+                                                                                            
+                                                                                        });
+                                                                                        */
     // every one minute
     // check building under construction
   }
@@ -188,7 +189,7 @@ class Islander {
     if (!b) {
       return a;
     }
-    return gcd(b, a % b); //recursive
+    return this.gcd(b, a % b); //recursive
   }
 }
 

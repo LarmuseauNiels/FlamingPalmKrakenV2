@@ -1,4 +1,5 @@
 // Require the necessary discord.js classes
+
 const fs = require("fs");
 const {
   Client,
@@ -10,9 +11,10 @@ const { token, DBHOST, DBPASS } = require("./config.js");
 
 const { PrismaClient } = require("@prisma/client");
 const mysql = require("mysql");
-const Islander = require("./islander/islander.js");
 
-class ClientDecorator extends Client {
+let islanderClass = require("./islander/islander.js");
+
+class FpgClient extends Client {
   constructor() {
     super({
       intents: [
@@ -46,22 +48,25 @@ class ClientDecorator extends Client {
 
     this.prisma = new PrismaClient();
     this.logChannel;
-    this.islander = new Islander(this);
+    this.islander = new islanderClass();
     this.events = null;
     this.cachUpdated;
   }
+
   log(loggText) {
     console.log(loggText);
     //test
   }
+
   channelLog() {
-    this.logChannel.send(loggText.toString());
+    //this.logChannel.send(loggText.toString());
   }
 }
-global.client = new ClientDecorator();
 
-client.commands = loadInteractionActions("commands");
-client.buttons = loadInteractionActions("buttons");
+global.client = new FpgClient();
+
+global.client.commands = loadInteractionActions("commands");
+global.client.buttons = loadInteractionActions("buttons");
 //client.selectMenus =  loadInteractionActions('selectMenus');
 
 const eventFiles = fs
@@ -71,14 +76,14 @@ const eventFiles = fs
 for (const file of eventFiles) {
   const event = require(`./events/${file}`);
   if (event.once) {
-    client.once(event.name, (...args) => event.execute(...args));
+    global.client.once(event.name, (...args) => event.execute(...args));
   } else {
-    client.on(event.name, (...args) => event.execute(...args));
+    global.client.on(event.name, (...args) => event.execute(...args));
   }
 }
 
 // Login to Discord with your client's token
-client.login(token);
+global.client.login(token);
 
 function loadInteractionActions(folderName) {
   let tempList = new Collection();

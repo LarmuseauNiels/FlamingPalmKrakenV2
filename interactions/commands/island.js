@@ -13,12 +13,12 @@ module.exports = {
     .setName("island")
     .setDescription("Check progress on your island"),
   async execute(interaction) {
-    client.islander.GetMemberIsland(interaction.user.id).then(
+    global.client.islander.GetMemberIsland(interaction.user.id).then(
       (member) => {
         let island = member.i_Island;
         var text = "";
         if (island == null) {
-          client.islander.SpawnIsland(member.ID);
+          global.client.islander.SpawnIsland(member.ID);
           text =
             "Welcome to Islander, you have started alone on your empty island" +
             "  You should now use /gather wood to gather your some wood and use /build to make a campfire!";
@@ -44,14 +44,16 @@ module.exports = {
             .setDisabled(true)
         );
 
-        client.islander.GetImage(interaction.user.id, island).then((image) => {
-          interaction.reply({
-            content: text,
-            files: [image],
-            components: [row],
-            ephemeral: false,
+        global.client.islander
+          .GetImage(interaction.user.id, island)
+          .then((image) => {
+            interaction.reply({
+              content: text,
+              files: [image],
+              components: [row],
+              ephemeral: false,
+            });
           });
-        });
       },
       (err) => {
         console.log("error island 01" + err);

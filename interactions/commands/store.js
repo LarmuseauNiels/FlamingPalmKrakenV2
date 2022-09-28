@@ -33,7 +33,7 @@ module.exports = {
         text: "Work in progress flamingpalm store",
         iconURL: "https://flamingpalm.com/images/FlamingPalmLogoSmall.png",
       });
-    let rewards = await client.prisma.reward.findMany({
+    let rewards = await global.client.prisma.reward.findMany({
       include: { RewardItem: true },
       orderBy: { Price: "asc" },
     });

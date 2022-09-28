@@ -4,7 +4,7 @@ module.exports = {
   name: "guildMemberAdd",
   async execute(GuildMember) {
     // just a test
-    const cachedInvites = client.invites.get(GuildMember.guild.id);
+    const cachedInvites = global.client.invites.get(GuildMember.guild.id);
     const oldinvites = cachedInvites.map((i) => {
       return { code: i.code, uses: i.uses };
     });
@@ -47,14 +47,14 @@ module.exports = {
         )
         .setTimestamp();
       try {
-        let user = await client.prisma.members.create({
+        let user = await global.client.prisma.members.create({
           data: {
             ID: GuildMember.id,
             DisplayName: GuildMember.user.username,
             avatar: GuildMember.user.avatar,
           },
         });
-        let referrer = await client.prisma.members.upsert({
+        let referrer = await global.client.prisma.members.upsert({
           where: { ID: usedInvite.inviter.id },
           update: {
             DisplayName: usedInvite.inviter.username,
@@ -67,7 +67,7 @@ module.exports = {
           },
         });
 
-        await client.prisma.refferals.create({
+        await global.client.prisma.refferals.create({
           data: {
             userid: GuildMember.id,
             refferer: usedInvite.inviter.id,
@@ -76,7 +76,7 @@ module.exports = {
       } catch (error) {
         console.log(error);
       }
-      client.logChannel.send({ embeds: [embed] });
+      global.client.logChannel.send({ embeds: [embed] });
     });
   },
 };

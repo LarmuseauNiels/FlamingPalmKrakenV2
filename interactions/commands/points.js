@@ -8,7 +8,7 @@ module.exports = {
     .setName("points")
     .setDescription("shows your flamingpalm points"),
   async execute(interaction) {
-    let member = await client.prisma.members.findUnique({
+    let member = await global.client.prisma.members.findUnique({
       where: { ID: interaction.user.id },
       include: {
         Points: true,
@@ -40,15 +40,11 @@ module.exports = {
         iconURL: "https://flamingpalm.com/images/FlamingPalmLogoSmall.png",
       });
     member.PointHistory.forEach((h) => {
-      embed.addFields(
-        [
-          {
-            name: `${h.points > 0 ? "+" : ""} ${h.points}:palm_tree:`,
-            value: `${h.comment == "" ? "no comment" : h.comment}`,
-          },
-        ],
-        false
-      );
+      embed.addFields({
+        name: `${h.points > 0 ? "+" : ""} ${h.points}:palm_tree:`,
+        value: `${h.comment == "" ? "no comment" : h.comment}`,
+        inline: false,
+      });
     });
     console.log(member);
     interaction.reply({ embeds: [embed], ephemeral: true });

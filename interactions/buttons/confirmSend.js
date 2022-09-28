@@ -3,7 +3,7 @@ const { ActionRowBuilder, ButtonBuilder } = require("discord.js");
 module.exports = {
   name: "confirmSend",
   async execute(interaction) {
-    await client.prisma.sSSender.update({
+    await global.client.prisma.sSSender.update({
       where: { ID: interaction.user.id },
       data: { IsSend: true },
     });
@@ -12,7 +12,7 @@ module.exports = {
       new ButtonBuilder()
         .setCustomId("confirmSend")
         .setLabel("Confirmed")
-        .setStyle(ButtonStyle.Success)
+        .setStyle(global.ButtonStyle.Success)
         .setDisabled(true)
     );
 

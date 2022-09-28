@@ -2,7 +2,7 @@
   "name": "discordtest",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
     "start": "npx tsc && node ./bin/index.js",
     "deploy": "npx tsc && node bin/deploy-commands.js",

@@ -28,6 +28,6 @@ module.exports = {
         }
       )
       .setTimestamp();
-    client.logChannel.send({ embeds: [embed] });
+    global.client.logChannel.send({ embeds: [embed] });
   },
 };
