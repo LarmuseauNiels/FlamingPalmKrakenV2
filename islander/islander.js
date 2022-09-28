@@ -163,18 +163,18 @@ class Islander {
 
   GameTick() {
     /*
-            let islands = this.client.prisma.i_Island.findMany();
-            islands.forEach(island => {
-                
-            });
-            */
+                let islands = this.client.prisma.i_Island.findMany();
+                islands.forEach(island => {
+                    
+                });
+                */
     // every one minute
     // check building under construction
   }
 
   getGatherCooldownTime(userid) {
     let timespan = Math.floor(
-      (this.userCooldowns.get(interaction.user.id) - Date.now()) / 60000
+      (this.userCooldowns.get(userid) - Date.now()) / 60000
     );
     let hours = Math.floor(timespan / 60);
     let min = timespan % 60;
