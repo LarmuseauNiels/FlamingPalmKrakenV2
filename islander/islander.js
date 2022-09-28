@@ -1,4 +1,4 @@
-//const cron = require('node-cron');
+const cron = require('node-cron');
 
 const Canvas = require("@napi-rs/canvas");
 const {AttachmentBuilder} = require("discord.js");
@@ -7,6 +7,8 @@ class Islander {
 	constructor(client){
 		this.client = client;
 		this.userCooldowns = new Map();
+		//start game clock
+		//cron.schedule('0 * 0 ? * * *',() => this.GameTick());
 	}
 	GetMemberIsland( memberID){
 		return new Promise(async function(resolve,reject) {
@@ -141,8 +143,30 @@ class Islander {
 		return new AttachmentBuilder(canvas.toBuffer('image/png'), { name: 'island.png' });
 	}
 
-	GameTick(){
-		//console.log("GameTick");
+	GameTick(){ 
+		/*
+		let islands = this.client.prisma.i_Island.findMany();
+		islands.forEach(island => {
+			
+		});
+		*/
+		// every one minute
+		// check building under construction
+
+	}
+
+	getGatherCooldownTime(userid){
+		let timespan =Math.floor((client.islander.userCooldowns.get(interaction.user.id) - Date.now()) /60000)
+		let hours = Math.floor(timespan / 60)
+		let min = timespan % 60
+		return hours == 0? min + ' minutes': hours + ' hours and ' + min + ' minutes';            
+	}
+
+	gcd(a, b) { //greatest-common-divisor for calculating quick resource reward times
+		if (!b) {
+			return a;
+		}
+		return gcd(b, a % b); //recursive
 	}
 }
 
