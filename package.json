@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npx tsc && node bin/index.js",
+    "start": "npx tsc && node ./bin/index.js",
     "deploy": "npx tsc && node bin/deploy-commands.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
