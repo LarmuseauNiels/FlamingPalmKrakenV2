@@ -10,6 +10,7 @@ class Islander {
     //start game clock
     //cron.schedule('0 * 0 ? * * *',() => this.GameTick());
   }
+
   GetMemberIsland(memberID) {
     return new Promise(async function (resolve, reject) {
       client.prisma.members
@@ -97,6 +98,7 @@ class Islander {
       resolve(island);
     });
   }
+
   AddFood(memberID, amount) {
     return new Promise(async function (resolve) {
       let island = await client.prisma.i_Island.update({
@@ -110,6 +112,7 @@ class Islander {
       resolve(island);
     });
   }
+
   AddStone(memberID, amount) {
     return new Promise(async function (resolve) {
       let island = await client.prisma.i_Island.update({
@@ -160,19 +163,18 @@ class Islander {
 
   GameTick() {
     /*
-		let islands = this.client.prisma.i_Island.findMany();
-		islands.forEach(island => {
-			
-		});
-		*/
+            let islands = this.client.prisma.i_Island.findMany();
+            islands.forEach(island => {
+                
+            });
+            */
     // every one minute
     // check building under construction
   }
 
   getGatherCooldownTime(userid) {
     let timespan = Math.floor(
-      (client.islander.userCooldowns.get(interaction.user.id) - Date.now()) /
-        60000
+      (this.userCooldowns.get(interaction.user.id) - Date.now()) / 60000
     );
     let hours = Math.floor(timespan / 60);
     let min = timespan % 60;
