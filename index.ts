@@ -36,13 +36,6 @@ class FpgClient extends Client {
       ],
       partials: [Partials.Message, Partials.Channel, Partials.Reaction],
     });
-    this.DBconnection = mysql.createPool({
-      connectionLimit: 10,
-      host: DBHOST,
-      user: "root",
-      password: DBPASS,
-      database: "discordstats",
-    });
 
     this.prisma = new PrismaClient();
     this.logChannel;

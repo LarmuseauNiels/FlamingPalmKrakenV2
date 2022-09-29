@@ -19,6 +19,12 @@ module.exports = function (client) {
   app.get("/", function (req, res) {
     res.send("API test page.");
   });
+  
+  app.get("/testprisma", function (req, res) {
+    let results = global.client.prisma.$queryRaw
+      `select timestamp,count(*) as online from VoiceConnected  WHERE VoiceConnected.TimeStamp >= curdate() - INTERVAL DAYOFWEEK(curdate())+6 DAY  group by timestamp`;
+      res.send(JSON.stringify(results));
+  });
 
   app.get("/activity", function (req, res) {
     this.DBconnection.query(
