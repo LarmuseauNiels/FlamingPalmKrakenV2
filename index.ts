@@ -1,5 +1,5 @@
 // Require the necessary discord.js classes
-
+import { Islander } from './islander/islander';
 const fs = require("fs");
 const {
   Client,
@@ -11,8 +11,6 @@ const { token, DBHOST, DBPASS } = require("./config.js");
 
 const { PrismaClient } = require("@prisma/client");
 const mysql = require("mysql");
-
-let islanderClass = require("./islander/islander.js");
 
 class FpgClient extends Client {
   constructor() {
@@ -48,7 +46,7 @@ class FpgClient extends Client {
 
     this.prisma = new PrismaClient();
     this.logChannel;
-    this.islander = new islanderClass();
+    this.islander = new Islander();
     this.events = null;
     this.cachUpdated;
   }

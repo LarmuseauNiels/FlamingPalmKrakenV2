@@ -3,7 +3,7 @@ const cron = require("node-cron");
 const Canvas = require("@napi-rs/canvas");
 const { AttachmentBuilder } = require("discord.js");
 
-class Islander {
+export class Islander {
   private userCooldowns: Map<any, any>;
 
   constructor() {
@@ -164,11 +164,11 @@ class Islander {
 
   GameTick() {
     /*
-                                                                                        let islands = this.client.prisma.i_Island.findMany();
-                                                                                        islands.forEach(island => {
-                                                                                            
-                                                                                        });
-                                                                                        */
+    let islands = this.client.prisma.i_Island.findMany();
+    islands.forEach(island => {
+        
+    });
+    */
     // every one minute
     // check building under construction
   }
@@ -183,14 +183,6 @@ class Islander {
       ? min + " minutes"
       : hours + " hours and " + min + " minutes";
   }
-
-  gcd(a, b) {
-    //greatest-common-divisor for calculating quick resource reward times
-    if (!b) {
-      return a;
-    }
-    return this.gcd(b, a % b); //recursive
-  }
 }
 
 function addText(ctx, text, x, y) {
@@ -200,4 +192,3 @@ function addText(ctx, text, x, y) {
   ctx.fillText(text, x, y);
 }
 
-module.exports = Islander;
