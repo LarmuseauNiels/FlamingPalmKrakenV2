@@ -7,185 +7,81 @@ const { DBHOST, DBPASS } = require("../config.js");
 module.exports = function (client) {
   app.use(cors());
 
-  this.DBconnection = mysql.createPool({
-    connectionLimit: 10,
-    host: DBHOST,
-    user: "root",
-    password: DBPASS,
-    database: "discordstats",
-  });
-
   //client.log("Loading WebApi Module")
   app.get("/", function (req, res) {
     res.send("API test page.");
   });
   
-  app.get("/testprisma", async function (req, res) {
+  app.get("/activity", async function (req, res) {
     let results = await global.client.prisma.$queryRaw
       `select timestamp,count(*) as online from VoiceConnected  WHERE VoiceConnected.TimeStamp >= curdate() - INTERVAL DAYOFWEEK(curdate())+6 DAY  group by timestamp`;
       res.send(JSON.stringify(results));
   });
 
-  app.get("/activity", function (req, res) {
-    this.DBconnection.query(
-      "select timestamp,count(*) as online from VoiceConnected " +
-        " WHERE VoiceConnected.TimeStamp >= curdate() - INTERVAL DAYOFWEEK(curdate())+6 DAY " +
-        " group by timestamp",
-      function (error, results, fields) {
-        if (error != null) {
-          client.log(error);
-          res.send(JSON.stringify("Failure"));
-        } else {
-          res.send(JSON.stringify(results));
-        }
-      }
-    );
-  });
-
-  app.get("/activityFromDate/:date", function (req, res) {
+  app.get("/activityFromDate/:date", async function (req, res) {
     var date = req.params["date"];
-    this.DBconnection.query(
-      "select timestamp,count(*) as online from VoiceConnected " +
-        " WHERE date(TimeStamp) = ? " +
-        " group by timestamp ",
-      [date],
-      function (error, results, fields) {
-        if (error != null) {
-          client.log(error);
-          res.send(JSON.stringify("Failure"));
-        } else {
-          res.send(JSON.stringify(results));
-        }
-      }
-    );
+    let results = await global.client.prisma.$queryRaw
+    `select timestamp,count(*) as online from VoiceConnected  WHERE date(TimeStamp) = ${date}  group by timestamp `;
+    res.send(JSON.stringify(results));
   });
 
-  app.get("/userActivityDate/:date", function (req, res) {
+  app.get("/userActivityDate/:date", async function (req, res) {
     var date = req.params["date"];
-    this.DBconnection.query(
-      "SELECT Members.DisplayName as name, count(*) as y FROM VoiceConnected LEFT JOIN Members ON VoiceConnected.ID = Members.ID " +
-        " WHERE date(TimeStamp) = ? GROUP BY VoiceConnected.ID order by y desc",
-      [date],
-      function (error, results, fields) {
-        if (error != null) {
-          client.log(error);
-          res.send(JSON.stringify("Failure"));
-        } else {
-          res.send(JSON.stringify(results));
-        }
-      }
-    );
+    let results = await global.client.prisma.$queryRaw
+    `SELECT Members.DisplayName as name, count(*) as y FROM VoiceConnected LEFT JOIN Members ON VoiceConnected.ID = Members.ID 
+     WHERE date(TimeStamp) = ${date} GROUP BY VoiceConnected.ID order by y desc`;
+     res.send(JSON.stringify(results));
   });
 
-  app.get("/channelActivity", function (req, res) {
-    this.DBconnection.query(
-      "select Channel.ChannelName as name, count(*) as y from VoiceConnected left join Channel on VoiceConnected.ChannelID = Channel.ID " +
-        " WHERE VoiceConnected.TimeStamp >= curdate() - INTERVAL DAYOFWEEK(curdate())+6 DAY group by Channel.ChannelName",
-      function (error, results, fields) {
-        if (error != null) {
-          client.log(error);
-          res.send(JSON.stringify("Failure"));
-        } else {
-          res.send(JSON.stringify(results));
-        }
-      }
-    );
-  });
-  app.get("/userActivity", function (req, res) {
-    this.DBconnection.query(
-      "SELECT Members.DisplayName as name, count(*) as y FROM VoiceConnected LEFT JOIN Members ON VoiceConnected.ID = Members.ID " +
-        " WHERE VoiceConnected.TimeStamp >= curdate() - INTERVAL DAYOFWEEK(curdate())+6 DAY GROUP BY VoiceConnected.ID order by y desc",
-      function (error, results, fields) {
-        if (error != null) {
-          client.log(error);
-          res.send(JSON.stringify("Failure"));
-        } else {
-          res.send(JSON.stringify(results));
-        }
-      }
-    );
+  app.get("/channelActivity", async function (req, res) {
+    let results = await global.client.prisma.$queryRaw
+    `select Channel.ChannelName as name, count(*) as y from VoiceConnected left join Channel on VoiceConnected.ChannelID = Channel.ID
+     WHERE VoiceConnected.TimeStamp >= curdate() - INTERVAL DAYOFWEEK(curdate())+6 DAY group by Channel.ChannelName`;
+     res.send(JSON.stringify(results));
   });
 
-  app.get("/userActivityAll", function (req, res) {
-    this.DBconnection.query(
-      "SELECT Members.DisplayName as name, count(*) as y FROM VoiceConnected LEFT JOIN Members ON VoiceConnected.ID = Members.ID " +
-        " GROUP BY VoiceConnected.ID order by y desc",
-      function (error, results, fields) {
-        if (error != null) {
-          client.log(error);
-          res.send(JSON.stringify("Failure"));
-        } else {
-          res.send(JSON.stringify(results));
-        }
-      }
-    );
+  app.get("/userActivity", async function (req, res) {
+    let results = await global.client.prisma.$queryRaw
+    `SELECT Members.DisplayName as name, count(*) as y FROM VoiceConnected LEFT JOIN Members ON VoiceConnected.ID = Members.ID 
+     WHERE VoiceConnected.TimeStamp >= curdate() - INTERVAL DAYOFWEEK(curdate())+6 DAY GROUP BY VoiceConnected.ID order by y desc`;
+     res.send(JSON.stringify(results));
   });
 
-  app.get("/userOnlineTimes/:userId", function (req, res) {
+  app.get("/userActivityAll", async function (req, res) {
+    let results = await global.client.prisma.$queryRaw
+    `SELECT Members.DisplayName as name, count(*) as y FROM VoiceConnected LEFT JOIN Members ON VoiceConnected.ID = Members.ID 
+     GROUP BY VoiceConnected.ID order by y desc`;
+     res.send(JSON.stringify(results));
+  });
+
+  app.get("/userOnlineTimes/:userId", async function (req, res) {
     var userId = req.params["userId"];
-    this.DBconnection.query(
-      "SELECT timestamp, 1 as online FROM `VoiceConnected` " +
-        "JOIN Channel on Channel.ID = VoiceConnected.ChannelID " +
-        "WHERE VoiceConnected.TimeStamp >= curdate() - INTERVAL DAYOFWEEK(curdate())+6 DAY AND VoiceConnected.ID = ?",
-      [userId],
-      function (error, results, fields) {
-        if (error != null) {
-          client.log(error);
-          res.send(JSON.stringify("Failure"));
-        } else {
-          res.send(JSON.stringify(results));
-        }
-      }
-    );
+    let results = await global.client.prisma.$queryRaw
+    `SELECT timestamp, 1 as online FROM VoiceConnected
+    JOIN Channel on Channel.ID = VoiceConnected.ChannelID 
+    WHERE VoiceConnected.TimeStamp >= curdate() - INTERVAL DAYOFWEEK(curdate())+6 DAY AND VoiceConnected.ID = ${userId}`;
+    res.send(JSON.stringify(results));
   });
 
-  app.get("/userInfo/:userId", function (req, res) {
+  app.get("/userInfo/:userId", async function (req, res) {
     var userId = req.params["userId"];
-    this.DBconnection.query(
-      "SELECT * FROM `Members` where ID =  ?",
-      [userId],
-      function (error, results, fields) {
-        if (error != null) {
-          client.log(error);
-          res.send(JSON.stringify("Failure"));
-        } else {
-          res.send(JSON.stringify(results));
-        }
-      }
-    );
+    let results = await global.client.prisma.$queryRaw
+    `SELECT * FROM Members where ID =  ${userId}`;
+     res.send(JSON.stringify(results));
   });
 
-  app.get("/PossibleYears", function (req, res) {
-    var year = req.params["year"];
-    this.DBconnection.query(
-      "select DISTINCT YEAR(timestamp) from VoiceConnected",
-      function (error, results, fields) {
-        if (error != null) {
-          client.log(error);
-          res.send(JSON.stringify("Failure"));
-        } else {
-          res.send(JSON.stringify(results));
-        }
-      }
-    );
+  app.get("/PossibleYears", async function (req, res) {
+    let results = await global.client.prisma.$queryRaw
+      `select DISTINCT YEAR(timestamp) from VoiceConnected`;
+    res.send(JSON.stringify(results));
   });
 
-  app.get("/YearActivity/:year", function (req, res) {
+  app.get("/YearActivity/:year", async function (req, res) {
     var year = req.params["year"];
-    this.DBconnection.query(
-      "select  MONTH(timestamp) as month, DAY(timestamp) as day ,YEAR(timestamp) as year, count(*) as online from VoiceConnected  " +
-        "Where YEAR(timestamp) = ? " +
-        "group by year,month, day",
-      [year],
-      function (error, results, fields) {
-        if (error != null) {
-          client.log(error);
-          res.send(JSON.stringify("Failure"));
-        } else {
-          res.send(JSON.stringify(results));
-        }
-      }
-    );
+    let results = await global.client.prisma.$queryRaw
+      `select  MONTH(timestamp) as month, DAY(timestamp) as day ,YEAR(timestamp) as year, count(*) as online from VoiceConnected 
+      Where YEAR(timestamp) = ${year} group by year,month, day`;
+    res.send(JSON.stringify(results));
   });
 
   app.get("/events", function (req, res) {
