@@ -3,7 +3,7 @@ const cron = require("node-cron");
 const Canvas = require("@napi-rs/canvas");
 const { AttachmentBuilder } = require("discord.js");
 
-export default class {
+export class Islander {
   private userCooldowns: Map<any, any>;
 
   constructor() {
