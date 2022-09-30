@@ -1,6 +1,5 @@
-import IEvent  from './interfaces/IEvent';
 // Require the necessary discord.js classes
-import Islander  from './islander/islander';
+import { Islander } from './islander/islander';
 const fs = require("fs");
 const {
   Client,
@@ -63,10 +62,10 @@ global.client.buttons = loadInteractionActions("buttons");
 
 const eventFiles = fs
   .readdirSync("./events")
-  .filter((file: string) => file.endsWith(".js"));
+  .filter((file) => file.endsWith(".js"));
 
 for (const file of eventFiles) {
-  let event = require(`./events/${file}`);
+  const event = require(`./events/${file}`);
   if (event.once) {
     global.client.once(event.name, (...args) => event.execute(...args));
   } else {

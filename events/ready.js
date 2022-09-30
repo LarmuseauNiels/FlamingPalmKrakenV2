@@ -1,9 +1,8 @@
-import  IEvent from './../interfaces/IEvent';
 const { Collection } = require("discord.js");
 
-export default class implements IEvent {
-  name = "ready";
-  once = true;
+module.exports = {
+  name: "ready",
+  once: true,
   execute(client) {
     client.logChannel = client.channels.cache.get("894190067747262464");
     client.log(`Ready! Logged in as ${client.user.tag}`);
@@ -24,5 +23,5 @@ export default class implements IEvent {
         .then((invite) => client.invites.set(guild.id, invite))
         .catch((error) => console.log(error));
     }
-  };
-} 
+  },
+};
