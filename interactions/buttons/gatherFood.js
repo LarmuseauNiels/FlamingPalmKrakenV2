@@ -5,7 +5,7 @@ module.exports = {
   async execute(interaction) {
     console.log(interaction.message.interaction);
     if (interaction.user.id !== interaction.message.interaction.user.id) {
-      interaction.reply({
+      await interaction.reply({
         content: "You can't interact with someone else's buttons!",
         ephemeral: true,
       });
@@ -16,7 +16,7 @@ module.exports = {
       global.client.islander.userCooldowns.has(interaction.user.id) &&
       global.client.islander.userCooldowns.get(interaction.user.id) > Date.now()
     ) {
-      interaction.reply({
+      await interaction.reply({
         content:
           "You are still gathering for " +
           global.client.islander.getGatherCooldownTime(interaction.user.id),
@@ -29,8 +29,8 @@ module.exports = {
       let gatherAmount = 5 + Math.floor(Math.random() * 12);
       global.client.islander
         .AddFood(interaction.user.id, gatherAmount)
-        .then((food) => {
-          interaction.reply({
+        .then(async (food) => {
+          await interaction.reply({
             content: `You gather ${gatherAmount} food`,
             ephemeral: false,
           }); //TODO make more intresting with different gathering amounts
@@ -42,8 +42,8 @@ module.exports = {
           let island = member.i_Island;
           global.client.islander
             .GetImage(interaction.user.id, island)
-            .then((image) => {
-              interaction.update({
+            .then(async (image) => {
+              await interaction.update({
                 files: [image],
               });
             });
