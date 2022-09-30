@@ -11,7 +11,7 @@ module.exports = {
       });
       return;
     }
-
+    //test
     if (
       global.client.islander.userCooldowns.has(interaction.user.id) &&
       global.client.islander.userCooldowns.get(interaction.user.id) > Date.now()
