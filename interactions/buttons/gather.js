@@ -3,6 +3,14 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 module.exports = {
   name: "gather",
   async execute(interaction) {
+    if (interaction.user.id !== interaction.message.author.id) {
+      interaction.reply({
+        content: "You can't interact with someone else's buttons!",
+        ephemeral: true,
+      });
+      return;
+    }
+
     let row1 = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId("gather")
