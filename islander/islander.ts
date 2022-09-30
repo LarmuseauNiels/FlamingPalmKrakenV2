@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+
 const cron = require("node-cron");
 const Canvas = require("@napi-rs/canvas");
 const { AttachmentBuilder } = require("discord.js");
@@ -130,9 +131,6 @@ export class Islander {
   }
 
   async GetImage(memberID, island) {
-    console.log(island);
-    console.log(island.Wood);
-    console.log(island["Wood"]);
     let memberIsland = island;
     let canvas = Canvas.createCanvas(950, 650);
     let ctx = canvas.getContext("2d");
@@ -165,14 +163,15 @@ export class Islander {
 
   GameTick() {
     /*
-    let islands = this.client.prisma.i_Island.findMany();
-    islands.forEach(island => {
-        
-    });
-    */
+        let islands = this.client.prisma.i_Island.findMany();
+        islands.forEach(island => {
+            
+        });
+        */
     // every one minute
     // check building under construction
   }
+
   getGatherCooldownTime(userid) {
     let timespan = Math.floor(
       (this.userCooldowns.get(userid) - Date.now()) / 60000

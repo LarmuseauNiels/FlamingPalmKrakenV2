@@ -18,10 +18,9 @@ module.exports = {
         let island = member.i_Island;
         var text = "";
         if (island == null) {
-          global.client.islander.SpawnIsland(member.ID);
+          let island = global.client.islander.SpawnIsland(member.ID);
           text =
-            "Welcome to Islander, you have started alone on your empty island" +
-            "  You should now use /gather wood to gather your some wood and use /build to make a campfire!";
+            "Welcome to Islander, you have started alone on your empty island";
         }
         let row = new ActionRowBuilder().addComponents(
           new ButtonBuilder()

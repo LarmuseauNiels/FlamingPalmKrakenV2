@@ -20,6 +20,6 @@ module.exports = {
         .setStyle(ButtonStyle.Secondary)
         .setEmoji("1024566959456649256")
     );
-    interaction.reply({ components: [row], ephemeral: true });
+    interaction.followUp({ components: [row], ephemeral: true });
   },
 };
