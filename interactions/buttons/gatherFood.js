@@ -30,23 +30,23 @@ module.exports = {
       global.client.islander
         .AddFood(interaction.user.id, gatherAmount)
         .then(async (food) => {
+          global.client.islander
+            .GetMemberIsland(interaction.user.id)
+            .then((member) => {
+              let island = member.i_Island;
+              global.client.islander
+                .GetImage(interaction.user.id, island)
+                .then(async (image) => {
+                  await interaction.update({
+                    files: [image],
+                  });
+                });
+            });
+
           await interaction.reply({
             content: `You gather ${gatherAmount} food`,
             ephemeral: false,
           }); //TODO make more intresting with different gathering amounts
-        });
-
-      global.client.islander
-        .GetMemberIsland(interaction.user.id)
-        .then((member) => {
-          let island = member.i_Island;
-          global.client.islander
-            .GetImage(interaction.user.id, island)
-            .then(async (image) => {
-              await interaction.update({
-                files: [image],
-              });
-            });
         });
     }
   },
