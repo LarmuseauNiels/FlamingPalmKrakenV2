@@ -3,7 +3,7 @@ const {} = require("discord.js");
 module.exports = {
   name: "gatherStone",
   async execute(interaction) {
-    if (interaction.user.id !== interaction.message.author.id) {
+    if (interaction.user.id !== interaction.message.interaction.user.id) {
       interaction.reply({
         content: "You can't interact with someone else's buttons!",
         ephemeral: true,
