@@ -6,11 +6,9 @@ type MemberIsland = Promise<Prisma.PromiseReturnType<typeof _getMemberIsland>>;
 
 export class Islander {
   userCooldowns: Map<any, any>;
-  prisma: any;
 
   constructor() {
     this.userCooldowns = new Map();
-    this.prisma = global.client.prisma;
     //start game clock
     //cron.schedule('0 * 0 ? * * *',() => this.GameTick());
   }
