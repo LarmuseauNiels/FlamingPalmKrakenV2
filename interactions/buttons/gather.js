@@ -3,6 +3,26 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 module.exports = {
   name: "gather",
   async execute(interaction) {
+    let row1 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId("gather")
+        .setLabel("Gather")
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId("build")
+        .setLabel("Buildings")
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId("islanderBuyUnits")
+        .setLabel("Units")
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(true),
+      new ButtonBuilder()
+        .setCustomId("islanderExpedition")
+        .setLabel("Expeditions")
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(true)
+    );
     let row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId("gatherWood")
@@ -20,6 +40,6 @@ module.exports = {
         .setStyle(ButtonStyle.Secondary)
         .setEmoji("1024566959456649256")
     );
-    interaction.followUp({ components: [row], ephemeral: true });
+    interaction.update({ components: [row1, row] });
   },
 };
