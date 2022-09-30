@@ -3,6 +3,7 @@ const {} = require("discord.js");
 module.exports = {
   name: "gatherFood",
   async execute(interaction) {
+    console.log(interaction.message.interaction);
     if (interaction.user.id !== interaction.message.interaction.user.id) {
       interaction.reply({
         content: "You can't interact with someone else's buttons!",
