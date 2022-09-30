@@ -1,4 +1,4 @@
-const { ActionRowBuilder, ButtonBuilder } = require("discord.js");
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 
 module.exports = {
   name: "confirmSend",
@@ -12,7 +12,7 @@ module.exports = {
       new ButtonBuilder()
         .setCustomId("confirmSend")
         .setLabel("Confirmed")
-        .setStyle(global.ButtonStyle.Success)
+        .setStyle(ButtonStyle.Success)
         .setDisabled(true)
     );
 

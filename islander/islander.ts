@@ -1,42 +1,45 @@
+import { Prisma } from "@prisma/client";
 const cron = require("node-cron");
-
 const Canvas = require("@napi-rs/canvas");
 const { AttachmentBuilder } = require("discord.js");
+type MemberIsland = Promise<Prisma.PromiseReturnType<typeof _getMemberIsland>>;
 
 export class Islander {
-  private userCooldowns: Map<any, any>;
+  userCooldowns: Map<any, any>;
+  prisma: any;
 
   constructor() {
     this.userCooldowns = new Map();
+    this.prisma = global.client.prisma;
     //start game clock
     //cron.schedule('0 * 0 ? * * *',() => this.GameTick());
   }
 
-  GetMemberIsland(memberID) {
-    return new Promise(async function (resolve, reject) {
-      global.client.prisma.members
-        .findUnique({
-          where: {
-            ID: memberID,
-          },
+  async getIsland(memberID: string): Promise<MemberIsland> {
+    return await _getMemberIsland(memberID);
+  }
+
+  async GetMemberIsland(memberID: string) {
+    return global.client.prisma.members.findUnique({
+      where: {
+        ID: memberID,
+      },
+      include: {
+        i_Island: {
           include: {
-            i_Island: {
+            i_Building_Island: {
               include: {
-                i_Building_Island: {
-                  include: {
-                    i_Building: true,
-                    i_BuildingLevel: true,
-                  },
-                },
+                i_Building: true,
+                i_BuildingLevel: true,
               },
             },
           },
-        })
-        .then((member) => resolve(member));
+        },
+      },
     });
   }
 
-  SpawnIsland(memberID) {
+  SpawnIsland(memberID: string) {
     return new Promise(async function (resolve, reject) {
       let island = await global.client.prisma.i_Island.create({
         data: {
@@ -152,10 +155,10 @@ export class Islander {
     ctx.drawImage(foodIcon, 270, 10, 50, 50);
     ctx.drawImage(woodIcon, 480, 2, 70, 70);
     ctx.drawImage(stoneIcon, 705, 10, 50, 50);
-    addText(ctx, island.Currency.toString(), 160, 42);
-    addText(ctx, island.Food.toString(), 375, 42);
-    addText(ctx, island.Wood.toString(), 595, 42);
-    addText(ctx, island.Stone.toString(), 810, 42);
+    _addText(ctx, island.Currency.toString(), 160, 42);
+    _addText(ctx, island.Food.toString(), 375, 42);
+    _addText(ctx, island.Wood.toString(), 595, 42);
+    _addText(ctx, island.Stone.toString(), 810, 42);
 
     return new AttachmentBuilder(canvas.toBuffer("image/png"), {
       name: "island.png",
@@ -172,7 +175,6 @@ export class Islander {
     // every one minute
     // check building under construction
   }
-
   getGatherCooldownTime(userid) {
     let timespan = Math.floor(
       (this.userCooldowns.get(userid) - Date.now()) / 60000
@@ -185,10 +187,29 @@ export class Islander {
   }
 }
 
-function addText(ctx, text, x, y) {
+async function _getMemberIsland(memberID: string) {
+  return global.client.prisma.members.findUnique({
+    where: {
+      ID: memberID,
+    },
+    include: {
+      i_Island: {
+        include: {
+          i_Building_Island: {
+            include: {
+              i_Building: true,
+              i_BuildingLevel: true,
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+function _addText(ctx, text, x, y) {
   ctx.font = "28px sans-serif";
   ctx.textAlign = "center";
   ctx.fillStyle = "#fff";
   ctx.fillText(text, x, y);
 }
-

@@ -1,7 +1,6 @@
 const express = require("express");
 var cors = require("cors");
 const app = express();
-const mysql = require("mysql");
 const { DBHOST, DBPASS } = require("../config.js");
 
 module.exports = function (client) {

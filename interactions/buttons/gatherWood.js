@@ -17,8 +17,9 @@ module.exports = {
       let now = new Date();
       now.setHours(now.getHours() + 4);
       global.client.islander.userCooldowns.set(interaction.user.id, now);
-      global.client.islander.AddWood(interaction.user.id, 10).then((wood) => {
-        interaction.reply({ content: "You gather 10 wood", ephemeral: true });
+      let gatherAmount = 5 + Math.floor(Math.random() * 8);
+      global.client.islander.AddWood(interaction.user.id, gatherAmount).then((wood) => {
+        interaction.reply({ content: `You gather ${gatherAmount} wood`, ephemeral: false });
       });
     }
   },

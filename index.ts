@@ -1,4 +1,5 @@
 // Require the necessary discord.js classes
+import { PrismaClient } from '@prisma/client';
 import { Islander } from './islander/islander';
 const fs = require("fs");
 const {
@@ -9,10 +10,10 @@ const {
 } = require("discord.js");
 const { token, DBHOST, DBPASS } = require("./config.js");
 
-const { PrismaClient } = require("@prisma/client");
-const mysql = require("mysql");
-
 class FpgClient extends Client {
+  declare islander : Islander;
+  declare prisma : PrismaClient;
+
   constructor() {
     super({
       intents: [
@@ -52,10 +53,13 @@ class FpgClient extends Client {
   channelLog() {
     //this.logChannel.send(loggText.toString());
   }
+
 }
 
+declare global {
+ var  client : FpgClient;
+}
 global.client = new FpgClient();
-
 global.client.commands = loadInteractionActions("commands");
 global.client.buttons = loadInteractionActions("buttons");
 //client.selectMenus =  loadInteractionActions('selectMenus');
