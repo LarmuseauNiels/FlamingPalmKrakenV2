@@ -29,19 +29,6 @@ module.exports = {
       global.client.islander
         .AddStone(interaction.user.id, gatherAmount)
         .then((stone) => {
-          global.client.islander
-            .GetMemberIsland(interaction.user.id)
-            .then((member) => {
-              let island = member.i_Island;
-              global.client.islander
-                .GetImage(interaction.user.id, island)
-                .then(async (image) => {
-                  await interaction.update({
-                    files: [image],
-                  });
-                });
-            });
-
           interaction.reply({
             content: `You gather ${gatherAmount} stone`,
             ephemeral: false,

@@ -29,19 +29,6 @@ module.exports = {
       global.client.islander
         .AddWood(interaction.user.id, gatherAmount)
         .then((wood) => {
-          global.client.islander
-            .GetMemberIsland(interaction.user.id)
-            .then((member) => {
-              let island = member.i_Island;
-              global.client.islander
-                .GetImage(interaction.user.id, island)
-                .then(async (image) => {
-                  await interaction.update({
-                    files: [image],
-                  });
-                });
-            });
-
           interaction.reply({
             content: `You gather ${gatherAmount} wood`,
             ephemeral: false,
