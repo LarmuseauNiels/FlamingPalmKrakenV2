@@ -1,6 +1,6 @@
 // Require the necessary discord.js classes
-import { PrismaClient } from '@prisma/client';
-import { Islander } from './islander/islander';
+import { PrismaClient } from "@prisma/client";
+import { Islander } from "./islander/islander";
 const fs = require("fs");
 const {
   Client,
@@ -11,8 +11,11 @@ const {
 const { token, DBHOST, DBPASS } = require("./config.js");
 
 class FpgClient extends Client {
-  declare islander : Islander;
-  declare prisma : PrismaClient;
+  declare islander: Islander;
+  declare prisma: PrismaClient;
+  declare commands: typeof Collection;
+  declare buttons: typeof Collection;
+  declare modals: typeof Collection;
 
   constructor() {
     super({
@@ -53,15 +56,15 @@ class FpgClient extends Client {
   channelLog() {
     //this.logChannel.send(loggText.toString());
   }
-
 }
 
 declare global {
- var  client : FpgClient;
+  var client: FpgClient;
 }
 global.client = new FpgClient();
 global.client.commands = loadInteractionActions("commands");
 global.client.buttons = loadInteractionActions("buttons");
+global.client.modals = loadInteractionActions("modals");
 //client.selectMenus =  loadInteractionActions('selectMenus');
 
 const eventFiles = fs
@@ -80,8 +83,8 @@ for (const file of eventFiles) {
 // Login to Discord with your client's token
 global.client.login(token);
 
-function loadInteractionActions(folderName) {
-  let tempList = new Collection();
+function loadInteractionActions(folderName): typeof Collection {
+  let tempList: typeof Collection = new Collection();
   let actionFiles = fs
     .readdirSync("./interactions/" + folderName)
     .filter((file) => file.endsWith(".js"));

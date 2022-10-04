@@ -1,12 +1,18 @@
-const { SlashCommandBuilder } = require("@discordjs/builders");
-const { EmbedBuilder, ButtonBuilder, ActionRowBuilder } = require("discord.js");
+import {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ButtonBuilder,
+  ActionRowBuilder,
+  ButtonStyle,
+  PermissionFlagsBits,
+} from "discord.js";
 
 module.exports = {
   name: "admin-send-santas",
   data: new SlashCommandBuilder()
     .setName("admin-send-santas")
     .setDescription("Sends recipients name/id to santas")
-    .setDefaultPermission(false),
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   async execute(interaction) {
     let links = await client.prisma.sSLink.findMany({
       include: {
@@ -26,31 +32,29 @@ module.exports = {
             { name: "Address", value: link.SSReceiver.Address },
             { name: "Store links", value: link.SSReceiver.StoreLinks }
           )
-          .setFooter(
-            "FlamingPalm Secret Santa",
-            "https://flamingpalm.com/images/FlamingPalmLogoSmall.png"
-          )
+          .setFooter({
+            text: `If you have any questions, please contact Niels#2398`,
+            iconURL: "https://flamingpalm.com/images/FlamingPalmLogoSmall.png",
+          })
           .setTimestamp();
         let row = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
-            .setCustomId("confirmSanta")
-            .setLabel(
-              "I have received the required info and will purchase a gift in time "
-            )
-            .setStyle("PRIMARY")
+            .setCustomId("MsgSantaBtn")
+            .setLabel("Message santa")
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId("MsgReceiverBtn")
+            .setLabel("Message receiver")
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId("MsgSupportBtn")
+            .setLabel("Message support")
+            .setStyle(ButtonStyle.Danger)
         );
-
         user.send({ embeds: [embed], components: [row], ephemeral: false });
       });
     });
     await interaction.reply("Sent secret santa recipients");
   },
-  permissions: [
-    {
-      id: "178435947816419328",
-      type: "USER",
-      permission: true,
-    },
-  ],
   isGuild: true,
 };

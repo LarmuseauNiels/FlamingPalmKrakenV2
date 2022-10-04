@@ -15,6 +15,10 @@ module.exports = {
         //let selectMenu = client.selectMenus.get(interaction.customId);
         //await selectMenu.execute(interaction);
       }
+      if (interaction.isModalSubmit()) {
+        let modal = global.client.modals.get(interaction.customId);
+        await modal.execute(interaction);
+      }
     } catch (error) {
       global.client.log(error);
       await interaction.reply({

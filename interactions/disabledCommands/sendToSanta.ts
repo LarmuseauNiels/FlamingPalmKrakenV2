@@ -1,10 +1,9 @@
-const { SlashCommandBuilder } = require("@discordjs/builders");
-
+import { SlashCommandBuilder } from "discord.js";
 module.exports = {
-  name: "send-to-receiver",
+  name: "send-to-santa",
   data: new SlashCommandBuilder()
-    .setName("send-to-receiver")
-    .setDescription("Sends a message to who you are buying a gift for")
+    .setName("send-to-santa")
+    .setDescription("Send message to your santa")
     .addStringOption((option) =>
       option
         .setName("message")
@@ -13,22 +12,22 @@ module.exports = {
     ),
   async execute(interaction) {
     const message = interaction.options.getString("message");
-    await client.prisma.sSLink
+    client.prisma.sSLink
       .findUnique({
-        where: { SenderID: interaction.user.id },
+        where: { ReceiverID: interaction.user.id },
       })
       .then((link) => {
         if (link == null) {
           interaction.reply({
-            content: "Failure, you do not have a gift receiver",
+            content: "Failure, you do not have a secret santa",
             ephemeral: true,
           });
           return;
         }
-        client.users.fetch(link.ReceiverID, false).then((user) => {
-          user.send("message from Santa: " + message);
+        client.users.fetch(link.SenderID, false).then((user) => {
+          user.send("Message from your receiver: " + message);
           interaction.reply({
-            content: "successfully send message to " + user.username,
+            content: "successfully send message to santa",
             ephemeral: false,
           });
         });
