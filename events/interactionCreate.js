@@ -3,7 +3,8 @@ module.exports = {
   async execute(interaction) {
     try {
       if (interaction.isButton()) {
-        let button = global.client.buttons.get(interaction.customId);
+        let buttonId = interaction.customId.split("_")[0];
+        let button = global.client.buttons.get(buttonId);
         await button.execute(interaction);
       }
       if (interaction.isCommand()) {
@@ -16,7 +17,8 @@ module.exports = {
         //await selectMenu.execute(interaction);
       }
       if (interaction.isModalSubmit()) {
-        let modal = global.client.modals.get(interaction.customId);
+        let modalId = interaction.customId.split("_")[0];
+        let modal = global.client.modals.get(modalId);
         await modal.execute(interaction);
       }
     } catch (error) {
