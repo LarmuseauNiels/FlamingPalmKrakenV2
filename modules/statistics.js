@@ -27,6 +27,17 @@ module.exports = async function (client) {
         guild.scheduledEvents.fetch().then((events) => {
           client.events = events;
           client.cachUpdated = Date.now();
+          client.forEach((event) => {
+            let timespanToGo =
+              new Date(event.scheduledStartTimestamp).getTime() - Date.now();
+            if (timespanToGo / 60000 < 35 && timespanToGo / 60000 > 25) {
+              global.client.logChannel.send(
+                `bot test: Event starting in 30 minutes: ${
+                  event.name
+                } ${event.url()}`
+              );
+            }
+          });
         });
       });
     } catch (e) {
