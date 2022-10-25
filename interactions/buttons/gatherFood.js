@@ -3,7 +3,6 @@ const {} = require("discord.js");
 module.exports = {
   name: "gatherFood",
   async execute(interaction) {
-    console.log(interaction.message.interaction);
     if (interaction.user.id !== interaction.message.interaction.user.id) {
       await interaction.reply({
         content: "You can't interact with someone else's buttons!",
@@ -18,7 +17,7 @@ module.exports = {
     ) {
       await interaction.reply({
         content:
-          "You are still gathering for " +
+          "You gatherers are still tired for " +
           global.client.islander.getGatherCooldownTime(interaction.user.id),
         ephemeral: true,
       });

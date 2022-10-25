@@ -17,7 +17,7 @@ module.exports = {
     ) {
       interaction.reply({
         content:
-          "You are still gathering for " +
+          "You gatherers are still tired for " +
           global.client.islander.getGatherCooldownTime(interaction.user.id),
         ephemeral: true,
       });
