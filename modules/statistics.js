@@ -27,7 +27,7 @@ module.exports = async function (client) {
         guild.scheduledEvents.fetch().then((events) => {
           client.events = events;
           client.cachUpdated = Date.now();
-          client.forEach((event) => {
+          client.events.forEach((event) => {
             let timespanToGo =
               new Date(event.scheduledStartTimestamp).getTime() - Date.now();
             if (timespanToGo / 60000 < 35 && timespanToGo / 60000 > 25) {
