@@ -32,9 +32,7 @@ module.exports = async function (client) {
               new Date(event.scheduledStartTimestamp).getTime() - Date.now();
             if (timespanToGo / 60000 < 35 && timespanToGo / 60000 > 25) {
               global.client.logChannel.send(
-                `bot test: Event starting in 30 minutes: ${
-                  event.name
-                } ${event.url()}`
+                `bot test: Event starting in 30 minutes: ${event.name}`
               );
             }
           });
