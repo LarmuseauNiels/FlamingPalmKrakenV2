@@ -50,7 +50,7 @@ class FpgClient extends Client {
 
   log(loggText) {
     console.log(loggText);
-    global.client.logChannel.send("ERROR LOG ```" + loggText + "```");
+    global.client.logChannel.send("```" + loggText + "```");
   }
 
   channelLog() {
