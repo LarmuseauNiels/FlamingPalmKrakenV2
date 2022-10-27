@@ -35,10 +35,13 @@ module.exports = {
     );
     let row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setCustomId("Other")
-        .setLabel("Other Menu test")
+        .setCustomId("newBuilding")
+        .setLabel("Build a new building")
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId("upgradeBuilding")
+        .setLabel("Upgrade a building")
         .setStyle(ButtonStyle.Secondary)
-      //.setEmoji("1024566960840769576")
     );
     interaction.update({ components: [row1, row] });
   },
