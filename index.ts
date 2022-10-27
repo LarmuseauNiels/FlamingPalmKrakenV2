@@ -49,8 +49,6 @@ class FpgClient extends Client {
     this.commands = new Collection();
     this.buttons = new Collection();
     this.modals = new Collection();
-
-    loadCommands();
   }
 
   log(loggText) {
@@ -63,7 +61,7 @@ class FpgClient extends Client {
   }
 }
 global.client = new FpgClient();
-
+loadCommands();
 async function loadCommands(): Promise<void> {
   global.client.commands = await loadInteractionActions("commands");
   global.client.buttons = await loadInteractionActions("buttons");
