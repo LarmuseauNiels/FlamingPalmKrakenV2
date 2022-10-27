@@ -46,6 +46,8 @@ class FpgClient extends Client {
     this.islander = new Islander();
     this.events = null;
     this.cachUpdated;
+
+    loadCommands();
   }
 
   log(loggText) {
@@ -57,14 +59,18 @@ class FpgClient extends Client {
     //this.logChannel.send(loggText.toString());
   }
 }
+global.client = new FpgClient();
+
+async function loadCommands(): Promise<void> {
+  this.commands = await loadInteractionActions("commands");
+  this.buttons = await loadInteractionActions("buttons");
+  this.modals = await loadInteractionActions("modals");
+}
 
 declare global {
   var client: FpgClient;
 }
-global.client = new FpgClient();
-global.client.commands = loadInteractionActions("commands");
-global.client.buttons = loadInteractionActions("buttons");
-global.client.modals = loadInteractionActions("modals");
+
 //client.selectMenus =  loadInteractionActions('selectMenus');
 
 const eventFiles = fs
@@ -83,13 +89,13 @@ for (const file of eventFiles) {
 // Login to Discord with your client's token
 global.client.login(token);
 
-function loadInteractionActions(folderName): typeof Collection {
+async function loadInteractionActions(folderName): Promise<typeof Collection> {
   let tempList: typeof Collection = new Collection();
   let actionFiles = fs
-    .readdirSync("../bin/interactions/" + folderName)
+    .readdirSync("./interactions/" + folderName)
     .filter((file) => file.endsWith(".js"));
   for (const file of actionFiles) {
-    let action = require(`../bin/interactions/${folderName}/${file}`);
+    let action = await import(`./interactions/${folderName}/${file}`);
     tempList.set(action.name, action);
   }
   return tempList;
