@@ -85,10 +85,11 @@ global.client.login(token);
 
 function loadInteractionActions(folderName): typeof Collection {
   let tempList: typeof Collection = new Collection();
-  let actionFiles = fs.readdirSync("./interactions/" + folderName);
-  //.filter((file) => file.endsWith(".js"));
+  let actionFiles = fs
+    .readdirSync("../bin/interactions/" + folderName)
+    .filter((file) => file.endsWith(".js"));
   for (const file of actionFiles) {
-    let action = require(`./interactions/${folderName}/${file}`);
+    let action = require(`../bin/interactions/${folderName}/${file}`);
     tempList.set(action.name, action);
   }
   return tempList;
