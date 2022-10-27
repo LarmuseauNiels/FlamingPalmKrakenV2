@@ -50,7 +50,7 @@ class FpgClient extends Client {
 
   log(loggText) {
     console.log(loggText);
-    //test
+    global.client.logChannel.send("ERROR LOG ```" + loggText + "```");
   }
 
   channelLog() {
@@ -68,11 +68,11 @@ global.client.modals = loadInteractionActions("modals");
 //client.selectMenus =  loadInteractionActions('selectMenus');
 
 const eventFiles = fs
-  .readdirSync("./events")
+  .readdirSync("./bin/events")
   .filter((file) => file.endsWith(".js"));
 
 for (const file of eventFiles) {
-  const event = require(`./events/${file}`);
+  const event = require(`./bin/events/${file}`);
   if (event.once) {
     global.client.once(event.name, (...args) => event.execute(...args));
   } else {
@@ -86,10 +86,10 @@ global.client.login(token);
 function loadInteractionActions(folderName): typeof Collection {
   let tempList: typeof Collection = new Collection();
   let actionFiles = fs
-    .readdirSync("./interactions/" + folderName)
+    .readdirSync("./bin/interactions/" + folderName)
     .filter((file) => file.endsWith(".js"));
   for (const file of actionFiles) {
-    let action = require(`./interactions/${folderName}/${file}`);
+    let action = require(`./bin/interactions/${folderName}/${file}`);
     tempList.set(action.name, action);
   }
   return tempList;
