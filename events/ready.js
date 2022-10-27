@@ -5,7 +5,11 @@ module.exports = {
   once: true,
   execute(client) {
     client.logChannel = client.channels.cache.get("894190067747262464");
-    client.log(`Ready! Logged in as ${client.user.tag}`);
+    client.log(
+      `Ready! Logged in as ${
+        client.user.tag
+      }, version ${process.env.CAPROVER_GIT_COMMIT_SHA.slice(0, 7)}`
+    );
     client.channels
       .fetch("561128481384300554")
       .then()
