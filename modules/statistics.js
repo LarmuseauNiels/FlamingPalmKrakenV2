@@ -4,7 +4,7 @@ const { Collection } = require("discord.js");
 module.exports = async function (client) {
   var knownuserCache = [];
   var trackedChannels = [];
-  client.log("loading statistics module");
+  console.log("loading statistics module");
   await client.prisma.members
     .findMany({
       select: {
@@ -21,7 +21,7 @@ module.exports = async function (client) {
     .then((channel) => (trackedChannels = channel));
 
   cron.schedule("30 0,15,30,45 * * * *", () => {
-    client.log("running statistics tracking cron job");
+    console.log("running statistics tracking cron job");
     try {
       client.guilds.fetch("530537522355240961").then((guild) => {
         guild.scheduledEvents.fetch().then((events) => {
@@ -32,7 +32,7 @@ module.exports = async function (client) {
               new Date(event.scheduledStartTimestamp).getTime() - Date.now();
             if (timespanToGo / 60000 < 35 && timespanToGo / 60000 > 25) {
               global.client.logChannel.send(
-                `${event.name} starting in 30 minutes\n${event.url}`
+                `${event.name} starting soon\n${event.url}`
               );
             }
           });
