@@ -92,6 +92,7 @@ global.client.login(token);
 
 async function loadInteractionActions(folderName): Promise<typeof Collection> {
   let tempList: typeof Collection = new Collection();
+  console.log(fs.readdirSync("./interactions/" + folderName));
   let actionFiles = fs
     .readdirSync("./interactions/" + folderName)
     .filter((file) => file.endsWith(".js"));
