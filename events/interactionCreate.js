@@ -8,6 +8,7 @@ module.exports = {
         await button.execute(interaction);
       }
       if (interaction.isCommand()) {
+        console.log(global.client.commands);
         let command = global.client.commands.get(interaction.commandName);
         await command.execute(interaction);
       }
@@ -24,7 +25,7 @@ module.exports = {
     } catch (error) {
       global.client.log(error);
       await interaction.reply({
-        content: "Issue executing, alert niels",
+        content: "Issue executing, alerting niels",
         ephemeral: true,
       });
     }
