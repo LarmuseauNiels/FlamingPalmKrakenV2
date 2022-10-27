@@ -46,6 +46,9 @@ class FpgClient extends Client {
     this.islander = new Islander();
     this.events = null;
     this.cachUpdated;
+    this.commands = new Collection();
+    this.buttons = new Collection();
+    this.modals = new Collection();
 
     loadCommands();
   }
