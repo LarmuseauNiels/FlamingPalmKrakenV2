@@ -62,9 +62,9 @@ class FpgClient extends Client {
 global.client = new FpgClient();
 
 async function loadCommands(): Promise<void> {
-  this.commands = await loadInteractionActions("commands");
-  this.buttons = await loadInteractionActions("buttons");
-  this.modals = await loadInteractionActions("modals");
+  global.client.commands = await loadInteractionActions("commands");
+  global.client.buttons = await loadInteractionActions("buttons");
+  global.client.modals = await loadInteractionActions("modals");
 }
 
 declare global {
