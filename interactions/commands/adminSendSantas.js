@@ -14,6 +14,14 @@ module.exports = {
     .setDescription("Sends recipients name/id to santas")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   async execute(interaction) {
+    if (interaction.user.id != "178435947816419328") {
+      interaction.reply({
+        content: "You are not allowed to use this command",
+        ephemeral: true,
+      });
+      return;
+    }
+
     let links = await client.prisma.sSLink.findMany({
       include: {
         SSReceiver: {
@@ -39,17 +47,9 @@ module.exports = {
           .setTimestamp();
         let row = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
-            .setCustomId("MsgSantaBtn")
-            .setLabel("Message santa")
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
-            .setCustomId("MsgReceiverBtn")
-            .setLabel("Message receiver")
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
-            .setCustomId("MsgSupportBtn")
-            .setLabel("Message support")
-            .setStyle(ButtonStyle.Danger)
+            .setCustomId("confirmSanta")
+            .setLabel("I have read this message and will send a gift")
+            .setStyle(ButtonStyle.Primary)
         );
         user.send({ embeds: [embed], components: [row], ephemeral: false });
       });

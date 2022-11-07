@@ -1,12 +1,19 @@
-const { SlashCommandBuilder } = require("@discordjs/builders");
+const { PermissionFlagsBits, SlashCommandBuilder } = require("discord.js");
 
 module.exports = {
   name: "admin-set-santas",
   data: new SlashCommandBuilder()
     .setName("admin-set-santas")
-    .setDescription("Tell receivers who they are giving a gift to.")
-    .setDefaultPermission(false),
+    .setDescription("Set receivers who they are giving a gift to.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   async execute(interaction) {
+    if (interaction.user.id != "178435947816419328") {
+      interaction.reply({
+        content: "You are not allowed to use this command",
+        ephemeral: true,
+      });
+      return;
+    }
     await interaction.deferReply();
 
     const receiver = await client.prisma.sSReceiver.findMany({});
@@ -15,13 +22,6 @@ module.exports = {
     let result = await attachUser(receiver, senders);
     await interaction.editReply({ content: "Success", ephemeral: true });
   },
-  permissions: [
-    {
-      id: "178435947816419328",
-      type: "USER",
-      permission: true,
-    },
-  ],
   isGuild: true,
 };
 
@@ -45,21 +45,16 @@ async function attachUser(receivers, senders) {
 
       for (let obj in senders) {
         if (senders[obj].ID == val[sender]) {
-          if (
-            (senders[obj].HasINTER == 1 &&
-              receivers[receiver].RequiresINTER == 1) ||
-            (senders[obj].HasEU == 1 && receivers[receiver].RequiresEU == 1)
-          ) {
-            if (added.includes(receivers[receiver].ID)) {
-              continue;
-            }
-            added.push(receivers[receiver].ID);
-            output.push({
-              SenderID: receivers[receiver].ID,
-              ReceiverID: senders[obj].ID,
-            });
-            val.splice(sender, 1);
+          if (added.includes(receivers[receiver].ID)) {
+            continue;
           }
+          added.push(receivers[receiver].ID);
+          output.push({
+            SenderID: receivers[receiver].ID,
+            ReceiverID: senders[obj].ID,
+          });
+          // @ts-ignore
+          val.splice(sender, 1);
         }
       }
     }
