@@ -1,5 +1,8 @@
-const { SlashCommandBuilder } = require("@discordjs/builders");
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder } = require("discord.js");
+const {
+  EmbedBuilder,
+  SlashCommandBuilder,
+  PermissionFlagsBits,
+} = require("discord.js");
 //const { EmbedBuilder,ActionRowBuilder, ButtonBuilder } = require('discord.js');
 
 module.exports = {
@@ -12,8 +15,16 @@ module.exports = {
         .setName("message")
         .setDescription("The message to send")
         .setRequired(true)
-    ),
+    )
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   async execute(interaction) {
+    if (interaction.user.id != "178435947816419328") {
+      interaction.reply({
+        content: "You are not allowed to use this command",
+        ephemeral: true,
+      });
+      return;
+    }
     const message = interaction.options.getString("message");
     let links = await client.prisma.sSLink.findMany({
       include: {
@@ -28,10 +39,10 @@ module.exports = {
           .setColor("#FD8612")
           .setTitle(`Organizational message`)
           .addFields({ name: "message", value: message })
-          .setFooter(
-            "FlamingPalm Secret Santa",
-            "https://flamingpalm.com/images/FlamingPalmLogoSmall.png"
-          )
+          .setFooter({
+            text: "Niels2398 FPG kraken bot",
+            iconURL: "https://flamingpalm.com/images/FlamingPalmLogoSmall.png",
+          })
           .setTimestamp();
 
         user.send({ embeds: [embed], ephemeral: false });
@@ -39,12 +50,5 @@ module.exports = {
     });
     await interaction.reply("Sent message");
   },
-  permissions: [
-    {
-      id: "178435947816419328",
-      type: "USER",
-      permission: true,
-    },
-  ],
   isGuild: true,
 };

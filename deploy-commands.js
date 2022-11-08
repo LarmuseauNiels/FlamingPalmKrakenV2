@@ -7,11 +7,11 @@ const guildCommands = [];
 const commands = [];
 
 const commandFiles = fs
-  .readdirSync("./bin/interactions/commands")
+  .readdirSync("./interactions/commands")
   .filter((file) => file.endsWith(".js"));
 
 for (const file of commandFiles) {
-  const command = require(`./bin/interactions/commands/${file}`);
+  const command = require(`./interactions/commands/${file}`);
   if (command.isGuild) guildCommands.push(command.data.toJSON());
   else commands.push(command.data.toJSON());
 }
