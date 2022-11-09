@@ -20,7 +20,7 @@ module.exports = {
     const senders = await client.prisma.sSSender.findMany({});
 
     let result = await attachUser(receiver, senders);
-    if (result.count == receiver.length()) {
+    if (result.count == receiver.length) {
       await interaction.editReply({ content: "Success", ephemeral: true });
     } else {
       await interaction.editReply({
