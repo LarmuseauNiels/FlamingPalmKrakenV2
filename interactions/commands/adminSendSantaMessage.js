@@ -2,6 +2,9 @@ const {
   EmbedBuilder,
   SlashCommandBuilder,
   PermissionFlagsBits,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
 } = require("discord.js");
 //const { EmbedBuilder,ActionRowBuilder, ButtonBuilder } = require('discord.js');
 
@@ -15,6 +18,17 @@ module.exports = {
         .setName("message")
         .setDescription("The message to send")
         .setRequired(true)
+    )
+    .addStringOption((option) =>
+      option
+        .setName("button")
+        .setDescription("adds extra button for confirmations")
+        .setRequired(false)
+        .addChoices(
+          { name: "none", value: "none" },
+          { name: "send", value: "send" },
+          { name: "received", value: "received" }
+        )
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   async execute(interaction) {
@@ -44,8 +58,25 @@ module.exports = {
             iconURL: "https://flamingpalm.com/images/FlamingPalmLogoSmall.png",
           })
           .setTimestamp();
-
-        user.send({ embeds: [embed], ephemeral: false });
+        if (interaction.options.getString("button") == "send") {
+          let row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+              .setCustomId("confirmSend")
+              .setLabel("I ordered the gift and it is on its way")
+              .setStyle(ButtonStyle.Primary)
+          );
+          user.send({ embeds: [embed], components: [row], ephemeral: false });
+        } else if (interaction.options.getString("button") == "received") {
+          let row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+              .setCustomId("confirmReceived")
+              .setLabel("I received the gift")
+              .setStyle(ButtonStyle.Primary)
+          );
+          user.send({ embeds: [embed], components: [row], ephemeral: false });
+        } else {
+          user.send({ embeds: [embed], ephemeral: false });
+        }
       });
     });
     await interaction.reply("Sent message");
