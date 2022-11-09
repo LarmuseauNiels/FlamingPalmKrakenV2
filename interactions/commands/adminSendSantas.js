@@ -37,6 +37,23 @@ module.exports = {
             `You have been assigned ${link.SSReceiver.Members.DisplayName} as your recipient`
           )
           .addFields(
+            {
+              name: "Info",
+              value: `Welcome to Secret Santa 2022! 
+
+It's very important to keep your identity hidden until the reveal party,
+so we've made it possible to message your recipient and secret santa anonymously using the bot.
+Use the command /send-to-receiver in this chat to message your gift recipient,
+and use the command /send-to-santa to reply to your secret santa. 
+It's that simple!
+**Please read and reply to messages in this chat ASAP**
+
+You'll also receive organisational messages with important information from time to time, so keep a look out for those. 
+Some messages will have a button to confirm you have completed the action. 
+Please use this button when applicable so we can confirm everyone has received / sent their gift!
+
+Have a Merry Christmas!🎄 `,
+            },
             { name: "Address", value: link.SSReceiver.Address },
             { name: "Store links", value: link.SSReceiver.StoreLinks }
           )
