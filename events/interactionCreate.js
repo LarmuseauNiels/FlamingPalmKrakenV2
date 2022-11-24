@@ -8,7 +8,7 @@ module.exports = {
         await button.execute(interaction);
       }
       if (interaction.isCommand()) {
-        console.log(global.client.commands);
+        console.log(interaction.commandName);
         let command = global.client.commands.get(interaction.commandName);
         await command.execute(interaction);
       }
