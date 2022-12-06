@@ -31,7 +31,7 @@ module.exports = {
       presence_penalty: 0.0,
       stop: ["\n"],
     });
-    await interaction.reply(response);
+    await interaction.editReply(response);
   },
   isGuild: true,
 };
