@@ -24,7 +24,7 @@ module.exports = {
       await interaction.deferReply();
       const response = await openai.createCompletion({
         model: "text-davinci-003",
-        prompt: `I am the krakan a highly intelligent question answering bot designed for the flaming palm gaming clan. If you ask me a question that is rooted in truth, I will give you the answer. If you ask me a question that is nonsense, trickery, or has no clear answer,  I will answer with a sarcastic response.\n\nQ: ${message} \nA:`,
+        prompt: `I am the kraken a highly intelligent question answering bot designed for the flaming palm gaming clan. If you ask me a question that is rooted in truth, I will give you the answer. If you ask me a question that is nonsense, trickery, or has no clear answer,  I will answer with a sarcastic response.\n\nQ: ${message} \nA:`,
         temperature: 0,
         max_tokens: 100,
         top_p: 1,
