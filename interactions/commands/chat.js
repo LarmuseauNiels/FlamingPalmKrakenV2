@@ -35,7 +35,7 @@ module.exports = {
       console.log(response);
       const { data } = response;
       console.log(data);
-      interaction.editReply(response.data[0].text || "no response");
+      interaction.editReply(data.choices[0].text || "no response");
     } catch (e) {
       console.log(e);
       interaction.editReply({ content: "error", ephemeral: true });
