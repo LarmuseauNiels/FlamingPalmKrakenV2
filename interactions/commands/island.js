@@ -1,6 +1,4 @@
 const {
-  EmbedBuilder,
-  AttachmentBuilder,
   SlashCommandBuilder,
   ActionRowBuilder,
   ButtonBuilder,
@@ -13,6 +11,7 @@ module.exports = {
     .setName("island")
     .setDescription("Check progress on your island"),
   async execute(interaction) {
+    interaction.deferReply({ ephemeral: true });
     global.client.islander.GetMemberIsland(interaction.user.id).then(
       (member) => {
         let island = member.i_Island;
@@ -50,7 +49,7 @@ module.exports = {
               content: text,
               files: [image],
               components: [row],
-              ephemeral: false,
+              ephemeral: true,
             });
           });
       },
