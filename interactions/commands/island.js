@@ -19,7 +19,7 @@ module.exports = {
         if (island == null) {
           let island = global.client.islander.SpawnIsland(member.ID);
           text =
-            "Welcome to Islander, you have started alone on your empty island";
+            "Welcome to Islander, you have started alone on your own empty island";
         }
         let row = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
