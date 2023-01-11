@@ -9,7 +9,7 @@ module.exports = {
   name: "island",
   data: new SlashCommandBuilder()
     .setName("island")
-    .setDescription("Check progress on your island"),
+    .setDescription("Check the progress of your island"),
   async execute(interaction) {
     interaction.deferReply({ ephemeral: true });
     global.client.islander.GetMemberIsland(interaction.user.id).then(
