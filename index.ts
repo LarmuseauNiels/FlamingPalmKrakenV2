@@ -102,6 +102,7 @@ async function loadInteractionActions(folderName): Promise<typeof Collection> {
   for (const file of actionFiles) {
     let action = await import(`./interactions/${folderName}/${file}`);
     tempList.set(action.name, action);
+    console.log(`Loaded ${action.name} from ${folderName}`);
   }
   return tempList;
 }

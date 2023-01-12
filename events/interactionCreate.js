@@ -19,8 +19,8 @@ module.exports = {
       }
       if (interaction.isUserContextMenuCommand()) {
         console.log(interaction.commandName);
-        let command = global.client.contextMenus.get(interaction.commandName);
-        await command.execute(interaction);
+        let menu = global.client.contextMenus.get(interaction.commandName);
+        await menu.execute(interaction);
       }
     } catch (error) {
       global.client.log(error);
