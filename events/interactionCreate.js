@@ -12,11 +12,6 @@ module.exports = {
         let command = global.client.commands.get(interaction.commandName);
         await command.execute(interaction);
       }
-      if (interaction.isSelectMenu()) {
-        console.log(interaction);
-        //let selectMenu = client.selectMenus.get(interaction.customId);
-        //await selectMenu.execute(interaction);
-      }
       if (interaction.isModalSubmit()) {
         let modalId = interaction.customId.split("_")[0];
         let modal = global.client.modals.get(modalId);
