@@ -16,6 +16,15 @@ for (const file of commandFiles) {
   else commands.push(command.data.toJSON());
 }
 
+const contextMenus = fs
+  .readdirSync("./interactions/contextmenus")
+  .filter((file) => file.endsWith(".js"));
+
+for (const file of contextMenus) {
+  const menu = require(`./interactions/contextmenus/${file}`);
+  guildCommands.push(menu.data.toJSON());
+}
+
 const rest = new REST({ version: "9" }).setToken(token);
 
 rest

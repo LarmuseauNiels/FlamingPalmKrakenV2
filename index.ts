@@ -16,6 +16,7 @@ class FpgClient extends Client {
   declare commands: typeof Collection;
   declare buttons: typeof Collection;
   declare modals: typeof Collection;
+  declare contextMenus: typeof Collection;
 
   constructor() {
     super({
@@ -49,6 +50,7 @@ class FpgClient extends Client {
     this.commands = new Collection();
     this.buttons = new Collection();
     this.modals = new Collection();
+    this.contextMenus = new Collection();
   }
 
   log(loggText) {
@@ -66,6 +68,7 @@ async function loadCommands(): Promise<void> {
   global.client.commands = await loadInteractionActions("commands");
   global.client.buttons = await loadInteractionActions("buttons");
   global.client.modals = await loadInteractionActions("modals");
+  global.client.contextMenus = await loadInteractionActions("contextmenus");
 }
 
 declare global {

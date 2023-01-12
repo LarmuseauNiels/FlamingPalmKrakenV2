@@ -22,6 +22,11 @@ module.exports = {
         let modal = global.client.modals.get(modalId);
         await modal.execute(interaction);
       }
+      if (interaction.isUserContextMenuCommand()) {
+        console.log(interaction.commandName);
+        let command = global.client.contextMenus.get(interaction.commandName);
+        await command.execute(interaction);
+      }
     } catch (error) {
       global.client.log(error);
       await interaction.reply({
