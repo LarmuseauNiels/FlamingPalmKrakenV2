@@ -43,14 +43,14 @@ module.exports = {
           },
           {
             name: "Points",
-            value: `${dbinfo.Points.TotalPoints} :palm_tree:`,
+            value: `${dbinfo?.Points?.TotalPoints ?? 0} :palm_tree:`,
             inline: false,
           },
           {
             name: "Last transaction",
-            value: `${dbinfo.PointHistory[0].comment} ${
-              dbinfo.PointHistory[0].points > 0 ? "+" : ""
-            } ${dbinfo.PointHistory[0].points}:palm_tree:`,
+            value: `${dbinfo?.PointHistory[0]?.comment ?? "No history"} ${
+              dbinfo?.PointHistory[0]?.points ?? 0 > 0 ? "+" : ""
+            } ${dbinfo?.PointHistory[0]?.points ?? 0}:palm_tree:`,
             inline: false,
           }
         );
