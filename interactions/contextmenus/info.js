@@ -43,7 +43,7 @@ module.exports = {
           },
           {
             name: "Points",
-            value: `${member.Points.TotalPoints} :palm_tree:`,
+            value: `${dbinfo.Points.TotalPoints} :palm_tree:`,
             inline: false,
           },
           {
