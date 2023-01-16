@@ -3,7 +3,7 @@ const { Collection } = require("discord.js");
 
 module.exports = async function (client) {
   var knownuserCache = [];
-  var trackedChannels = [];
+  //var trackedChannels = [];
   console.log("loading statistics module");
   await client.prisma.members
     .findMany({
@@ -12,18 +12,66 @@ module.exports = async function (client) {
       },
     })
     .then((members) => (knownuserCache = members));
-  await client.prisma.channel
+  /*await client.prisma.channel
     .findMany({
       select: {
         ID: true,
       },
     })
-    .then((channel) => (trackedChannels = channel));
+    .then((channel) => (trackedChannels = channel));*/
 
   cron.schedule("30 0,15,30,45 * * * *", () => {
     console.log("running statistics tracking cron job");
     try {
       client.guilds.fetch("530537522355240961").then((guild) => {
+        guild.members.fetch().then((members) => {
+          members.forEach((member) => {
+            let q = knownuserCache.find((ku) => ku.ID === member.user.id);
+            if (q === undefined) {
+              client.prisma.members
+                .upsert({
+                  where: { ID: member.user.id },
+                  select: { ID: true },
+                  update: {
+                    DisplayName: member.user.username,
+                    avatar: member.user.avatar,
+                  },
+                  create: {
+                    ID: member.user.id,
+                    DisplayName: member.user.username,
+                    avatar: member.user.avatar,
+                  },
+                })
+                .then((t) => {
+                  knownuserCache.push(t);
+                });
+            }
+          });
+
+          client.prisma.voiceConnected
+            .createMany({
+              data: members
+                .filter(
+                  (m) =>
+                    m.voice.channel != null &&
+                    m.voice.channelId !== "530539169580318732"
+                )
+                .map((z) => {
+                  return {
+                    ID: z.id,
+                    ChannelID: z.voice.channelId,
+                    ChannelName: z.voice.channel.name,
+                    deaf: z.voice.deaf,
+                    mute: z.voice.mute,
+                    streaming: z.voice.streaming,
+                  };
+                }),
+            })
+            .then((x) =>
+              console.log("tracked " + x.count + " members in voice channels")
+            );
+        });
+
         guild.scheduledEvents.fetch().then((events) => {
           client.events = events;
           client.cachUpdated = Date.now();
@@ -41,6 +89,7 @@ module.exports = async function (client) {
     } catch (e) {
       console.log(e);
     }
+    /*
     try {
       trackedChannels.forEach((trackedChannel) => {
         let channelID = trackedChannel.ID;
@@ -87,6 +136,6 @@ module.exports = async function (client) {
     } catch (err) {
       console.log(err);
       client.channelLog("Statistics module error " + err.toString());
-    }
+    */
   });
 };

@@ -82,20 +82,24 @@ model SSLink {
 
 model SSSender {
   ID        String   @id @db.VarChar(25)
-  HasEU     Boolean
-  HasPaypal Boolean
-  HasINTER  Boolean
+  HasEU     Boolean  @default(false)
+  HasPaypal Boolean  @default(false)
+  HasINTER  Boolean  @default(false)
   IsSend    Boolean? @default(false)
   Members   Members  @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "SSSender_Members_ID_fk")
   SSLink    SSLink?
 }
 
 model VoiceConnected {
-  ID        String   @db.VarChar(25)
-  TimeStamp DateTime @default(now()) @db.Timestamp(0)
-  ChannelID String   @db.VarChar(25)
-  Channel   Channel  @relation(fields: [ChannelID], references: [ID], onDelete: Cascade, map: "VoiceConnected_Channel_ID_fk")
-  Members   Members  @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "VoiceConnected_ibfk_1")
+  ID          String   @db.VarChar(25)
+  TimeStamp   DateTime @default(now()) @db.Timestamp(0)
+  ChannelID   String   @db.VarChar(25)
+  ChannelName String?  @db.VarChar(255)
+  deaf        Boolean?
+  mute        Boolean?
+  streaming   Boolean?
+  Channel     Channel  @relation(fields: [ChannelID], references: [ID], onDelete: Cascade, map: "VoiceConnected_Channel_ID_fk")
+  Members     Members  @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "VoiceConnected_ibfk_1")
 
   @@id([ID, TimeStamp, ChannelID])
   @@index([ChannelID], map: "VoiceConnected_Channel_ID_fk")
@@ -112,6 +116,7 @@ model i_Building_Island {
   BuildingID      Int
   IslandID        String          @db.VarChar(25)
   level           Int             @default(1) @db.UnsignedTinyInt
+  upgrading       Int?
   i_Building      i_Building      @relation(fields: [BuildingID], references: [ID], onUpdate: Restrict, map: "i_Building_Island_ibfk_3")
   i_Island        i_Island        @relation(fields: [IslandID], references: [ID], onDelete: Cascade, onUpdate: Restrict, map: "i_Building_Island_ibfk_2")
   i_BuildingLevel i_BuildingLevel @relation(fields: [level, BuildingID], references: [Level, BuildingID], onUpdate: Restrict, map: "i_Building_Island_i_BuildingLevel_Level_BuildingID_fk")
@@ -154,9 +159,8 @@ model i_BuildingLevel {
   imagename         String              @default("") @db.VarChar(255)
   imagePosY         Int                 @default(0) @db.MediumInt
   imagePosX         Int                 @default(0) @db.MediumInt
-  ProdWood          Int?                @default(0)
-  ProdFood          Int?                @default(0)
-  ProdStone         Int?                @default(0)
+  Function          String?             @default("none") @db.VarChar(25)
+  FunctAttribute    Int?                @default(0)
   i_Building        i_Building          @relation(fields: [BuildingID], references: [ID], onDelete: Cascade, map: "i_BuildingLevel_ibfk_1")
   i_Building_Island i_Building_Island[]
 
@@ -181,9 +185,9 @@ model SSReceiver {
   ID             String   @id @db.VarChar(25)
   Address        String   @db.Text
   StoreLinks     String   @db.Text
-  RequiresEU     Boolean
-  RequiresPaypal Boolean
-  RequiresINTER  Boolean
+  RequiresEU     Boolean  @default(false)
+  RequiresPaypal Boolean  @default(false)
+  RequiresINTER  Boolean  @default(false)
   IsReceived     Boolean? @default(false)
   Members        Members  @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "SSReceiver_Members_ID_fk")
   SSLink         SSLink?
