@@ -28,7 +28,7 @@ module.exports = {
         size: "1024x1024",
       });
       let image_url = response.data.data[0].url;
-      interaction.editReply({ content: message, files: [image_url] });
+      interaction.editReply({ content: image_url });
     } catch (e) {
       console.log(e);
       interaction.editReply({ content: "error" });
