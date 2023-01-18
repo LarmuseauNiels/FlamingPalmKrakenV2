@@ -4,9 +4,9 @@ const { Configuration, OpenAIApi } = require("openai");
 //const { EmbedBuilder,ActionRowBuilder, ButtonBuilder } = require('discord.js');
 
 module.exports = {
-  name: "aiImage",
+  name: "generate",
   data: new SlashCommandBuilder()
-    .setName("aiImage")
+    .setName("generate")
     .setDescription("Generate an image with AI")
     .addStringOption((option) =>
       option
