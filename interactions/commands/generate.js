@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, AttachmentBuilder } = require("discord.js");
 const { EmbedBuilder } = require("discord.js");
 const { Configuration, OpenAIApi } = require("openai");
 //const { EmbedBuilder,ActionRowBuilder, ButtonBuilder } = require('discord.js');
@@ -26,9 +26,12 @@ module.exports = {
         prompt: message,
         n: 1,
         size: "1024x1024",
+        response_format: "b64_json",
       });
-      let image_url = response.data.data[0].url;
-      interaction.editReply({ content: image_url });
+      let images = imagesFromBase64Response(response.data);
+      let image = images[0];
+      let attachment = new AttachmentBuilder(image, { name: "dalle.png" });
+      interaction.editReply({ content: message, files: [attachment] });
     } catch (e) {
       console.log(e);
       interaction.editReply({ content: "error" });
@@ -36,3 +39,9 @@ module.exports = {
   },
   isGuild: true,
 };
+
+function imagesFromBase64Response(response) {
+  const data = response.data;
+  const resultData = data.map((d) => d.b64_json);
+  return resultData.map((j) => Buffer.from(j, "base64"));
+}
