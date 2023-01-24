@@ -69,7 +69,7 @@ module.exports = async function (client) {
               data: members
                 .filter(
                   (m) =>
-                    m.presence?.status === "online" &&
+                    m.presence?.status !== "offline" &&
                     m.user?.bot === false &&
                     (m.presence?.activities?.length ?? 0) > 0
                 )
