@@ -64,6 +64,18 @@ module.exports = async function (client) {
               console.log("tracked " + x.count + " members in voice channels")
             );
 
+          console.log(
+            "tracked " +
+              members.filter((m) => m.presence?.status === "online").size +
+              " members in presence"
+          );
+          console.log(
+            "tracked " +
+              members.filter((m) => (m.presence?.activities?.length ?? 0) > 0)
+                .size +
+              " members in activities"
+          );
+
           let activityMembers = members
             .filter((m) => m.presence?.status === "online")
             .filter((m) => (m.presence?.activities?.length ?? 0) > 0)
@@ -80,7 +92,9 @@ module.exports = async function (client) {
                 };
               });
             });
-
+          console.log(
+            "tracked " + activityMembers.length + " members in activities"
+          );
           client.prisma.presence.createMany({
             data: activityMembers,
           });
