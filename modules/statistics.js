@@ -87,17 +87,19 @@ module.exports = async function (client) {
               .filter((m) => m.presence?.status === "online")
               .filter((m) => (m.presence?.activities?.length ?? 0) > 0)
               .map((z) =>
-                z.presence.activities.map((a) => {
-                  return {
-                    userID: z.id,
-                    applicationID: a.applicationId,
-                    name: a.name,
-                    details: a.details,
-                    url: a.url,
-                    state: a.state,
-                    type: a.type.toString(),
-                  };
-                })
+                z.presence.activities
+                  .filter((a) => a.type !== 4)
+                  .map((a) => {
+                    return {
+                      userID: z.id,
+                      applicationID: a.applicationId,
+                      name: a.name,
+                      details: a.details,
+                      url: a.url,
+                      state: a.state,
+                      type: a.type.toString(),
+                    };
+                  })
               ),
           });
         });
