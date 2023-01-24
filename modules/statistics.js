@@ -100,7 +100,8 @@ module.exports = async function (client) {
                       type: a.type.toString(),
                     };
                   })
-              ),
+              )
+              .flat(),
           });
         });
         //console.log(members.filter(m => m.presence.status === "online").select(m => m.presence));
