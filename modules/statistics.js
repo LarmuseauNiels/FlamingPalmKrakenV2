@@ -85,6 +85,7 @@ module.exports = async function (client) {
                         url: a.url,
                         state: a.state,
                         type: a.type.toString(),
+                        status: z.presence.status,
                       };
                     })
                 )

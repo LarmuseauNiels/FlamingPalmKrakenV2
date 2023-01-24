@@ -228,7 +228,8 @@ model Presence {
   details       String?   @db.VarChar(255)
   url           String?   @db.VarChar(255)
   state         String?   @db.VarChar(255)
-  type          String?   @db.VarChar(100)
+  type          String?   @db.VarChar(10)
+  status        String?   @db.VarChar(50)
   Members       Members?  @relation(fields: [userID], references: [ID], onDelete: Restrict, onUpdate: Restrict, map: "Presence_Members_ID_fk")
 
   @@index([userID], map: "Presence_Members_ID_fk")
