@@ -63,57 +63,36 @@ module.exports = async function (client) {
             .then((x) =>
               console.log("tracked " + x.count + " members in voice channels")
             );
-          console.log(
-            members
-              .filter(
-                (m) =>
-                  m.presence?.status === "online" &&
-                  m.user?.bot === false &&
-                  (m.presence?.activities?.length ?? 0) > 0
-              )
-              .map((z) =>
-                z.presence.activities
-                  .filter((a) => a.type !== 4)
-                  .map((a) => {
-                    return {
-                      userID: z.id,
-                      applicationID: a.applicationId,
-                      name: a.name,
-                      details: a.details,
-                      url: a.url,
-                      state: a.state,
-                      type: a.type.toString(),
-                    };
-                  })
-              )
-              .flat()
-          );
 
-          client.prisma.presence.createMany({
-            data: members
-              .filter(
-                (m) =>
-                  m.presence?.status === "online" &&
-                  m.user?.bot === false &&
-                  (m.presence?.activities?.length ?? 0) > 0
-              )
-              .map((z) =>
-                z.presence.activities
-                  .filter((a) => a.type !== 4)
-                  .map((a) => {
-                    return {
-                      userID: z.id,
-                      applicationID: a.applicationId,
-                      name: a.name,
-                      details: a.details,
-                      url: a.url,
-                      state: a.state,
-                      type: a.type.toString(),
-                    };
-                  })
-              )
-              .flat(),
-          });
+          client.prisma.presence
+            .createMany({
+              data: members
+                .filter(
+                  (m) =>
+                    m.presence?.status === "online" &&
+                    m.user?.bot === false &&
+                    (m.presence?.activities?.length ?? 0) > 0
+                )
+                .map((z) =>
+                  z.presence.activities
+                    .filter((a) => a.type !== 4)
+                    .map((a) => {
+                      return {
+                        userID: z.id,
+                        applicationID: a.applicationId,
+                        name: a.name,
+                        details: a.details,
+                        url: a.url,
+                        state: a.state,
+                        type: a.type.toString(),
+                      };
+                    })
+                )
+                .flat(),
+            })
+            .then((x) => {
+              console.log(x);
+            });
         });
         //console.log(members.filter(m => m.presence.status === "online").select(m => m.presence));
 
