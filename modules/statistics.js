@@ -65,8 +65,8 @@ module.exports = async function (client) {
             );
 
           let activityMembers = members
-            .filter((m) => m.presence.status === "online")
-            .filter((m) => m.presence.activities.length > 0)
+            .filter((m) => m.presence?.status === "online")
+            .filter((m) => (m.presence?.activities?.length ?? 0) > 0)
             .map((z) => {
               return z.presence.activities.map((a) => {
                 return {
