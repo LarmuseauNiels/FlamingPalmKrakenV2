@@ -12,7 +12,7 @@ module.exports = {
     )
     .addStringOption((option) =>
       option
-        .setName("Achievement")
+        .setName("achievement")
         .setDescription("Achievement to give")
         .setAutocomplete(true)
         .setRequired(true)
