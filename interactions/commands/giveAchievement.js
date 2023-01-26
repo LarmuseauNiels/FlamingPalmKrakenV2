@@ -36,22 +36,25 @@ module.exports = {
       achievement,
       interaction.user.id
     );
+    await interaction.reply("Achievement given");
   },
   async autocomplete(interaction) {
-    global.client.achievements.GetManualAchievements().then((achievements) => {
-      const focusedValue = interaction.options.getFocused();
-      const options = achievements
-        .filter((achievement) =>
-          achievement.Name.toLowerCase().includes(focusedValue.toLowerCase())
-        )
-        .map((achievement) => {
-          return {
-            name: achievement.Name,
-            value: achievement.ID,
-          };
-        });
-      interaction.respond(options);
-    });
+    global.client.achievements
+      .GetManualAchievements()
+      .then(async (achievements) => {
+        const focusedValue = interaction.options.getFocused();
+        const options = achievements
+          .filter((achievement) =>
+            achievement.Name.toLowerCase().includes(focusedValue.toLowerCase())
+          )
+          .map((achievement) => {
+            return {
+              name: achievement.Name,
+              value: achievement.ID,
+            };
+          });
+        await interaction.respond(options);
+      });
   },
   isGuild: true,
 };
