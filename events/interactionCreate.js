@@ -23,6 +23,10 @@ module.exports = {
         let modal = global.client.modals.get(modalId);
         await modal.execute(interaction);
       }
+      if (interaction.isAutocomplete()) {
+        let command = global.client.commands.get(interaction.commandName);
+        await command.autocomplete(interaction);
+      }
     } catch (error) {
       global.client.log(error);
       await interaction.reply({

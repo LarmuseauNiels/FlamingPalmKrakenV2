@@ -13,16 +13,17 @@ model Channel {
 }
 
 model Members {
-  ID                                    String           @id @db.VarChar(25)
-  DisplayName                           String?          @db.VarChar(255)
-  avatar                                String?          @db.VarChar(255)
-  LastWebLogon                          DateTime?        @db.DateTime(0)
-  XP                                    Int              @default(0)
+  ID                                    String                @id @db.VarChar(25)
+  DisplayName                           String?               @db.VarChar(255)
+  avatar                                String?               @db.VarChar(255)
+  LastWebLogon                          DateTime?             @db.DateTime(0)
+  XP                                    Int                   @default(0)
+  Achievement_History                   Achievement_History[]
   PointHistory                          PointHistory[]
   Points                                Points?
   Presence                              Presence[]
-  Refferals_MembersToRefferals_refferer Refferals[]      @relation("MembersToRefferals_refferer")
-  Refferals_MembersToRefferals_userid   Refferals[]      @relation("MembersToRefferals_userid")
+  Refferals_MembersToRefferals_refferer Refferals[]           @relation("MembersToRefferals_refferer")
+  Refferals_MembersToRefferals_userid   Refferals[]           @relation("MembersToRefferals_userid")
   SSReceiver                            SSReceiver?
   SSSender                              SSSender?
   VoiceConnected                        VoiceConnected[]
@@ -210,13 +211,14 @@ model Refferals {
 }
 
 model Achievements {
-  ID          Int     @id @default(autoincrement())
-  Type        String? @db.VarChar(50)
-  Name        String? @db.VarChar(255)
-  Description String? @db.VarChar(255)
-  Minimum     Int?
-  XpIncrease  Int?    @default(0)
-  points      Int?    @default(0)
+  ID                  Int                   @id @default(autoincrement())
+  Type                String?               @db.VarChar(50)
+  Name                String?               @db.VarChar(255)
+  Description         String?               @db.VarChar(255)
+  Minimum             Int?
+  XpIncrease          Int?                  @default(0)
+  points              Int?                  @default(0)
+  Achievement_History Achievement_History[]
 }
 
 model Presence {
@@ -233,4 +235,18 @@ model Presence {
   Members       Members?  @relation(fields: [userID], references: [ID], onDelete: Restrict, onUpdate: Restrict, map: "Presence_Members_ID_fk")
 
   @@index([userID], map: "Presence_Members_ID_fk")
+}
+
+model Achievement_History {
+  ID            Int          @id @default(autoincrement())
+  AchievementID Int
+  UserID        String?      @db.VarChar(25)
+  TimeStamp     DateTime?    @default(now()) @db.Timestamp(0)
+  GrantedBy     String?      @db.VarChar(25)
+  Achievements  Achievements @relation(fields: [AchievementID], references: [ID], onUpdate: Restrict, map: "Achievement_History_Achievements_ID_fk")
+  Members       Members?     @relation(fields: [UserID], references: [ID], onDelete: Restrict, onUpdate: Restrict, map: "Achievement_History_Members_ID_fk")
+
+  @@index([AchievementID], map: "Achievement_History_Achievements_ID_fk")
+  @@index([UserID], map: "Achievement_History_Members_ID_fk")
+  @@index([TimeStamp], map: "Achievement_History_TimeStamp_index")
 }

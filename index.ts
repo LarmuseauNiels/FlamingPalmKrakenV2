@@ -1,6 +1,7 @@
 // Require the necessary discord.js classes
 import { PrismaClient } from "@prisma/client";
 import { Islander } from "./islander/islander";
+import { Achievements } from "./islander/Achievements";
 const fs = require("fs");
 const {
   Client,
@@ -12,6 +13,7 @@ const { token, DBHOST, DBPASS } = require("./config.js");
 
 class FpgClient extends Client {
   declare islander: Islander;
+  declare achievements: Achievements;
   declare prisma: PrismaClient;
   declare commands: typeof Collection;
   declare buttons: typeof Collection;
