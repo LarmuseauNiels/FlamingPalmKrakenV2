@@ -80,10 +80,10 @@ module.exports = async function (client) {
                       return {
                         userID: z.id,
                         applicationID: a.applicationId,
-                        name: a.name,
+                        name: cleanString(a.name),
                         details: cleanString(a.details),
-                        url: a.url,
-                        state: a.state,
+                        url: cleanString(a.url),
+                        state: cleanString(a.state),
                         type: a.type.toString(),
                         status: z.presence.status,
                       };
