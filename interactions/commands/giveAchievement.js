@@ -50,7 +50,7 @@ module.exports = {
           .map((achievement) => {
             return {
               name: achievement.Name,
-              value: achievement.ID,
+              value: achievement.ID.toString(),
             };
           });
         await interaction.respond(options);
