@@ -29,7 +29,7 @@ module.exports = {
   async execute(interaction) {
     //give achievement
     const user = interaction.options.getUser("user");
-    const achievement = interaction.options.getString("Achievement");
+    const achievement = +interaction.options.getString("Achievement");
     const description = interaction.options.getString("description");
     await global.client.achievements.GiveAchievement(
       user.id,
