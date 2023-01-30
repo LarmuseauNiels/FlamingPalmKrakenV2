@@ -53,6 +53,7 @@ class FpgClient extends Client {
     this.buttons = new Collection();
     this.modals = new Collection();
     this.contextMenus = new Collection();
+    this.achievements = new Achievements();
   }
 
   log(loggText) {
