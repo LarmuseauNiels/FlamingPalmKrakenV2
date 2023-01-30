@@ -81,7 +81,7 @@ module.exports = async function (client) {
                         userID: z.id,
                         applicationID: a.applicationId,
                         name: a.name,
-                        details: cleanString(a.details.toString()),
+                        details: cleanString(a.details),
                         url: a.url,
                         state: a.state,
                         type: a.type.toString(),
@@ -120,6 +120,7 @@ module.exports = async function (client) {
 function cleanString(input) {
   if (input === null || input === undefined) return "";
   var output = "";
+  input = input.toString();
   for (var i = 0; i < input.length; i++) {
     if (input.charCodeAt(i) <= 127) {
       output += input.charAt(i);
