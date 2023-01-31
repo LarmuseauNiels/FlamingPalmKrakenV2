@@ -31,6 +31,7 @@ module.exports = {
     const user = interaction.options.getUser("user");
     const achievement = +interaction.options.getString("Achievement");
     const description = interaction.options.getString("description");
+    console.log(achievement, interaction.options.getString("Achievement"));
     await global.client.achievements.GiveAchievement(
       user.id,
       achievement,
