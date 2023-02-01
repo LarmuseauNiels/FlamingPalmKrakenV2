@@ -1,5 +1,5 @@
 const cron = require("node-cron");
-const { Collection } = require("discord.js");
+const { Collection, EmbedBuilder } = require("discord.js");
 
 module.exports = async function (client) {
   var knownuserCache = [];
@@ -104,9 +104,22 @@ module.exports = async function (client) {
             let timespanToGo =
               new Date(event.scheduledStartTimestamp).getTime() - Date.now();
             if (timespanToGo / 60000 < 35 && timespanToGo / 60000 > 25) {
-              global.client.logChannel.send(
-                `${event.name} starting soon\n${event.url}`
-              );
+              const eventEmbed = new EmbedBuilder()
+                .setColor(0x0099ff)
+                .setTitle("Starting in 30 min: " + event.name)
+                .setURL(event.url)
+                .setAuthor({
+                  name: event.creator.username,
+                  iconURL: event.creator.avatarURL(),
+                })
+                .setDescription(event.description)
+                .setImage(event.coverImageURL())
+                .setTimestamp(event.scheduledStartTimestamp)
+                .setFooter({
+                  text: "Event at ",
+                });
+
+              global.client.logChannel.send({ embeds: [eventEmbed] });
             }
           });
         });
