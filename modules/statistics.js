@@ -113,7 +113,7 @@ module.exports = async function (client) {
                   iconURL: event.creator.avatarURL(),
                 })
                 .setDescription(event.description)
-                .setImage(event.coverImageURL({ size: 512 }
+                .setImage(event.coverImageURL({ size: 512 })
                 .setTimestamp(event.scheduledStartTimestamp)
                 .setFooter({
                   text: "Event at ",
