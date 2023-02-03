@@ -120,6 +120,7 @@ module.exports = async function (client) {
                 });
 
               global.client.logChannel.send({ embeds: [eventEmbed] });
+              //client.channels.cache.get("711936563000508496").send({ embeds: [eventEmbed] });
             }
           });
         });
