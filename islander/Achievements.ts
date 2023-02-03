@@ -1,4 +1,4 @@
-import { createCanvas, Image } from "@napi-rs/canvas";
+import Canvas, { createCanvas, Image } from "@napi-rs/canvas";
 import { readFile } from "fs/promises";
 import { AttachmentBuilder, User } from "discord.js";
 const { request } = require("undici");
@@ -36,9 +36,7 @@ export class Achievements {
     let guildMember: User = await global.client.users.fetch(memberID, false);
     const canvas = createCanvas(700, 250);
     const context = canvas.getContext("2d");
-    const background = await readFile("./wallpaper.jpg");
-    const backgroundImage = new Image();
-    backgroundImage.src = background;
+    const backgroundImage = await Canvas.loadImage("sprites/profilebg.jpg");
     context.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
     context.strokeStyle = "#0099ff";
     context.strokeRect(0, 0, canvas.width, canvas.height);
