@@ -7,7 +7,7 @@ module.exports = {
     .setName("profile")
     .setDescription("show your profile"),
   async execute(interaction) {
-    interaction.deferReply();
+    //interaction.deferReply();
     global.client.achievements
       .GetProfile(interaction.user.id)
       .then((profile) => {
