@@ -11,7 +11,7 @@ module.exports = {
     global.client.achievements
       .GetProfile(interaction.user.id)
       .then((profile) => {
-        interaction.editReply({ files: [profile] });
+        interaction.reply({ files: [profile] });
       });
   },
   isGuild: true,
