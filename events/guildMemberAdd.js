@@ -31,8 +31,9 @@ module.exports = {
       console.log(removed);
       let usedInvite;
       if (moreUses.length === 1) usedInvite = newInvites.get(moreUses[0].code);
-      else if (removed.length === 1) usedInvite = cachedInvites.get(removed[0]);
-      console.log(cachedInvites);
+      else if (removed.length === 1)
+        usedInvite = cachedInvites.get(removed[0].code);
+      //console.log(cachedInvites);
       /*
       console.log("got invites");
       let usedInvite;
