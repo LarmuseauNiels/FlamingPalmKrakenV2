@@ -11,9 +11,15 @@ module.exports = {
     GuildMember.guild.invites.fetch().then(async (newInvites) => {
       console.log("got invites");
       let usedInvite;
+      console.log(
+        newInvites.filter(
+          (invite) =>
+            cachedInvites.find((i) => i.code === invite.code).uses < invite.uses
+        )
+      );
       let possibleInvites = newInvites.filter(
         (invite) =>
-          oldinvites.find((i) => i.code === invite.code).uses < invite.uses
+          cachedInvites.find((i) => i.code === invite.code).uses < invite.uses
       ).size;
       console.log(possibleInvites + " possible invites");
       if (possibleInvites === 1) {
