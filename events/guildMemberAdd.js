@@ -12,7 +12,7 @@ module.exports = {
       console.log("got invites");
       let usedInvite;
       console.log(
-        newInvites.filter(
+        newInvites.find(
           (invite) =>
             cachedInvites.find((i) => i.code === invite.code).uses < invite.uses
         )
@@ -40,7 +40,7 @@ module.exports = {
           console.log(removedInvites);
         }
       }
-      console.log(usedInvite.code);
+      console.log(usedInvite);
       global.client.invites.set(GuildMember.guild.id, newInvites);
 
       let embed = new EmbedBuilder()
