@@ -11,10 +11,33 @@ module.exports = {
     console.log(oldinvites);
     GuildMember.guild.invites.fetch().then(async (newInvites) => {
       console.log("got invites");
-      const usedInvite = newInvites.find(
+      console.log(newInvites);
+      let usedInvite;
+      let possibleInvites = newInvites.filter(
         (invite) =>
-          oldinvites.find((i) => i.code == invite.code).uses < invite.uses
-      );
+          oldinvites.find((i) => i.code === invite.code).uses < invite.uses
+      ).size;
+      console.log(possibleInvites + " possible invites");
+      if (possibleInvites === 1) {
+        usedInvite = newInvites.find(
+          (invite) =>
+            oldinvites.find((i) => i.code === invite.code).uses < invite.uses
+        );
+        console.log(usedInvite);
+      }
+      if (possibleInvites === 0) {
+        console.log("invite not found checking for removed invite");
+        let removedInvites = oldinvites.filter((inv) => !newInvites.has(inv));
+        if (removedInvites.size === 1) usedInvite = removedInvites[0];
+        else {
+          console.log("could not pin down single removed invite");
+          console.log(removedInvites);
+        }
+      }
+
+      console.log(usedInvite);
+      global.client.invites.set(GuildMember.guild.id, newInvites);
+
       let embed = new EmbedBuilder()
         .setColor("#FD8612")
         .setTitle(`${GuildMember.user.username} joined`)
@@ -38,10 +61,10 @@ module.exports = {
             value: `${GuildMember.user.createdAt}`,
             inline: false,
           },
-          { name: "link code", value: `${usedInvite.code}`, inline: false },
+          { name: "link code", value: `${usedInvite?.code}`, inline: false },
           {
             name: "inviter",
-            value: `${usedInvite.inviter.username}`,
+            value: `${usedInvite?.inviter?.username}`,
             inline: false,
           }
         )
