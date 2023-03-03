@@ -9,6 +9,22 @@ module.exports = {
     });
     console.log(oldinvites);
     GuildMember.guild.invites.fetch().then(async (newInvites) => {
+      let invitemap = newInvites.map((i) => {
+        return { code: i.code, uses: i.uses };
+      });
+      console.log(invitemap);
+      let moreUses = invitemap.filter(
+        (a) => oldinvites.find((b) => b.code === a.code).uses < a.uses
+      );
+      console.log("used");
+      console.log(moreUses);
+      let notExist = oldinvites.filter(
+        (a) => !newInvites.has((b) => b.code === a.code)
+      );
+      console.log("removed");
+      console.log(notExist);
+      let usedInvite = newInvites.get(moreUses[0].code);
+      /*
       console.log("got invites");
       let usedInvite;
       console.log(
@@ -41,6 +57,8 @@ module.exports = {
         }
       }
       console.log(usedInvite);
+      */
+
       global.client.invites.set(GuildMember.guild.id, newInvites);
 
       let embed = new EmbedBuilder()
