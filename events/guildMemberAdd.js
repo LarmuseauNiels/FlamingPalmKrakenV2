@@ -3,7 +3,6 @@ const { EmbedBuilder, ActionRowBuilder, ButtonBuilder } = require("discord.js");
 module.exports = {
   name: "guildMemberAdd",
   async execute(GuildMember) {
-    // just a test
     const cachedInvites = global.client.invites.get(GuildMember.guild.id);
     const oldinvites = cachedInvites.map((i) => {
       return { code: i.code, uses: i.uses };
@@ -11,7 +10,6 @@ module.exports = {
     console.log(oldinvites);
     GuildMember.guild.invites.fetch().then(async (newInvites) => {
       console.log("got invites");
-      console.log(newInvites);
       let usedInvite;
       let possibleInvites = newInvites.filter(
         (invite) =>
@@ -23,19 +21,20 @@ module.exports = {
           (invite) =>
             oldinvites.find((i) => i.code === invite.code).uses < invite.uses
         );
-        console.log(usedInvite);
       }
       if (possibleInvites === 0) {
         console.log("invite not found checking for removed invite");
-        let removedInvites = oldinvites.filter((inv) => !newInvites.has(inv));
+        let removedInvites = cachedInvites.filter(
+          (inv) =>
+            newInvites.filter((ninv) => ninv.code === inv.code).size === 0
+        );
         if (removedInvites.size === 1) usedInvite = removedInvites[0];
-        else {
+        if (removedInvites.size > 1) {
           console.log("could not pin down single removed invite");
           console.log(removedInvites);
         }
       }
-
-      console.log(usedInvite);
+      console.log(usedInvite.code);
       global.client.invites.set(GuildMember.guild.id, newInvites);
 
       let embed = new EmbedBuilder()
