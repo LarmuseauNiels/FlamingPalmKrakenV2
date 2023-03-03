@@ -124,6 +124,10 @@ module.exports = async function (client) {
             }
           });
         });
+
+        guild.invites.fetch().then((invites) => {
+          global.client.invites.set(guild.id, invites);
+        });
       });
     } catch (e) {
       console.log(e);
