@@ -18,12 +18,14 @@ module.exports = {
       );
       console.log("used");
       console.log(moreUses);
-      let notExist = oldinvites.filter(
-        (a) => !newInvites.has((b) => b.code === a.code)
+      let removed = oldinvites.filter(
+        (a) => newInvites.find((b) => b.code === a.code) === undefined
       );
       console.log("removed");
-      console.log(notExist);
-      let usedInvite = newInvites.get(moreUses[0].code);
+      console.log(removed);
+      let usedInvite;
+      if (moreUses.length === 1) usedInvite = newInvites.get(moreUses[0].code);
+      else if (removed.length === 1) usedInvite = cachedInvites.get(removed[0]);
       /*
       console.log("got invites");
       let usedInvite;
