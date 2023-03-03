@@ -1,4 +1,10 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder } = require("discord.js");
+const {
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  Collection,
+  Invite,
+} = require("discord.js");
 
 module.exports = {
   name: "guildMemberAdd",
@@ -26,6 +32,7 @@ module.exports = {
       let usedInvite;
       if (moreUses.length === 1) usedInvite = newInvites.get(moreUses[0].code);
       else if (removed.length === 1) usedInvite = cachedInvites.get(removed[0]);
+      console.log(cachedInvites);
       /*
       console.log("got invites");
       let usedInvite;
