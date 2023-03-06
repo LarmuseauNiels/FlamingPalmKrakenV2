@@ -112,7 +112,7 @@ module.exports = async function (client) {
                   name: event.creator.username,
                   iconURL: event.creator.avatarURL(),
                 })
-                .setDescription(event.description)
+                .setDescription(event?.description ?? event.name)
                 .setImage(event.coverImageURL({ size: 512 }))
                 .setTimestamp(event.scheduledStartTimestamp)
                 .setFooter({
