@@ -67,7 +67,10 @@ class FpgClient extends Client {
   }
 }
 
-Bugsnag.start({ apiKey: "5e7812ef11645064360e8e03be9b5373" });
+Bugsnag.start({
+  apiKey: "5e7812ef11645064360e8e03be9b5373",
+  appVersion: process.env.CAPROVER_GIT_COMMIT_SHA.slice(0, 7),
+});
 global.bugsnag = Bugsnag;
 global.client = new FpgClient();
 loadCommands();
