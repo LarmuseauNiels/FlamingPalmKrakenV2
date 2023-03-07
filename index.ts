@@ -58,7 +58,6 @@ class FpgClient extends Client {
   }
 
   log(loggText) {
-    Bugsnag.notify(loggText);
     console.log(loggText);
     global.client.logChannel.send("```" + loggText + "```");
   }
@@ -69,6 +68,7 @@ class FpgClient extends Client {
 }
 
 Bugsnag.start({ apiKey: "5e7812ef11645064360e8e03be9b5373" });
+global.bugsnag = Bugsnag;
 global.client = new FpgClient();
 loadCommands();
 async function loadCommands(): Promise<void> {

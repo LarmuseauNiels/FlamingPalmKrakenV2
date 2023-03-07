@@ -37,6 +37,7 @@ module.exports = {
       console.log(data);
       interaction.editReply(data.choices[0].text || "no response");
     } catch (e) {
+      global.bugsnag.notify(e);
       console.log(e);
       interaction.editReply({ content: "error" });
     }

@@ -33,6 +33,7 @@ module.exports = {
       let attachment = new AttachmentBuilder(image, { name: "dalle.png" });
       interaction.editReply({ content: message, files: [attachment] });
     } catch (e) {
+      global.bugsnag.notify(e);
       console.log(e);
       interaction.editReply({ content: "error" });
     }

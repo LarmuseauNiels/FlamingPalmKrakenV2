@@ -130,6 +130,7 @@ module.exports = async function (client) {
         });
       });
     } catch (e) {
+      global.bugsnag.notify(e);
       console.log(e);
     }
   });

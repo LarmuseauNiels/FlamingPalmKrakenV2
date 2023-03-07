@@ -130,6 +130,7 @@ module.exports = {
           },
         });
       } catch (error) {
+        global.bugsnag.notify(error);
         console.log(error);
       }
       global.client.logChannel.send({ embeds: [embed] });

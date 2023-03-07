@@ -28,6 +28,7 @@ module.exports = {
         await command.autocomplete(interaction);
       }
     } catch (error) {
+      global.bugsnag.notify(error);
       global.client.log(error);
       await interaction.reply({
         content: "Issue executing, alerting niels",

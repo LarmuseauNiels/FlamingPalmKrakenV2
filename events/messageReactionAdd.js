@@ -16,6 +16,7 @@ module.exports = {
           })
           .catch((err) => global.client.log(err));
       } catch (e) {
+        global.bugsnag.notify(e);
         global.client.log(e);
       }
     }
