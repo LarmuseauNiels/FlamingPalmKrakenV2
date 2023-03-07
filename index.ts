@@ -2,6 +2,7 @@
 import { PrismaClient } from "@prisma/client";
 import { Islander } from "./islander/islander";
 import { Achievements } from "./islander/Achievements";
+import Bugsnag from "@bugsnag/js";
 const fs = require("fs");
 const {
   Client,
@@ -57,6 +58,7 @@ class FpgClient extends Client {
   }
 
   log(loggText) {
+    Bugsnag.notify(loggText);
     console.log(loggText);
     global.client.logChannel.send("```" + loggText + "```");
   }
@@ -65,6 +67,8 @@ class FpgClient extends Client {
     //this.logChannel.send(loggText.toString());
   }
 }
+
+Bugsnag.start({ apiKey: "5e7812ef11645064360e8e03be9b5373" });
 global.client = new FpgClient();
 loadCommands();
 async function loadCommands(): Promise<void> {
