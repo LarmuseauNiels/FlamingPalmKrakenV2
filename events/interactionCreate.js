@@ -1,6 +1,7 @@
 module.exports = {
   name: "interactionCreate",
   async execute(interaction) {
+    global.bugsnag.startSession();
     try {
       if (interaction.isButton()) {
         let buttonId = interaction.customId.split("_")[0];
@@ -35,5 +36,6 @@ module.exports = {
         ephemeral: true,
       });
     }
+    global.bugsnag.pauseSession();
   },
 };
