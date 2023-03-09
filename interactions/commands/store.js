@@ -38,19 +38,21 @@ module.exports = {
       orderBy: { Price: "asc" },
     });
     rewards.forEach((reward) => {
-      let stock = reward.RewardItem.filter((x) => x.RedeemedBy == "").length;
-      if (stock == 0)
-        embed.addFields({
-          name: reward.Title,
-          value: `out of stock`,
-          inline: true,
-        });
-      else
-        embed.addFields({
-          name: reward.Title,
-          value: `**${reward.Price}:palm_tree:**`,
-          inline: true,
-        }); //${reward.Description }\n ${stock} key${stock == 1?'':'s'} in stock\n
+      if (reward.visible) {
+        let stock = reward.RewardItem.filter((x) => x.RedeemedBy == "").length;
+        if (stock == 0)
+          embed.addFields({
+            name: reward.Title,
+            value: `out of stock`,
+            inline: true,
+          });
+        else
+          embed.addFields({
+            name: reward.Title,
+            value: `**${reward.Price}:palm_tree:**`,
+            inline: true,
+          }); //${reward.Description }\n ${stock} key${stock == 1?'':'s'} in stock\n
+      }
     });
     let row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
