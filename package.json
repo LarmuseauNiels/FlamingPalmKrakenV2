@@ -13,7 +13,7 @@
   "dependencies": {
     "@bugsnag/js": "^7.20.0",
     "@napi-rs/canvas": "^0.1.29",
-    "@prisma/client": "^3.3.0",
+    "@prisma/client": "3.15.2",
     "cors": "^2.8.5",
     "discord.js": "^14.1.2",
     "express": "^4.17.1",
