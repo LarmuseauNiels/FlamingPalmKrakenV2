@@ -121,12 +121,10 @@ module.exports = async function (client) {
               let eventText =
                 event.name + event.description ? event.description : "";
               guild.roles.fetch().then((roles) => {
-                let roleId = roles.find((role) =>
-                  eventText.includes(role.name)
-                ).id;
-                if (roleId) {
+                let role = roles.find((role) => eventText.includes(role.name));
+                if (role?.id) {
                   global.client.logChannel.send({
-                    content: "<@&" + roleId + ">",
+                    content: "<@&" + role.id + ">",
                     embeds: [eventEmbed],
                   });
                 } else {
