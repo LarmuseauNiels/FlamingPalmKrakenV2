@@ -112,14 +112,29 @@ module.exports = async function (client) {
                   name: event.creator.username,
                   iconURL: event.creator.avatarURL(),
                 })
-                .setDescription(event?.description ?? event.name)
+                .setDescription(event.description ? event.description : "")
                 .setImage(event.coverImageURL({ size: 512 }))
                 .setTimestamp(event.scheduledStartTimestamp)
                 .setFooter({
                   text: "Event at ",
                 });
-
-              global.client.logChannel.send({ embeds: [eventEmbed] });
+              let eventText =
+                event.name + event.description ? event.description : "";
+              guild.roles.fetch().then((roles) => {
+                let roleId = roles.find((role) =>
+                  eventText.includes(role.name)
+                ).id;
+                if (roleId) {
+                  global.client.logChannel.send({
+                    content: "<@&" + roleId + ">",
+                    embeds: [eventEmbed],
+                  });
+                } else {
+                  global.client.logChannel.send({
+                    embeds: [eventEmbed],
+                  });
+                }
+              });
               //client.channels.cache.get("711936563000508496").send({ embeds: [eventEmbed] });
             }
           });
