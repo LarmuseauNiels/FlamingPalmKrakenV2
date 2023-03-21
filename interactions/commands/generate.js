@@ -15,6 +15,11 @@ module.exports = {
         .setRequired(true)
     ),
   async execute(interaction) {
+    // check if this is the admin user
+    if (interaction.user.id !== "178435947816419328") {
+      interaction.reply("You are not allowed to use this command");
+      return;
+    }
     const configuration = new Configuration({
       apiKey: process.env.OPENAI_API_KEY,
     });

@@ -19,8 +19,9 @@ module.exports = {
     const message = interaction.options.getString("message");
     const openai = new OpenAIApi(configuration);
     try {
-      await interaction.deferReply();
       let convo = global.client.chats.get(interaction.user.id).convo;
+      if (!convo) await interaction.reply("no conversation found");
+      await interaction.deferReply();
       convo.push({ role: "user", content: message });
       const response = await openai.createChatCompletion({
         model: "gpt-3.5-turbo",
