@@ -22,20 +22,14 @@ module.exports = {
     const openai = new OpenAIApi(configuration);
     try {
       await interaction.deferReply();
-      const response = await openai.createCompletion({
-        model: "text-davinci-003",
-        prompt: `I am the kraken a highly intelligent question answering bot designed for the flaming palm gaming clan. If you ask me a question that is rooted in truth, I will give you the answer. If you ask me a question that is nonsense, trickery, or has no clear answer,  I will answer with a sarcastic response.\n\nQ: ${message} \nA:`,
-        temperature: 0,
-        max_tokens: 100,
-        top_p: 1,
-        frequency_penalty: 0.0,
-        presence_penalty: 0.0,
-        stop: ["\n"],
+      const response = await openai.createChatCompletion({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: message }],
       });
       console.log(response);
       const { data } = response;
       console.log(data);
-      interaction.editReply(data.choices[0].text || "no response");
+      interaction.editReply(data.choices[0].message.content || "no response");
     } catch (e) {
       global.bugsnag.notify(e);
       console.log(e);
