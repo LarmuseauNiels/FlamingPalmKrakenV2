@@ -6,3 +6,4 @@ config.js
 privateconfig.json
 /.env
 /bin/
+.idea

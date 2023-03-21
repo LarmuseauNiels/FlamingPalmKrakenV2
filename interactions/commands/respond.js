@@ -2,10 +2,10 @@ const { SlashCommandBuilder } = require("discord.js");
 const { Configuration, OpenAIApi } = require("openai");
 
 module.exports = {
-  name: "chat",
+  name: "respond",
   data: new SlashCommandBuilder()
-    .setName("chat")
-    .setDescription("chat with the kraken")
+    .setName("respond")
+    .setDescription("Continue a conversation after using the chat command")
     .addStringOption((option) =>
       option
         .setName("message")
@@ -20,9 +20,11 @@ module.exports = {
     const openai = new OpenAIApi(configuration);
     try {
       await interaction.deferReply();
+      let convo = global.client.chats.get(interaction.user.id).convo;
+      convo.push({ role: "user", content: message });
       const response = await openai.createChatCompletion({
         model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: message }],
+        messages: convo,
         max_tokens: 360,
       });
       console.log(response);
@@ -33,9 +35,8 @@ module.exports = {
         return;
       }
       interaction.editReply(data.choices[0].message.content || "no response");
-      global.client.chats.set(interaction.user.id, {
-        convo: [{ role: "user", content: message }, data.choices[0].message],
-      });
+      convo.push(data.choices[0].message);
+      global.client.chats.set(interaction.user.id, { convo: convo });
     } catch (e) {
       global.bugsnag.notify(e);
       console.log(e);

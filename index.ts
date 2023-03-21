@@ -20,6 +20,7 @@ class FpgClient extends Client {
   declare buttons: typeof Collection;
   declare modals: typeof Collection;
   declare contextMenus: typeof Collection;
+  declare chats: Map<any, any>;
 
   constructor() {
     super({
@@ -55,6 +56,7 @@ class FpgClient extends Client {
     this.modals = new Collection();
     this.contextMenus = new Collection();
     this.achievements = new Achievements();
+    this.chats = new Map();
   }
 
   log(loggText) {
