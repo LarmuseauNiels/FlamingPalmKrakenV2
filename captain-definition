@@ -4,7 +4,6 @@
                         "FROM node:hydrogen-alpine3.16",
                         "ARG CAPROVER_GIT_COMMIT_SHA=${CAPROVER_GIT_COMMIT_SHA}",
                         "ENV CAPROVER_GIT_COMMIT_SHA=${CAPROVER_GIT_COMMIT_SHA}",
-                        "RUN npm install -g yarn",
                         "RUN mkdir -p /usr/src/app",
                         "WORKDIR /usr/src/app",
                         "COPY ./package.json /usr/src/app/",
