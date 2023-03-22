@@ -7,7 +7,7 @@
                         "RUN mkdir -p /usr/src/app",
                         "WORKDIR /usr/src/app",
                         "COPY ./package.json /usr/src/app/",
-                        "RUN npm install -g -s --no-progress yarn",
+                        "RUN npm install -g yarn",
                         "RUN yarn install --production",
                         "COPY ./ /usr/src/app",
                         "RUN npx prisma generate",
