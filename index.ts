@@ -2,6 +2,7 @@
 import { PrismaClient } from "@prisma/client";
 import { Islander } from "./islander/islander";
 import { Achievements } from "./islander/Achievements";
+import { WebApi } from "./modules/WebApi";
 import Bugsnag from "@bugsnag/js";
 const fs = require("fs");
 const {
@@ -21,6 +22,7 @@ class FpgClient extends Client {
   declare modals: typeof Collection;
   declare contextMenus: typeof Collection;
   declare chats: Map<any, any>;
+  declare webapi: WebApi;
 
   constructor() {
     super({
@@ -57,6 +59,7 @@ class FpgClient extends Client {
     this.contextMenus = new Collection();
     this.achievements = new Achievements();
     this.chats = new Map();
+    this.webapi = new WebApi();
   }
 
   log(loggText) {

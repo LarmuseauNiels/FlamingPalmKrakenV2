@@ -16,7 +16,6 @@ module.exports = {
       .then((channel) => channel.messages.fetch({ limit: 100 }))
       .catch((err) => client.log(err));
     require("../modules/statistics.js")(client);
-    require("../modules/webapi.js")(client);
     // Collection is an enhanced Map which we are going to save our invites to.
     const guildInvites = new Collection();
     client.invites = guildInvites;
