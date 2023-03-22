@@ -15,7 +15,7 @@
     "@napi-rs/canvas": "^0.1.29",
     "@prisma/client": "3.15.2",
     "cors": "^2.8.5",
-    "discord.js": "^14.1.2",
+    "discord.js": "^14.8.0",
     "express": "^4.17.1",
     "node-cron": "^3.0.0",
     "openai": "^3.2.1"
