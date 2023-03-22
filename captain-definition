@@ -4,12 +4,16 @@
                         "FROM node:hydrogen-alpine3.16",
                         "ARG CAPROVER_GIT_COMMIT_SHA=${CAPROVER_GIT_COMMIT_SHA}",
                         "ENV CAPROVER_GIT_COMMIT_SHA=${CAPROVER_GIT_COMMIT_SHA}",
+                        "RUN mkdir -p /usr/src/app",
+                        "WORKDIR /usr/src/app",
+                        "COPY ./package.json /usr/src/app/",
+                        "COPY ./yarn.lock /usr/src/app/",
                         "RUN yarn",
+                        "rsync -a ./ /usr/src/app",
                         "RUN npx prisma generate",
-                        "RUN npm build",
                         "ENV NODE_ENV production",
                         "ENV PORT 80",
                         "EXPOSE 80",
-                        "CMD [ \"node\", \"/bin/index.js\" ]"
+                        "CMD [ \"npm\", \"start\" ]"
                     ]
  }
