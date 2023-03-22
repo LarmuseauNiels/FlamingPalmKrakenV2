@@ -9,7 +9,7 @@
                         "COPY ./package.json /usr/src/app/",
                         "COPY ./yarn.lock /usr/src/app/",
                         "RUN yarn",
-                        "rsync -a ./ /usr/src/app",
+                        "COPY ./ /usr/src/app",
                         "RUN npx prisma generate",
                         "ENV NODE_ENV production",
                         "ENV PORT 80",
