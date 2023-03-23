@@ -22,7 +22,13 @@ module.exports = {
       await interaction.deferReply();
       const response = await openai.createChatCompletion({
         model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: message }],
+        messages: [
+          {
+            role: "system",
+            content: "you are a helpful assistant called kraken",
+          },
+          { role: "user", content: message },
+        ],
         max_tokens: 360,
       });
       console.log(response);
@@ -34,7 +40,14 @@ module.exports = {
       }
       interaction.editReply(data.choices[0].message.content || "no response");
       global.client.chats.set(interaction.user.id, {
-        convo: [{ role: "user", content: message }, data.choices[0].message],
+        convo: [
+          {
+            role: "system",
+            content: "you are a helpful assistant called kraken",
+          },
+          { role: "user", content: message },
+          data.choices[0].message,
+        ],
       });
     } catch (e) {
       global.bugsnag.notify(e);
