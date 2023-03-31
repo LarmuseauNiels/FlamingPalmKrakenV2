@@ -101,7 +101,7 @@ export class WebApi {
 
   jsonify(obj) {
     return JSON.stringify(obj, (key, value) =>
-      typeof value === "bigint" ? value.toString() : value
+      typeof value === "bigint" ? Number(value) : value
     );
   }
 
