@@ -107,7 +107,7 @@ export class WebApi {
 
   load() {
     app.listen(3000, () => {
-      console.log("WebApi listening on port 3000!");
+      console.log("WebApi listening on port 3000");
     });
   }
 }
