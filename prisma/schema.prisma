@@ -18,6 +18,7 @@ model Members {
   avatar                                String?               @db.VarChar(255)
   LastWebLogon                          DateTime?             @db.DateTime(0)
   XP                                    Int                   @default(0)
+  AchievementNotifications              Boolean?
   Achievement_History                   Achievement_History[]
   PointHistory                          PointHistory[]
   Points                                Points?
@@ -106,6 +107,8 @@ model VoiceConnected {
   @@id([ID, TimeStamp, ChannelID])
   @@index([ChannelID], map: "VoiceConnected_Channel_ID_fk")
   @@index([TimeStamp], map: "VoiceConnected_Timestamp")
+  @@index([ID], map: "VoiceConnected_ID_index")
+  @@index([ID], map: "index_name")
 }
 
 model i_Building {
@@ -243,6 +246,7 @@ model Achievement_History {
   UserID        String?      @db.VarChar(25)
   TimeStamp     DateTime?    @default(now()) @db.Timestamp(0)
   GrantedBy     String?      @db.VarChar(25)
+  Description   String?      @db.VarChar(255)
   Achievements  Achievements @relation(fields: [AchievementID], references: [ID], onUpdate: Restrict, map: "Achievement_History_Achievements_ID_fk")
   Members       Members?     @relation(fields: [UserID], references: [ID], onDelete: Restrict, onUpdate: Restrict, map: "Achievement_History_Members_ID_fk")
 
