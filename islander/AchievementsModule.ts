@@ -64,7 +64,9 @@ export class AchievementsModule {
         ID: memberID,
       },
     });
+    console.log(member);
     let guildMember: User = await global.client.users.fetch(memberID, false);
+    console.log(guildMember);
     const canvas = createCanvas(700, 250);
     const context = canvas.getContext("2d");
     const backgroundImage = await Canvas.loadImage("sprites/profilebg.jpg");
@@ -74,10 +76,10 @@ export class AchievementsModule {
     context.font = "28px sans-serif";
     context.fillStyle = "#ffffff";
     context.fillText("Profile", canvas.width / 2.5, canvas.height / 3.5);
-    context.font = applyText(canvas, `${member.DisplayName}!`);
+    context.font = applyText(canvas, `${guildMember.username}!`);
     context.fillStyle = "#ffffff";
     context.fillText(
-      `${member.DisplayName}!`,
+      `${guildMember.username}!`,
       canvas.width / 2.5,
       canvas.height / 1.8
     );
@@ -97,6 +99,7 @@ export class AchievementsModule {
     return attachment;
   }
 }
+
 const applyText = (canvas, text) => {
   const context = canvas.getContext("2d");
   let fontSize = 70;
