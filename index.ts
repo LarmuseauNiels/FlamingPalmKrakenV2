@@ -1,7 +1,7 @@
 // Require the necessary discord.js classes
 import { PrismaClient } from "@prisma/client";
 import { Islander } from "./islander/islander";
-import { Achievements } from "./islander/Achievements";
+import { AchievementsModule } from "./islander/AchievementsModule";
 import { WebApi } from "./modules/WebApi";
 import Bugsnag from "@bugsnag/js";
 const fs = require("fs");
@@ -15,7 +15,7 @@ const { token, DBHOST, DBPASS } = require("./config.js");
 
 class FpgClient extends Client {
   declare islander: Islander;
-  declare achievements: Achievements;
+  declare achievementsModule: AchievementsModule;
   declare prisma: PrismaClient;
   declare commands: typeof Collection;
   declare buttons: typeof Collection;
@@ -57,7 +57,7 @@ class FpgClient extends Client {
     this.buttons = new Collection();
     this.modals = new Collection();
     this.contextMenus = new Collection();
-    this.achievements = new Achievements();
+    this.achievementsModule = new AchievementsModule();
     this.chats = new Map();
     this.webapi = new WebApi();
   }

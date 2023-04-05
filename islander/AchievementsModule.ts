@@ -1,14 +1,21 @@
 import Canvas, { createCanvas, Image } from "@napi-rs/canvas";
-import { readFile } from "fs/promises";
 import { AttachmentBuilder, User } from "discord.js";
 const { request } = require("undici");
 
-export class Achievements {
+export class AchievementsModule {
   async GiveAchievement(
     memberID: string,
     achievementID: number,
     grantedBy: string
   ) {
+    // get achievement
+    let achievement = await global.client.prisma.achievements.findFirst({
+      where: {
+        ID: achievementID,
+      },
+    });
+
+    console.log("Giving achievement: " + achievement.Name + " to " + memberID);
     await global.client.prisma.achievement_History.create({
       data: {
         UserID: memberID,
@@ -16,11 +23,35 @@ export class Achievements {
         GrantedBy: grantedBy,
       },
     });
+
+    if (achievement.XpIncrease > 0) {
+      // get member
+      await global.client.prisma.members.update({
+        where: {
+          ID: memberID,
+        },
+        data: {
+          XP: { increment: achievement.XpIncrease },
+        },
+      });
+    }
+    //check if achievement gives points
+    if (achievement.points > 0) {
+      await global.client.prisma.points.update({
+        where: {
+          userid: memberID,
+        },
+        data: {
+          TotalPoints: { increment: achievement.points },
+          lastComment: achievement.Name + " " + achievement.Description,
+        },
+      });
+    }
   }
 
-  // get all achievements where type is manual
+  // get all achievementsModule where type is manual
   async GetManualAchievements() {
-    return await global.client.prisma.achievements.findMany({
+    return global.client.prisma.achievements.findMany({
       where: {
         Type: "Manual",
       },

@@ -3,7 +3,7 @@ module.exports = {
   name: "give-achievement",
   data: new SlashCommandBuilder()
     .setName("give-achievement")
-    .setDescription("give achievements to users")
+    .setDescription("give achievement to users")
     .addUserOption((option) =>
       option
         .setName("user")
@@ -21,7 +21,7 @@ module.exports = {
       option
         .setName("description")
         .setDescription(
-          "Optional extra description for this instance of the achievement"
+          "Optional description for this instance of the achievement"
         )
         .setRequired(false)
     )
@@ -32,7 +32,7 @@ module.exports = {
     const achievement = +interaction.options.getString("achievement");
     const description = interaction.options.getString("description");
     console.log(achievement, interaction.options.getString("achievement"));
-    await global.client.achievements.GiveAchievement(
+    await global.client.achievementsModule.GiveAchievement(
       user.id,
       achievement,
       interaction.user.id
@@ -40,7 +40,7 @@ module.exports = {
     await interaction.reply("Achievement given");
   },
   async autocomplete(interaction) {
-    global.client.achievements
+    global.client.achievementsModule
       .GetManualAchievements()
       .then(async (achievements) => {
         const focusedValue = interaction.options.getFocused();
