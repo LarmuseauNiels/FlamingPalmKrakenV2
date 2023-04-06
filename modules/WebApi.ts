@@ -45,13 +45,9 @@ export class WebApi {
       "/callback",
       passport.authenticate("discord", { failureRedirect: "/" }),
       function (req, res) {
-        res.redirect("/authtest");
+        res.json(req);
       } // auth success
     );
-
-    app.get("/authtest", this.checkAuth, function (req, res) {
-      res.json(req);
-    });
 
     app.get("/", function (req, res) {
       res.send("KRAKEN API");
@@ -157,10 +153,5 @@ export class WebApi {
     app.listen(3000, () => {
       console.log("WebApi listening on port 3000");
     });
-  }
-
-  checkAuth(req, res, next) {
-    if (req.isAuthenticated()) return next();
-    res.send("not logged in :(");
   }
 }
