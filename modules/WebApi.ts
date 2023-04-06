@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import passport from "passport";
+
 const DiscordStrategy = require("passport-discord").Strategy;
 
 const app = express();
@@ -18,9 +19,9 @@ export class WebApi {
     passport.use(
       new DiscordStrategy(
         {
-          clientID: "id",
-          clientSecret: "secret",
-          callbackURL: "callbackURL",
+          clientID: "534686392589221898",
+          clientSecret: process.env.oauthSecret,
+          callbackURL: "callback",
           scope: ["identify", "guilds"],
         },
         function (accessToken, refreshToken, profile, done) {
