@@ -21,6 +21,8 @@
     "node-cron": "^3.0.0",
     "openai": "^3.2.1",
     "passport": "^0.6.0",
+    "passport-discord": "^0.1.4",
+    "passport-oauth2-refresh": "^2.1.0",
     "typescript": "^5.0.2"
   },
   "devDependencies": {

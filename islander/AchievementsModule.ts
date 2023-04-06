@@ -1,5 +1,6 @@
 import Canvas, { createCanvas, Image } from "@napi-rs/canvas";
 import { AttachmentBuilder, User } from "discord.js";
+
 const { request } = require("undici");
 
 export class AchievementsModule {
@@ -73,9 +74,6 @@ export class AchievementsModule {
     context.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
     context.strokeStyle = "#0099ff";
     context.strokeRect(0, 0, canvas.width, canvas.height);
-    context.font = "28px sans-serif";
-    context.fillStyle = "#ffffff";
-    context.fillText("Profile", canvas.width / 2.5, canvas.height / 3.5);
     context.font = applyText(canvas, `${guildMember.username}!`);
     context.fillStyle = "#ffffff";
     context.fillText(
@@ -93,10 +91,9 @@ export class AchievementsModule {
     const avatar = new Image();
     avatar.src = Buffer.from(await body.arrayBuffer());
     context.drawImage(avatar, 25, 25, 200, 200);
-    const attachment = new AttachmentBuilder(canvas.toBuffer("image/png"), {
+    return new AttachmentBuilder(canvas.toBuffer("image/png"), {
       name: "profile-image.png",
     });
-    return attachment;
   }
 }
 

@@ -1,10 +1,57 @@
 import express from "express";
 import cors from "cors";
+import passport from "passport";
+const DiscordStrategy = require("passport-discord").Strategy;
+
 const app = express();
+const prompt = "consent";
 
 export class WebApi {
   constructor() {
+    passport.serializeUser(function (user, done) {
+      done(null, user);
+    });
+    passport.deserializeUser(function (obj, done) {
+      done(null, obj);
+    });
+    let jsonify = this.jsonify;
+    passport.use(
+      new DiscordStrategy(
+        {
+          clientID: "id",
+          clientSecret: "secret",
+          callbackURL: "callbackURL",
+          scope: ["identify", "guilds"],
+        },
+        function (accessToken, refreshToken, profile, done) {
+          console.log(profile);
+          return done(null, profile);
+        }
+      )
+    );
     app.use(cors());
+
+    //auth test
+    app.get(
+      "/auth",
+      passport.authenticate("discord", {
+        scope: ["identify", "guilds"],
+        prompt: prompt,
+      }),
+      function (req, res) {}
+    );
+    app.get(
+      "/callback",
+      passport.authenticate("discord", { failureRedirect: "/" }),
+      function (req, res) {
+        res.redirect("/authtest");
+      } // auth success
+    );
+
+    app.get("/authtest", this.checkAuth, function (req, res) {
+      res.json(req);
+    });
+
     app.get("/", function (req, res) {
       res.send("KRAKEN API");
     });
@@ -109,5 +156,10 @@ export class WebApi {
     app.listen(3000, () => {
       console.log("WebApi listening on port 3000");
     });
+  }
+
+  checkAuth(req, res, next) {
+    if (req.isAuthenticated()) return next();
+    res.send("not logged in :(");
   }
 }

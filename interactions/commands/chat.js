@@ -31,14 +31,17 @@ module.exports = {
         ],
         max_tokens: 360,
       });
-      console.log(response);
       const { data } = response;
-      console.log(data);
+      console.log(
+        interaction.user.id + " used " + data.usage.total_tokens + " tokens"
+      );
       if (data.choices[0].message.content.length > 2000) {
-        interaction.editReply("response too long");
+        await interaction.editReply("response too long");
         return;
       }
-      interaction.editReply(data.choices[0].message.content || "no response");
+      await interaction.editReply(
+        data.choices[0].message.content || "no response"
+      );
       global.client.chats.set(interaction.user.id, {
         convo: [
           {
@@ -52,7 +55,7 @@ module.exports = {
     } catch (e) {
       global.bugsnag.notify(e);
       console.log(e);
-      interaction.editReply({ content: "error" });
+      await interaction.editReply({ content: "error" });
     }
   },
   isGuild: true,
