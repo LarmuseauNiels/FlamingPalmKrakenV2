@@ -60,13 +60,19 @@ export class WebApi {
       } // auth success
     );
 
-    app.get("/test", this.checkAuth, function (req, res) {
+    app.get("/test", checkAuth, function (req, res) {
       res.send(jsonify(req.user));
     });
 
     app.get("/", function (req, res) {
       res.send("KRAKEN API");
     });
+
+    function checkAuth(req, res, next) {
+      if (req.isAuthenticated()) return next();
+      res.send("not logged in :(");
+    }
+
     this.setLegacyEndPoints();
     this.load();
   }
@@ -168,9 +174,5 @@ export class WebApi {
     app.listen(3000, () => {
       console.log("WebApi listening on port 3000");
     });
-  }
-  checkAuth(req, res, next) {
-    if (req.isAuthenticated()) return next();
-    res.send("not logged in :(");
   }
 }
