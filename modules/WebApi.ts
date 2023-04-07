@@ -31,8 +31,8 @@ export class WebApi {
         }
       )
     );
+    app.use(cors());
     app.use(
-      cors(),
       session({
         secret: process.env.oauthSecret,
         resave: false,
@@ -40,6 +40,8 @@ export class WebApi {
         cookie: { secure: true },
       })
     );
+    app.use(passport.initialize());
+    app.use(passport.session());
 
     //auth test
     app.get(
