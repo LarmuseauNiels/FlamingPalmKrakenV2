@@ -43,7 +43,10 @@ export class WebApi {
     );
     app.get(
       "/callback",
-      passport.authenticate("discord", { failureRedirect: "/" }),
+      passport.authenticate("discord", {
+        failureRedirect: "/",
+        session: false,
+      }),
       function (req, res) {
         res.json(req);
       } // auth success
