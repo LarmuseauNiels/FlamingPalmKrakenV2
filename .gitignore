@@ -8,3 +8,4 @@ privateconfig.json
 /bin/
 .idea
 environment.cmd
+environment.ps1

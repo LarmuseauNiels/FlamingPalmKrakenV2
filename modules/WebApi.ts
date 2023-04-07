@@ -4,7 +4,6 @@ import passport from "passport";
 import session from "express-session";
 import { legacyEndPoints } from "./ApiFunctions/LegacyEndPoints";
 import { jsonify } from "./ApiFunctions/Helpers";
-
 const DiscordStrategy = require("passport-discord").Strategy;
 
 const app = express();
@@ -28,13 +27,7 @@ export class WebApi {
           prompt: prompt,
         },
         function (accessToken, refreshToken, profile, done) {
-          console.log(profile.id);
-          global.client.prisma.login_History.create({
-            data: {
-              UserID: profile.id,
-              DiscordProfile: jsonify(profile),
-            },
-          });
+          logDiscordLogin(profile);
           if (profile.guilds.map((g) => g.id).includes(process.env.GUILD_ID)) {
             process.nextTick(function () {
               return done(null, profile);
@@ -104,4 +97,14 @@ export class WebApi {
       console.log("WebApi listening on port 3000");
     });
   }
+}
+
+async function logDiscordLogin(profile) {
+  let result = await global.client.prisma.login_History.create({
+    data: {
+      UserID: profile.id,
+      DiscordProfile: jsonify(profile),
+    },
+  });
+  console.log("Logged discord login: " + profile.username + " " + result.Id);
 }
