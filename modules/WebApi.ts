@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import passport from "passport";
+import session from "express-session";
 
 const DiscordStrategy = require("passport-discord").Strategy;
 
@@ -30,7 +31,15 @@ export class WebApi {
         }
       )
     );
-    app.use(cors());
+    app.use(
+      cors(),
+      session({
+        secret: process.env.oauthSecret,
+        resave: false,
+        saveUninitialized: false,
+        cookie: { secure: true },
+      })
+    );
 
     //auth test
     app.get(
@@ -45,12 +54,15 @@ export class WebApi {
       "/callback",
       passport.authenticate("discord", {
         failureRedirect: "/",
-        session: false,
       }),
       function (req, res) {
-        res.send(jsonify(passport.profile));
+        res.redirect("/test");
       } // auth success
     );
+
+    app.get("/test", this.checkAuth, function (req, res) {
+      res.send(jsonify(req.user));
+    });
 
     app.get("/", function (req, res) {
       res.send("KRAKEN API");
@@ -156,5 +168,9 @@ export class WebApi {
     app.listen(3000, () => {
       console.log("WebApi listening on port 3000");
     });
+  }
+  checkAuth(req, res, next) {
+    if (req.isAuthenticated()) return next();
+    res.send("not logged in :(");
   }
 }
