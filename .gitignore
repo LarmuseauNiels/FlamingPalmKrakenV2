@@ -7,3 +7,4 @@ privateconfig.json
 /.env
 /bin/
 .idea
+environment.cmd

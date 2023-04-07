@@ -11,7 +11,6 @@ const {
   Partials,
   Collection,
 } = require("discord.js");
-const { token, DBHOST, DBPASS } = require("./config.js");
 
 class FpgClient extends Client {
   declare islander: Islander;
@@ -66,14 +65,10 @@ class FpgClient extends Client {
     console.log(loggText);
     global.client.logChannel.send("```" + loggText + "```");
   }
-
-  channelLog() {
-    //this.logChannel.send(loggText.toString());
-  }
 }
 
 Bugsnag.start({
-  apiKey: "5e7812ef11645064360e8e03be9b5373",
+  apiKey: process.env.BUGSNAG_API_KEY,
   appVersion: process.env.CAPROVER_GIT_COMMIT_SHA.slice(0, 7),
 });
 global.bugsnag = Bugsnag;
@@ -106,7 +101,7 @@ for (const file of eventFiles) {
 }
 
 // Login to Discord with your client's token
-global.client.login(token);
+global.client.login(process.env.TOKEN);
 
 async function loadInteractionActions(folderName): Promise<typeof Collection> {
   let tempList: typeof Collection = new Collection();

@@ -158,7 +158,7 @@
     "@napi-rs/canvas-linux-x64-musl" "0.1.39"
     "@napi-rs/canvas-win32-x64-msvc" "0.1.39"
 
-"@prisma/client@4.12.0":
+"@prisma/client@^4.12.0":
   version "4.12.0"
   resolved "https://registry.npmjs.org/@prisma/client/-/client-4.12.0.tgz"
   integrity sha512-j9/ighfWwux97J2dS15nqhl60tYoH8V0IuSsgZDb6bCFcQD3fXbXmxjYC8GHhIgOk3lB7Pq+8CwElz2MiDpsSg==
@@ -170,10 +170,10 @@
   resolved "https://registry.npmjs.org/@prisma/engines-version/-/engines-version-4.12.0-67.659ef412370fa3b41cd7bf6e94587c1dfb7f67e7.tgz"
   integrity sha512-JIHNj5jlXb9mcaJwakM0vpgRYJIAurxTUqM0iX0tfEQA5XLZ9ONkIckkhuAKdAzocZ+80GYg7QSsfpjg7OxbOA==
 
-"@prisma/engines@3.15.1-1.461d6a05159055555eb7dfb337c9fb271cbd4d7e":
-  version "3.15.1-1.461d6a05159055555eb7dfb337c9fb271cbd4d7e"
-  resolved "https://registry.npmjs.org/@prisma/engines/-/engines-3.15.1-1.461d6a05159055555eb7dfb337c9fb271cbd4d7e.tgz"
-  integrity sha512-NHlojO1DFTsSi3FtEleL9QWXeSF/UjhCW0fgpi7bumnNZ4wj/eQ+BJJ5n2pgoOliTOGv9nX2qXvmHap7rJMNmg==
+"@prisma/engines@4.12.0":
+  version "4.12.0"
+  resolved "https://registry.npmjs.org/@prisma/engines/-/engines-4.12.0.tgz"
+  integrity sha512-0alKtnxhNB5hYU+ymESBlGI4b9XrGGSdv7Ud+8TE/fBNOEhIud0XQsAR+TrvUZgS4na5czubiMsODw0TUrgkIA==
 
 "@sapphire/async-queue@^1.1.4", "@sapphire/async-queue@^1.5.0":
   version "1.5.0"
@@ -894,12 +894,12 @@ prettier@2.7.1:
   resolved "https://registry.npmjs.org/prettier/-/prettier-2.7.1.tgz"
   integrity sha512-ujppO+MkdPqoVINuDFDRLClm7D78qbDt0/NR+wp5FqEZOoTNAjPHWj17QRhu7geIHJfcNhRk1XVQmF8Bp3ye+g==
 
-prisma@*, prisma@^3.3.0:
-  version "3.15.2"
-  resolved "https://registry.npmjs.org/prisma/-/prisma-3.15.2.tgz"
-  integrity sha512-nMNSMZvtwrvoEQ/mui8L/aiCLZRCj5t6L3yujKpcDhIPk7garp8tL4nMx2+oYsN0FWBacevJhazfXAbV1kfBzA==
+prisma@*, prisma@^4.12.0:
+  version "4.12.0"
+  resolved "https://registry.npmjs.org/prisma/-/prisma-4.12.0.tgz"
+  integrity sha512-xqVper4mbwl32BWzLpdznHAYvYDWQQWK2tBfXjdUD397XaveRyAP7SkBZ6kFlIg8kKayF4hvuaVtYwXd9BodAg==
   dependencies:
-    "@prisma/engines" "3.15.1-1.461d6a05159055555eb7dfb337c9fb271cbd4d7e"
+    "@prisma/engines" "4.12.0"
 
 proxy-addr@~2.0.7:
   version "2.0.7"

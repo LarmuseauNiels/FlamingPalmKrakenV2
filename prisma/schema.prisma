@@ -23,8 +23,8 @@ model Members {
   PointHistory                          PointHistory[]
   Points                                Points?
   Presence                              Presence[]
-  Refferals_MembersToRefferals_refferer Refferals[]           @relation("MembersToRefferals_refferer")
   Refferals_MembersToRefferals_userid   Refferals[]           @relation("MembersToRefferals_userid")
+  Refferals_MembersToRefferals_refferer Refferals[]           @relation("MembersToRefferals_refferer")
   SSReceiver                            SSReceiver?
   SSSender                              SSSender?
   VoiceConnected                        VoiceConnected[]
@@ -90,8 +90,8 @@ model SSSender {
   HasPaypal Boolean  @default(false)
   HasINTER  Boolean  @default(false)
   IsSend    Boolean? @default(false)
-  Members   Members  @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "SSSender_Members_ID_fk")
   SSLink    SSLink?
+  Members   Members  @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "SSSender_Members_ID_fk")
 }
 
 model VoiceConnected {
@@ -123,9 +123,9 @@ model i_Building_Island {
   IslandID        String          @db.VarChar(25)
   level           Int             @default(1) @db.UnsignedTinyInt
   upgrading       Int?
-  i_Building      i_Building      @relation(fields: [BuildingID], references: [ID], onUpdate: Restrict, map: "i_Building_Island_ibfk_3")
-  i_Island        i_Island        @relation(fields: [IslandID], references: [ID], onDelete: Cascade, onUpdate: Restrict, map: "i_Building_Island_ibfk_2")
   i_BuildingLevel i_BuildingLevel @relation(fields: [level, BuildingID], references: [Level, BuildingID], onUpdate: Restrict, map: "i_Building_Island_i_BuildingLevel_Level_BuildingID_fk")
+  i_Island        i_Island        @relation(fields: [IslandID], references: [ID], onDelete: Cascade, onUpdate: Restrict, map: "i_Building_Island_ibfk_2")
+  i_Building      i_Building      @relation(fields: [BuildingID], references: [ID], onUpdate: Restrict, map: "i_Building_Island_ibfk_3")
 
   @@id([BuildingID, IslandID])
   @@index([IslandID], map: "IslandID")
@@ -141,8 +141,8 @@ model i_Island {
   Currency          Int                 @default(0) @db.UnsignedInt
   Food              Int                 @default(0) @db.UnsignedInt
   Manpower          Int                 @default(0) @db.UnsignedInt
-  Members           Members             @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "i_Island_ibfk_1")
   i_Building_Island i_Building_Island[]
+  Members           Members             @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "i_Island_ibfk_1")
   i_Unit_Island     i_Unit_Island[]
 }
 
@@ -180,8 +180,8 @@ model i_Unit_Island {
   IslandID String   @db.VarChar(25)
   UnitID   Int      @db.UnsignedInt
   count    Int      @db.UnsignedSmallInt
-  i_Island i_Island @relation(fields: [IslandID], references: [ID], onDelete: Cascade, map: "i_Unit_Island_ibfk_2")
   i_Unit   i_Unit   @relation(fields: [UnitID], references: [ID], onDelete: Cascade, map: "i_Unit_Island_ibfk_1")
+  i_Island i_Island @relation(fields: [IslandID], references: [ID], onDelete: Cascade, map: "i_Unit_Island_ibfk_2")
 
   @@id([IslandID, UnitID])
   @@index([UnitID], map: "UnitID")
@@ -195,8 +195,8 @@ model SSReceiver {
   RequiresPaypal Boolean  @default(false)
   RequiresINTER  Boolean  @default(false)
   IsReceived     Boolean? @default(false)
-  Members        Members  @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "SSReceiver_Members_ID_fk")
   SSLink         SSLink?
+  Members        Members  @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "SSReceiver_Members_ID_fk")
 }
 
 model Refferals {
@@ -206,8 +206,8 @@ model Refferals {
   RegularRewarded                     DateTime? @db.DateTime(0)
   MemberRewarded                      DateTime? @db.DateTime(0)
   CreatedTimestamp                    DateTime? @default(now()) @db.DateTime(0)
-  Members_MembersToRefferals_refferer Members   @relation("MembersToRefferals_refferer", fields: [refferer], references: [ID], onUpdate: Restrict, map: "Refferals_Members_ID_fk_2")
   Members_MembersToRefferals_userid   Members   @relation("MembersToRefferals_userid", fields: [userid], references: [ID], onUpdate: Restrict, map: "Refferals_Members_ID_fk")
+  Members_MembersToRefferals_refferer Members   @relation("MembersToRefferals_refferer", fields: [refferer], references: [ID], onUpdate: Restrict, map: "Refferals_Members_ID_fk_2")
 
   @@id([userid, refferer])
   @@index([refferer], map: "Refferals_Members_ID_fk_2")
@@ -253,4 +253,11 @@ model Achievement_History {
   @@index([AchievementID], map: "Achievement_History_Achievements_ID_fk")
   @@index([UserID], map: "Achievement_History_Members_ID_fk")
   @@index([TimeStamp], map: "Achievement_History_TimeStamp_index")
+}
+
+model Login_History {
+  UserID         String?   @db.VarChar(25)
+  TimeStamp      DateTime? @default(now()) @db.Timestamp(0)
+  DiscordProfile Json?
+  Id             Int       @id @default(autoincrement())
 }

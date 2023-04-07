@@ -1,7 +1,6 @@
 const fs = require("fs");
 const { REST } = require("@discordjs/rest");
 const { Routes } = require("discord-api-types/v9");
-const { clientId, token } = require("./config.js");
 
 const guildCommands = [];
 const commands = [];
@@ -25,10 +24,10 @@ for (const file of contextMenus) {
   guildCommands.push(menu.data.toJSON());
 }
 
-const rest = new REST({ version: "9" }).setToken(token);
+const rest = new REST({ version: "9" }).setToken(process.env.TOKEN);
 
 rest
-  .put(Routes.applicationCommands(clientId), { body: commands })
+  .put(Routes.applicationCommands(process.env.CLIENT_ID), { body: commands })
   .then(() =>
     console.log(
       "Successfully registered " + commands.length + " application commands."
@@ -37,9 +36,15 @@ rest
   .catch(console.error);
 
 rest
-  .put(Routes.applicationGuildCommands(clientId, "530537522355240961"), {
-    body: guildCommands,
-  })
+  .put(
+    Routes.applicationGuildCommands(
+      process.env.CLIENT_ID,
+      process.env.GUILD_ID
+    ),
+    {
+      body: guildCommands,
+    }
+  )
   .then(() =>
     console.log(
       "Successfully registered " + guildCommands.length + " guild commands."

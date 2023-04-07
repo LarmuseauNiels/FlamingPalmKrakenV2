@@ -16,7 +16,7 @@ module.exports = async function (client) {
   cron.schedule("30 0,15,30,45 * * * *", () => {
     console.log("running statistics tracking cron job");
     try {
-      client.guilds.fetch("530537522355240961").then((guild) => {
+      client.guilds.fetch(process.env.GUILD_ID).then((guild) => {
         guild.members.fetch().then((members) => {
           members.forEach((member) => {
             let q = knownuserCache.find((ku) => ku.ID === member.user.id);
@@ -103,6 +103,8 @@ module.exports = async function (client) {
           client.events.forEach((event) => {
             let timespanToGo =
               new Date(event.scheduledStartTimestamp).getTime() - Date.now();
+            let description =
+              event?.description !== null ? event.description : "";
             if (timespanToGo / 60000 < 35 && timespanToGo / 60000 > 25) {
               const eventEmbed = new EmbedBuilder()
                 .setColor(0x0099ff)
@@ -112,7 +114,7 @@ module.exports = async function (client) {
                   name: event.creator.username,
                   iconURL: event.creator.avatarURL(),
                 })
-                .setDescription(event.description ? event.description : "")
+                .setDescription(description)
                 .setImage(event.coverImageURL({ size: 512 }))
                 .setTimestamp(event.scheduledStartTimestamp)
                 .setFooter({
