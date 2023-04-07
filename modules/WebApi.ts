@@ -34,7 +34,7 @@ export class WebApi {
               DiscordProfile: profile,
             },
           });
-          if (profile.guilds.any((g) => g.id == process.env.GUILD_ID)) {
+          if (profile.guilds.map((g) => g.id).includes(process.env.GUILD_ID)) {
             process.nextTick(function () {
               return done(null, profile);
             });
