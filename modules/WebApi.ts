@@ -24,10 +24,12 @@ export class WebApi {
           clientSecret: process.env.oauthSecret,
           callbackURL: "callback",
           scope: ["identify", "guilds"],
+          prompt: prompt,
         },
         function (accessToken, refreshToken, profile, done) {
-          console.log(profile);
-          return done(null, profile);
+          process.nextTick(function () {
+            return done(null, profile);
+          });
         }
       )
     );
@@ -37,7 +39,7 @@ export class WebApi {
         secret: process.env.oauthSecret,
         resave: false,
         saveUninitialized: false,
-        cookie: { secure: true },
+        //cookie: { secure: true },
       })
     );
     app.use(passport.initialize());
