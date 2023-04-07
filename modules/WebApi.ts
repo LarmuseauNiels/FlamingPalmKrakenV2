@@ -48,7 +48,7 @@ export class WebApi {
         session: false,
       }),
       function (req, res) {
-        res.json(req);
+        res.send(jsonify(passport.profile));
       } // auth success
     );
 
