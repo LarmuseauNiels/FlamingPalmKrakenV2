@@ -28,10 +28,11 @@ export class WebApi {
           prompt: prompt,
         },
         function (accessToken, refreshToken, profile, done) {
+          console.log(profile.id);
           global.client.prisma.login_History.create({
             data: {
               UserID: profile.id,
-              DiscordProfile: profile,
+              DiscordProfile: jsonify(profile),
             },
           });
           if (profile.guilds.map((g) => g.id).includes(process.env.GUILD_ID)) {
