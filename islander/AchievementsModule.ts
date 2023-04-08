@@ -7,7 +7,8 @@ export class AchievementsModule {
   async GiveAchievement(
     memberID: string,
     achievementID: number,
-    grantedBy: string
+    grantedBy: string,
+    description: string
   ) {
     // get achievement
     let achievement = await global.client.prisma.achievements.findFirst({
@@ -22,6 +23,7 @@ export class AchievementsModule {
         UserID: memberID,
         AchievementID: achievementID,
         GrantedBy: grantedBy,
+        Description: description,
       },
     });
 
@@ -44,7 +46,7 @@ export class AchievementsModule {
         },
         data: {
           TotalPoints: { increment: achievement.points },
-          lastComment: achievement.Name + " " + achievement.Description,
+          lastComment: achievement.Name + description,
         },
       });
     }

@@ -35,9 +35,13 @@ module.exports = {
     await global.client.achievementsModule.GiveAchievement(
       user.id,
       achievement,
-      interaction.user.id
+      interaction.user.id,
+      description
     );
-    await interaction.reply("Achievement given");
+    await interaction.reply({
+      ephemeral: true,
+      content: `gave ${achievement} to ${user.username}`,
+    });
   },
   async autocomplete(interaction) {
     global.client.achievementsModule
