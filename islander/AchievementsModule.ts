@@ -46,7 +46,8 @@ export class AchievementsModule {
         },
         data: {
           TotalPoints: { increment: achievement.points },
-          lastComment: achievement.Name + " - " + description,
+          lastComment:
+            achievement.Name + (description != null ? description : ""),
         },
       });
     }
