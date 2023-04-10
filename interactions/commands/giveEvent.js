@@ -63,7 +63,7 @@ module.exports = {
             results.map((u) => {
               return {
                 label: u.DisplayName,
-                description: `Give ${u.DisplayName} achievement`,
+                description: `Give ${u.DisplayName} the achievement`,
                 value: u.ID,
               };
             })
@@ -95,7 +95,7 @@ module.exports = {
           description
         );
         await interaction.reply({
-          ephemeral: true,
+          ephemeral: false,
           content: `gave achievement to ${
             results.find((u) => u.ID === selectedOption).DisplayName
           }`,
