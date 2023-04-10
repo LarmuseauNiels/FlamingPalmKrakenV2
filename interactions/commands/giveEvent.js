@@ -87,7 +87,19 @@ module.exports = {
       // listen for selected option
       collector.on("collect", async (interaction) => {
         const selectedOption = interaction.values[0]; // get the first selected option
-        await interaction.reply(`You selected option: ${selectedOption}`);
+
+        await global.client.achievementsModule.GiveAchievement(
+          selectedOption,
+          achievement,
+          interaction.user.id,
+          description
+        );
+        await interaction.reply({
+          ephemeral: true,
+          content: `gave achievement to ${
+            results.find((u) => u.ID === selectedOption).DisplayName
+          }`,
+        });
       });
     }
   },
