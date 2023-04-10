@@ -27,13 +27,15 @@ module.exports = {
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   async execute(interaction) {
-    const hour =
-      +interaction.options.getString("time") -
-      new Date().getTimezoneOffset() / 60;
+    const hour = +interaction.options.getString("time");
+    let diff = new Date().getTimezoneOffset() / 60;
+    console.log(diff);
 
     console.log(hour);
     let results = await globalThis.client.prisma
-      .$queryRaw`select distinct M.ID, M.DisplayName from VoiceConnected join Members M on M.ID = VoiceConnected.ID where HOUR(TimeStamp) = ${hour} and DATE(TimeStamp) = DATE(NOW()) `;
+      .$queryRaw`select distinct M.ID, M.DisplayName from VoiceConnected join Members M on M.ID = VoiceConnected.ID where HOUR(TimeStamp) = ${
+      hour + diff
+    } and DATE(TimeStamp) = DATE(NOW()) `;
 
     console.log(results);
     await interaction.reply({
@@ -42,20 +44,20 @@ module.exports = {
     });
     //give achievement
     /*const user = interaction.options.getUser("user");
-                                                        const achievement = +interaction.options.getString("achievement");
-                                                        const description = interaction.options.getString("description");
-                                                        console.log(achievement, interaction.options.getString("achievement"));
-                                                        await global.client.achievementsModule.GiveAchievement(
-                                                            user.id,
-                                                            achievement,
-                                                            interaction.user.id,
-                                                            description
-                                                        );
-                                                        await interaction.reply({
-                                                            ephemeral: true,
-                                                            content: `gave ${achievement} to ${user.username}`,
-                                                        });
-                                                        */
+                                                            const achievement = +interaction.options.getString("achievement");
+                                                            const description = interaction.options.getString("description");
+                                                            console.log(achievement, interaction.options.getString("achievement"));
+                                                            await global.client.achievementsModule.GiveAchievement(
+                                                                user.id,
+                                                                achievement,
+                                                                interaction.user.id,
+                                                                description
+                                                            );
+                                                            await interaction.reply({
+                                                                ephemeral: true,
+                                                                content: `gave ${achievement} to ${user.username}`,
+                                                            });
+                                                            */
   },
   async autocomplete(interaction) {
     global.client.achievementsModule

@@ -64,7 +64,7 @@ class FpgClient extends Client {
 
   log(loggText) {
     console.log(loggText);
-    //global.client.logChannel.send("```" + loggText + "```");
+    global.client.logChannel.send("```" + loggText + "```");
   }
 }
 
