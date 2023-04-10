@@ -41,10 +41,10 @@ module.exports = {
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   async execute(interaction) {
+    const achievement = +interaction.options.getString("achievement");
+    const description = interaction.options.getString("description");
     let hour = +interaction.options.getString("time");
-
     hour = hour - getOffset("Europe/Brussels") / 60;
-
     let results = new Array();
     results = await globalThis.client.prisma
       .$queryRaw`select distinct M.ID, M.DisplayName from VoiceConnected join Members M on M.ID = VoiceConnected.ID where HOUR(TimeStamp) = ${hour} and DATE(TimeStamp) = DATE(NOW()) `;
@@ -57,42 +57,39 @@ module.exports = {
     } else {
       let row = new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
-          .setCustomId("achievementGiver")
+          .setCustomId(`giveAchievement-${achievement}`)
           .setPlaceholder("Select users")
           .addOptions(
             results.map((u) => {
               return {
                 label: u.DisplayName,
-                description: `Give ${u.ID} achievement`,
+                description: `Give ${u.DisplayName} achievement`,
                 value: u.ID,
               };
             })
           )
       );
 
-      await interaction.reply({
+      const message = await interaction.reply({
         ephemeral: true,
         content: `Selecting the people will instantly grant them the event`,
         components: [row],
       });
-    }
 
-    //give achievement
-    /*const user = interaction.options.getUser("user");
-                                                                                                                    const achievement = +interaction.options.getString("achievement");
-                                                                                                                    const description = interaction.options.getString("description");
-                                                                                                                    console.log(achievement, interaction.options.getString("achievement"));
-                                                                                                                    await global.client.achievementsModule.GiveAchievement(
-                                                                                                                        user.id,
-                                                                                                                        achievement,
-                                                                                                                        interaction.user.id,
-                                                                                                                        description
-                                                                                                                    );
-                                                                                                                    await interaction.reply({
-                                                                                                                        ephemeral: true,
-                                                                                                                        content: `gave ${achievement} to ${user.username}`,
-                                                                                                                    });
-                                                                                                                    */
+      // create a collector for the select menu event
+      const filter = (interaction) =>
+        interaction.customId === `giveAchievement-${achievement}`;
+      const collector = message.createMessageComponentCollector({
+        filter,
+        time: 60000,
+      });
+
+      // listen for selected option
+      collector.on("collect", async (interaction) => {
+        const selectedOption = interaction.values[0]; // get the first selected option
+        await interaction.reply(`You selected option: ${selectedOption}`);
+      });
+    }
   },
   async autocomplete(interaction) {
     global.client.achievementsModule
