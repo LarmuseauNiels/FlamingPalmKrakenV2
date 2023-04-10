@@ -1,4 +1,11 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
+
+const getOffset = (timeZone = "UTC", date = new Date()) => {
+  const utcDate = new Date(date.toLocaleString("en-US", { timeZone: "UTC" }));
+  const tzDate = new Date(date.toLocaleString("en-US", { timeZone }));
+  return (tzDate.getTime() - utcDate.getTime()) / 6e4;
+};
+
 module.exports = {
   name: "give-event",
   data: new SlashCommandBuilder()
@@ -28,13 +35,12 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   async execute(interaction) {
     const hour = +interaction.options.getString("time");
-    let diff = new Date().getTimezoneOffset() / 60;
-    console.log(diff);
 
-    console.log(hour);
+    const
+
     let results = await globalThis.client.prisma
       .$queryRaw`select distinct M.ID, M.DisplayName from VoiceConnected join Members M on M.ID = VoiceConnected.ID where HOUR(TimeStamp) = ${
-      hour + diff
+      hour - (getOffset('Europe/Brussels')/60)
     } and DATE(TimeStamp) = DATE(NOW()) `;
 
     console.log(results);
