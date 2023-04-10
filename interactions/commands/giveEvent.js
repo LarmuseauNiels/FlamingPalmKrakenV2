@@ -71,7 +71,7 @@ module.exports = {
       );
 
       const message = await interaction.reply({
-        ephemeral: true,
+        ephemeral: false,
         content: `Selecting the people will instantly grant them the event`,
         components: [row],
       });
