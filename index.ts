@@ -4,6 +4,7 @@ import { Islander } from "./islander/islander";
 import { AchievementsModule } from "./islander/AchievementsModule";
 import { WebApi } from "./modules/WebApi";
 import Bugsnag from "@bugsnag/js";
+
 const fs = require("fs");
 const {
   Client,
@@ -63,7 +64,7 @@ class FpgClient extends Client {
 
   log(loggText) {
     console.log(loggText);
-    global.client.logChannel.send("```" + loggText + "```");
+    //global.client.logChannel.send("```" + loggText + "```");
   }
 }
 
@@ -74,6 +75,7 @@ Bugsnag.start({
 global.bugsnag = Bugsnag;
 global.client = new FpgClient();
 loadCommands();
+
 async function loadCommands(): Promise<void> {
   global.client.commands = await loadInteractionActions("commands");
   global.client.buttons = await loadInteractionActions("buttons");

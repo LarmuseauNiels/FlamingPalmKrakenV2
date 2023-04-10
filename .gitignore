@@ -3,7 +3,7 @@ node_modules/*
 config.js
 config.js
 .env
-privateconfig.json
+env.ps1
 /.env
 /bin/
 .idea
