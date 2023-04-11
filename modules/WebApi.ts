@@ -100,6 +100,14 @@ export class WebApi {
       res.send(jsonify(req.user));
     });
 
+    app.post(
+      "/profile",
+      passport.authenticate("jwt", { session: false }),
+      function (req, res) {
+        res.send(jsonify(req.user));
+      }
+    );
+
     legacyEndPoints(app);
     app.get("/", function (req, res) {
       res.send("KRAKEN API");

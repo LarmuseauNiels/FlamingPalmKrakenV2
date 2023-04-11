@@ -3,5 +3,4 @@ export class User {
   public username: string;
   public avatar: string;
   public points: number;
-  public spas: string;
 }
