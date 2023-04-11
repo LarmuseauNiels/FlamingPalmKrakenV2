@@ -53,9 +53,11 @@ export class WebApi {
 
     passport.use(
       new JwtStrategy(opts, function (jwt_payload, done) {
+        console.log(jwt_payload);
         global.client.prisma.members
           .findUnique({ where: { ID: jwt_payload.userId } })
           .then((member) => {
+            console.log(member);
             if (member) {
               return done(null, member);
             }
