@@ -6,17 +6,8 @@ import jwt from "jsonwebtoken";
 import { legacyEndPoints } from "./ApiFunctions/LegacyEndPoints";
 import { jsonify } from "./ApiFunctions/Helpers";
 const DiscordStrategy = require("passport-discord").Strategy;
-const JwtStrategy = require("passport-jwt").Strategy;
-const ExtractJwt = require("passport-jwt").ExtractJwt;
-
 const app = express();
 const prompt = "consent";
-
-var opts: any = {};
-opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
-opts.secretOrKey = process.env.TOKEN;
-opts.issuer = "https://krakenbot.serv.larmuseau.ovh";
-opts.audience = "https://flamingpalm.com";
 
 export class WebApi {
   constructor() {
@@ -50,22 +41,6 @@ export class WebApi {
         }
       )
     );
-
-    passport.use(
-      new JwtStrategy(opts, function (jwt_payload, done) {
-        console.log(jwt_payload);
-        global.client.prisma.members
-          .findUnique({ where: { ID: jwt_payload.userId } })
-          .then((member) => {
-            console.log(member);
-            if (member) {
-              return done(null, member);
-            }
-            return done(null, false);
-          });
-      })
-    );
-
     app.use(cors());
     app.use(
       session({
@@ -97,28 +72,17 @@ export class WebApi {
         res.send(token);
       } // auth success
     );
-
-    app.get("/test", checkAuth, function (req, res) {
+    app.post("/profile", authenticateToken, function (req, res) {
       res.send(jsonify(req.user));
     });
 
-    app.post(
-      "/profile",
-      passport.authenticate("jwt", { session: false }),
-      function (req, res) {
-        res.send(jsonify(req.user));
-      }
-    );
+    app.get("/test", function (req, res) {});
 
     legacyEndPoints(app);
     app.get("/", function (req, res) {
       res.send("KRAKEN API");
     });
     this.load();
-    function checkAuth(req, res, next) {
-      if (req.isAuthenticated()) return next();
-      res.send(401);
-    }
   }
 
   load() {
@@ -136,4 +100,24 @@ async function logDiscordLogin(profile) {
     },
   });
   console.log(`Logged discord login: ${profile.username} ${result.Id}`);
+}
+
+const jwt = require("jsonwebtoken");
+
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  console.log(token);
+
+  if (token == null) return res.sendStatus(401);
+
+  jwt.verify(token, process.env.TOKEN as string, (err: any, user: any) => {
+    console.log(err);
+
+    if (err) return res.sendStatus(403);
+
+    req.user = user;
+
+    next();
+  });
 }
