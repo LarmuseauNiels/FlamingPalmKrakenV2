@@ -11,12 +11,6 @@ const prompt = "consent";
 
 export class WebApi {
   constructor() {
-    passport.serializeUser(function (user, done) {
-      done(null, user);
-    });
-    passport.deserializeUser(function (obj, done) {
-      done(null, obj);
-    });
     passport.use(
       new DiscordStrategy(
         {
@@ -30,7 +24,7 @@ export class WebApi {
           logDiscordLogin(profile);
           if (profile.guilds.map((g) => g.id).includes(process.env.GUILD_ID)) {
             process.nextTick(function () {
-              return done(null, profile.id);
+              return done(null, profile);
             });
           } else {
             global.client.log(
@@ -42,16 +36,7 @@ export class WebApi {
       )
     );
     app.use(cors());
-    app.use(
-      session({
-        secret: process.env.oauthSecret,
-        resave: false,
-        saveUninitialized: false,
-        //cookie: { secure: true },
-      })
-    );
     app.use(passport.initialize());
-    app.use(passport.session());
 
     //auth test
     app.get(
@@ -64,11 +49,17 @@ export class WebApi {
     );
     app.get(
       "/callback",
-      passport.authenticate("discord", {
-        failureRedirect: "/",
-      }),
+      passport.authenticate("discord", { session: false }),
       function (req, res) {
-        let token = jwt.sign({ userId: req.user }, process.env.TOKEN);
+        let profile: any = req.user;
+        let token = jwt.sign(
+          {
+            id: profile.id,
+            username: profile.username,
+            avatar: profile.avatar,
+          },
+          process.env.TOKEN
+        );
         res.send(token);
       } // auth success
     );
@@ -107,7 +98,6 @@ const jwt = require("jsonwebtoken");
 function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
-  console.log(token);
 
   if (token == null) return res.sendStatus(401);
 
