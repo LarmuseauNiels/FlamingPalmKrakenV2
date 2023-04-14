@@ -1,10 +1,10 @@
 import express from "express";
 import cors from "cors";
 import passport from "passport";
-import session from "express-session";
 import jwt from "jsonwebtoken";
 import { legacyEndPoints } from "./ApiFunctions/LegacyEndPoints";
 import { jsonify } from "./ApiFunctions/Helpers";
+import { memberEndPoints } from "./ApiFunctions/MemberEndPoints";
 const DiscordStrategy = require("passport-discord").Strategy;
 const app = express();
 const prompt = "consent";
@@ -63,12 +63,8 @@ export class WebApi {
         res.send(token);
       } // auth success
     );
-    app.post("/profile", authenticateToken, function (req, res) {
-      res.send(jsonify(req.user));
-    });
 
-    app.get("/test", function (req, res) {});
-
+    memberEndPoints(app);
     legacyEndPoints(app);
     app.get("/", function (req, res) {
       res.send("KRAKEN API");
@@ -91,23 +87,4 @@ async function logDiscordLogin(profile) {
     },
   });
   console.log(`Logged discord login: ${profile.username} ${result.Id}`);
-}
-
-const jwt = require("jsonwebtoken");
-
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-
-  if (token == null) return res.sendStatus(401);
-
-  jwt.verify(token, process.env.TOKEN as string, (err: any, user: any) => {
-    console.log(err);
-
-    if (err) return res.sendStatus(403);
-
-    req.user = user;
-
-    next();
-  });
 }
