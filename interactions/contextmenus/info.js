@@ -26,11 +26,12 @@ module.exports = {
     lastOnline = await global.client.prisma
       .$queryRaw`select DATE_FORMAT(date(TimeStamp), '%Y-%m-%d' ) as date, count(*)/4 as hours
             from VoiceConnected 
-            where ID = '178435947816419328' 
+            where ID = '${interaction.targetId}'
             group by DATE_FORMAT(date(TimeStamp), '%Y-%m-%d' ) 
             order by date desc 
             limit 10`;
-    lastOnline.sort((a, b) => a.date - b.date);
+
+    lastOnline.reverse();
     let labels = lastOnline.map((x) => x.date).join(",");
     let data = lastOnline.map((x) => x.hours).join(",");
     let chart = `https://quickchart.io/chart/render/zm-45881e0a-49bc-4498-8b62-d64ff3adb44a?labels=${labels}&data1=${data}`;
