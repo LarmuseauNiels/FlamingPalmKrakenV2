@@ -24,15 +24,15 @@ module.exports = {
     });
     let lastOnline = new Array();
     lastOnline = await global.client.prisma
-      .$queryRaw`select date(TimeStamp) as date, count(*)/4 as hours
+      .$queryRaw`select DATE_FORMAT(date(TimeStamp), '%Y-%m-%d' ) as date, count(*)/4 as hours
             from VoiceConnected 
             where ID = '178435947816419328' 
-            group by date(TimeStamp) 
+            group by DATE_FORMAT(date(TimeStamp), '%Y-%m-%d' ) 
             order by date desc 
             limit 10`;
     let labels = lastOnline.map((x) => x.date).join(",");
     let data = lastOnline.map((x) => x.hours).join(",");
-    let chart = `https://quickchart.io/chart/render/zm-83eae2c8-25d3-4d1f-899c-5bcc188ffb3e?title=Last 10 days online&labels=${labels}&data1=${data}`;
+    let chart = `https://quickchart.io/chart/render/zm-83eae2c8-25d3-4d1f-899c-5bcc188ffb3e?labels=${labels}&data1=${data}`;
     console.log(chart);
 
     interaction.guild.members.fetch(interaction.targetId).then((member) => {
@@ -67,6 +67,7 @@ module.exports = {
             inline: false,
           }
         )
+        .setImage(chart)
         .setTimestamp();
       interaction.editReply({
         content: chart,
