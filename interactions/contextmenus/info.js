@@ -30,10 +30,10 @@ module.exports = {
             group by DATE_FORMAT(date(TimeStamp), '%Y-%m-%d' ) 
             order by date desc 
             limit 10`;
-    lastOnline.sort((a, b) => b.date - a.date);
+    lastOnline.sort((a, b) => a.date - b.date);
     let labels = lastOnline.map((x) => x.date).join(",");
     let data = lastOnline.map((x) => x.hours).join(",");
-    let chart = `https://quickchart.io/chart/render/zm-83eae2c8-25d3-4d1f-899c-5bcc188ffb3e?labels=${labels}&data1=${data}`;
+    let chart = `https://quickchart.io/chart/render/zm-45881e0a-49bc-4498-8b62-d64ff3adb44a?labels=${labels}&data1=${data}`;
     console.log(chart);
 
     interaction.guild.members.fetch(interaction.targetId).then((member) => {
@@ -71,7 +71,6 @@ module.exports = {
         .setImage(chart)
         .setTimestamp();
       interaction.editReply({
-        content: chart,
         embeds: [embed],
         ephemeral: true,
       });
