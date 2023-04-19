@@ -795,7 +795,7 @@ export default class Rank {
       ctx.fillStyle = this.data.level.textColor;
       ctx.fillText(
         this.data.level.displayText,
-        800 -
+        740 -
           // @ts-ignore
           ctx.measureText(Util.toAbbrev(parseInt(this.data.level.data))).width,
         82
