@@ -1,8 +1,5 @@
-import Canvas, { createCanvas, Image } from "@napi-rs/canvas";
 import { AttachmentBuilder, User } from "discord.js";
-
-const { request } = require("undici");
-const { Rank } = require("./profile");
+const { Rank } = require("../islander/profile");
 
 export class AchievementsModule {
   async GiveAchievement(
