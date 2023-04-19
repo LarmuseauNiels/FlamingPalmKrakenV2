@@ -5,7 +5,7 @@ const {
   PermissionFlagsBits,
 } = require("discord.js");
 module.exports = {
-  name: "info",
+  name: "remove",
   data: new ContextMenuCommandBuilder()
     .setName("remove")
     .setType(ApplicationCommandType.Message)
