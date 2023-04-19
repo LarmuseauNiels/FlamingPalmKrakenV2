@@ -19,7 +19,7 @@ module.exports = {
       const removedMessageEmbed = new EmbedBuilder()
         .setTitle("Message removed")
         .setDescription(
-          `${author.displayName}'s message has been removed by ${interactionUser.displayName}`
+          `${author.username}'s message has been removed by ${interactionUser.username}`
         )
         .addFields(
           { name: "Message", value: content, inline: false },
@@ -33,7 +33,7 @@ module.exports = {
       const userMessageEmbed = new EmbedBuilder()
         .setTitle("Your message has been removed")
         .setDescription(
-          `Your message has been removed by ${interactionUser.displayName}`
+          `Your message has been removed by ${interactionUser.username}`
         )
         .addFields(
           { name: "Message", value: content, inline: false },

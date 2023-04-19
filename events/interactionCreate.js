@@ -2,6 +2,9 @@ module.exports = {
   name: "interactionCreate",
   async execute(interaction) {
     global.bugsnag.startSession();
+    global.bugsnag.leaveBreadcrumb(
+      interaction.commandName ?? "No command name"
+    );
     try {
       if (interaction.isButton()) {
         let buttonId = interaction.customId.split("_")[0];
