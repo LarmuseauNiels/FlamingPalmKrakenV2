@@ -769,9 +769,9 @@ export default class Rank {
 
     // apply username
     !this.data.renderEmojis
-      ? ctx.fillText(`${name}`, 257 + 18.5, 164)
+      ? ctx.fillText(`${name}`, 257 + 18.5, 82)
       : // @ts-ignore
-        await Util.renderEmoji(ctx, name, 257 + 18.5, 164);
+        await Util.renderEmoji(ctx, name, 257 + 18.5, 82);
 
     // draw discriminator
     if (!this.data.discriminator.discrim)
@@ -848,12 +848,12 @@ export default class Rank {
     ctx.textAlign = "start";
     ctx.fillText(
       "/ " + Util.toAbbrev(this.data.requiredXP.data),
-      670 + ctx.measureText(Util.toAbbrev(this.data.currentXP.data)).width + 15,
+      700 + ctx.measureText(Util.toAbbrev(this.data.currentXP.data)).width + 15,
       164
     );
 
     ctx.fillStyle = this.data.currentXP.color;
-    ctx.fillText(Util.toAbbrev(this.data.currentXP.data), 670, 164);
+    ctx.fillText(Util.toAbbrev(this.data.currentXP.data), 700, 164);
 
     // draw progressbar
     ctx.beginPath();
