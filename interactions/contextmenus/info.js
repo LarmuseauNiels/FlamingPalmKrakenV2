@@ -24,9 +24,8 @@ module.exports = {
     });
     let lastOnline = new Array();
     lastOnline = await global.client.prisma
-      .$queryRaw`select DATE_FORMAT(date(TimeStamp), '%Y-%m-%d' ) as date, count(*)/4 as hours
-            from VoiceConnected 
-            where ID = '${interaction.targetId}'
+      .$queryRaw`select DATE_FORMAT(date(TimeStamp), '%Y-%m-%d' ) as date, count(*)/4 as hours  from VoiceConnected 
+            where ID = ${interaction.targetId}
             group by DATE_FORMAT(date(TimeStamp), '%Y-%m-%d' ) 
             order by date desc 
             limit 10`;
