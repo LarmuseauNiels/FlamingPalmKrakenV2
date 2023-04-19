@@ -22,6 +22,17 @@ module.exports = {
         },
       },
     });
+    let lastOnline = new Array();
+    lastOnline = await global.client.prisma
+      .$queryRaw`select date(TimeStamp) as date, count(*)/4 as hours
+            from VoiceConnected 
+            where ID = '178435947816419328' 
+            group by date(TimeStamp) 
+            order by date desc 
+            limit 10`;
+    let labels = lastOnline.map((x) => x.date).join(",");
+    let data = lastOnline.map((x) => x.hours).join(",");
+
     interaction.guild.members.fetch(interaction.targetId).then((member) => {
       let embed = new EmbedBuilder()
         .setTitle(member.user.username)
@@ -53,7 +64,11 @@ module.exports = {
             } ${dbinfo?.PointHistory[0]?.points ?? 0}:palm_tree:`,
             inline: false,
           }
-        );
+        )
+        .setImage(
+          `https://quickchart.io/chart/render/zm-ac7d2566-6186-4be1-b415-bc30470a6d6b?title=Last 10 days online&labels=${labels}&data1=${data}`
+        )
+        .setTimestamp();
       interaction.editReply({ embeds: [embed], ephemeral: true });
     });
   },

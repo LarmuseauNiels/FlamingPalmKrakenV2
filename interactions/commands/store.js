@@ -27,8 +27,9 @@ module.exports = {
       .setDescription("Flamingpalm points store")
       .setTimestamp()
       .setFooter({
-        text: "Work in progress flamingpalm store",
-        iconURL: "https://flamingpalm.com/images/FlamingPalmLogoSmall.png",
+        text: "Flamingpalm store",
+        iconURL:
+          "https://flamingpalm.com/assets/images/logo/FlamingPalmLogoSmall.png",
       });
     let rewards = await global.client.prisma.reward.findMany({
       include: { RewardItem: true },
