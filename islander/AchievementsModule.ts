@@ -1,5 +1,5 @@
 import { AttachmentBuilder, User } from "discord.js";
-const { Rank } = require("../islander/profile");
+import Rank from "../islander/profile";
 
 export class AchievementsModule {
   async GiveAchievement(

@@ -261,7 +261,7 @@ const Util = class Util {
  * @property {boolean} [renderEmojis=false] If it should render emojis
  */
 
-class Rank {
+export default class Rank {
   /**
      * Creates Rank card
      * @example
@@ -1009,5 +1009,3 @@ class Rank {
     return parseInt(width) || 0;
   }
 }
-
-module.exports = Rank;
