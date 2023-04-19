@@ -25,9 +25,6 @@ module.exports = {
         url: "https://flamingpalm.com",
       })
       .setDescription("Flamingpalm points store")
-      //.setThumbnail('https://i.imgur.com/AfFp7pu.png')
-
-      //.setImage('https://www.kenney.nl/assets/hexagon-kit/sample.png')
       .setTimestamp()
       .setFooter({
         text: "Work in progress flamingpalm store",
@@ -39,8 +36,8 @@ module.exports = {
     });
     rewards.forEach((reward) => {
       if (reward.visible) {
-        let stock = reward.RewardItem.filter((x) => x.RedeemedBy == "").length;
-        if (stock == 0)
+        let stock = reward.RewardItem.filter((x) => x.RedeemedBy === "").length;
+        if (stock === 0)
           embed.addFields({
             name: reward.Title,
             value: `out of stock`,
@@ -51,12 +48,14 @@ module.exports = {
             name: reward.Title,
             value: `**${reward.Price}:palm_tree:**`,
             inline: true,
-          }); //${reward.Description }\n ${stock} key${stock == 1?'':'s'} in stock\n
+          });
       }
     });
     let row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setURL("https://flamingpalm.com/members")
+        .setURL(
+          "https://discord.com/oauth2/authorize?state=xIMl4hl4dpSusL6n3hahJ6P3IjV8i2O6&scope=identify+guilds&response_type=code&approval_prompt=auto&client_id=534686392589221898&redirect_uri=https%3A%2F%2Fflamingpalm.com%2Flogin"
+        )
         .setLabel("Redeem on website")
         .setStyle(ButtonStyle.Link)
     );
