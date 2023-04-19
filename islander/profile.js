@@ -848,12 +848,12 @@ export default class Rank {
     ctx.textAlign = "start";
     ctx.fillText(
       "/ " + Util.toAbbrev(this.data.requiredXP.data),
-      700 + ctx.measureText(Util.toAbbrev(this.data.currentXP.data)).width + 15,
+      720 + ctx.measureText(Util.toAbbrev(this.data.currentXP.data)).width + 15,
       164
     );
 
     ctx.fillStyle = this.data.currentXP.color;
-    ctx.fillText(Util.toAbbrev(this.data.currentXP.data), 700, 164);
+    ctx.fillText(Util.toAbbrev(this.data.currentXP.data), 720, 164);
 
     // draw progressbar
     ctx.beginPath();

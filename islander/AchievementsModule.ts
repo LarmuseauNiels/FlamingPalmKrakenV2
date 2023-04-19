@@ -81,8 +81,7 @@ export class AchievementsModule {
       .setLevel(1, "LEVEL", true)
       .setStatus("online")
       .setProgressBar(["#FF0000", "#FF0000"], "GRADIENT")
-      .setUsername(guildMember.username)
-      .setDiscriminator(guildMember.discriminator);
+      .setUsername(guildMember.username);
 
     const data = await rank.build();
     return new AttachmentBuilder(data, {
