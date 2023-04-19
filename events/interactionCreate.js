@@ -8,7 +8,11 @@ module.exports = {
         let button = global.client.buttons.get(buttonId);
         await button.execute(interaction);
       }
-      if (interaction.isUserContextMenuCommand()) {
+      if (interaction.isMessageContextMenuCommand()) {
+        console.log(interaction.commandName);
+        let menu = global.client.contextMenus.get(interaction.commandName);
+        await menu.execute(interaction);
+      } else if (interaction.isUserContextMenuCommand()) {
         console.log(interaction.commandName);
         let menu = global.client.contextMenus.get(interaction.commandName);
         await menu.execute(interaction);
