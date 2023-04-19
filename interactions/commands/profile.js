@@ -7,11 +7,11 @@ module.exports = {
     .setName("profile")
     .setDescription("show your profile"),
   async execute(interaction) {
-    //interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
     global.client.achievementsModule
       .GetProfile(interaction.user.id)
       .then((profile) => {
-        interaction.reply({ files: [profile] });
+        interaction.editReply({ files: [profile] });
       });
   },
   isGuild: true,

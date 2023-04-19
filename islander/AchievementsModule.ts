@@ -2,6 +2,7 @@ import Canvas, { createCanvas, Image } from "@napi-rs/canvas";
 import { AttachmentBuilder, User } from "discord.js";
 
 const { request } = require("undici");
+const { Rank } = require("./profile");
 
 export class AchievementsModule {
   async GiveAchievement(
@@ -68,33 +69,24 @@ export class AchievementsModule {
         ID: memberID,
       },
     });
+    if (!member) {
+      throw new Error(`Member not found for ID ${memberID}`);
+    }
     console.log(member);
     let guildMember: User = await global.client.users.fetch(memberID, false);
     console.log(guildMember);
-    const canvas = createCanvas(700, 250);
-    const context = canvas.getContext("2d");
-    const backgroundImage = await Canvas.loadImage("sprites/profilebg.jpg");
-    context.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
-    context.strokeStyle = "#0099ff";
-    context.strokeRect(0, 0, canvas.width, canvas.height);
-    context.font = applyText(canvas, `${guildMember.username}!`);
-    context.fillStyle = "#ffffff";
-    context.fillText(
-      `${guildMember.username}!`,
-      canvas.width / 2.5,
-      canvas.height / 1.8
-    );
-    context.beginPath();
-    context.arc(125, 125, 100, 0, Math.PI * 2, true);
-    context.closePath();
-    context.clip();
-    const { body } = await request(
-      guildMember.displayAvatarURL({ extension: "jpg" })
-    );
-    const avatar = new Image();
-    avatar.src = Buffer.from(await body.arrayBuffer());
-    context.drawImage(avatar, 25, 25, 200, 200);
-    return new AttachmentBuilder(canvas.toBuffer("image/png"), {
+
+    const rank = new Rank()
+      .setAvatar(guildMember.avatarURL())
+      .setCurrentXP(member.XP)
+      .setRequiredXP(1000)
+      .setStatus("online")
+      .setProgressBar(["#FF0000", "#0000FF"], "GRADIENT")
+      .setUsername(guildMember.username)
+      .setDiscriminator(guildMember.discriminator);
+
+    const data = await rank.build();
+    return new AttachmentBuilder(data, {
       name: "profile-image.png",
     });
   }
