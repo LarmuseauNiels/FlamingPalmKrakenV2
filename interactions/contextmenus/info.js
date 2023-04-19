@@ -32,6 +32,8 @@ module.exports = {
             limit 10`;
     let labels = lastOnline.map((x) => x.date).join(",");
     let data = lastOnline.map((x) => x.hours).join(",");
+    let chart = `https://quickchart.io/chart/render/zm-83eae2c8-25d3-4d1f-899c-5bcc188ffb3e?title=Last 10 days online&labels=${labels}&data1=${data}`;
+    console.log(chart);
 
     interaction.guild.members.fetch(interaction.targetId).then((member) => {
       let embed = new EmbedBuilder()
@@ -65,11 +67,12 @@ module.exports = {
             inline: false,
           }
         )
-        .setImage(
-          `https://quickchart.io/chart/render/zm-ac7d2566-6186-4be1-b415-bc30470a6d6b?title=Last 10 days online&labels=${labels}&data1=${data}`
-        )
         .setTimestamp();
-      interaction.editReply({ embeds: [embed], ephemeral: true });
+      interaction.editReply({
+        content: chart,
+        embeds: [embed],
+        ephemeral: true,
+      });
     });
   },
   isGuild: true,
