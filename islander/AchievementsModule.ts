@@ -77,8 +77,10 @@ export class AchievementsModule {
       .setAvatar(guildMember.avatarURL())
       .setCurrentXP(member.XP)
       .setRequiredXP(1000)
+      .setRank(1, "RANK", false)
+      .setLevel(1, "LEVEL", true)
       .setStatus("online")
-      .setProgressBar(["#FF0000", "#0000FF"], "GRADIENT")
+      .setProgressBar(["#FF0000", "#FF0000"], "GRADIENT")
       .setUsername(guildMember.username)
       .setDiscriminator(guildMember.discriminator);
 
