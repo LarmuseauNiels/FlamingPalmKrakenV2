@@ -765,7 +765,7 @@ export default class Rank {
     ctx.font = `bold 36px ${ops.fontX}`;
     ctx.fillStyle = this.data.username.color;
     ctx.textAlign = "start";
-    const name = Util.shorten(this.data.username.name, 10);
+    const name = Util.shorten(this.data.username.name, 16);
 
     // apply username
     !this.data.renderEmojis
@@ -774,6 +774,7 @@ export default class Rank {
         await Util.renderEmoji(ctx, name, 257 + 18.5, 82);
 
     // draw discriminator
+    /*
     if (!this.data.discriminator.discrim)
       throw new Error("Missing discriminator!");
     const discrim = `${this.data.discriminator.discrim}`;
@@ -787,7 +788,7 @@ export default class Rank {
         164
       );
     }
-
+    */
     // fill level
     if (this.data.level.display && !isNaN(this.data.level.data)) {
       ctx.font = `bold 36px ${ops.fontX}`;
