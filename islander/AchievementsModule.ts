@@ -60,6 +60,18 @@ export class AchievementsModule {
     });
   }
 
+  private getLevel(xp: number) {
+    return Math.floor(0.2 * Math.sqrt(xp));
+  }
+
+  private getCurrentLevelXp(xp: number) {
+    return xp - Math.pow(this.getLevel(xp) / 0.2, 2);
+  }
+
+  private getRequiredXp(level: number) {
+    return Math.pow(level / 0.2, 2) - Math.pow(level + 1 / 0.2, 2);
+  }
+
   async GetProfile(memberID: string): Promise<AttachmentBuilder> {
     let member = await global.client.prisma.members.findFirst({
       where: {
@@ -75,10 +87,10 @@ export class AchievementsModule {
 
     const rank = new Rank()
       .setAvatar(guildMember.avatarURL())
-      .setCurrentXP(member.XP)
-      .setRequiredXP(1000)
+      .setCurrentXP(this.getCurrentLevelXp(member.XP))
+      .setRequiredXP(this.getRequiredXp(this.getLevel(member.XP)))
       .setRank(1, "RANK", false)
-      .setLevel(1, "LEVEL", true)
+      .setLevel(this.getLevel(member.XP), "LEVEL", true)
       .setStatus("online")
       .setProgressBar(["#FF0000", "#FF0000"], "GRADIENT")
       .setUsername(guildMember.username);
