@@ -9,6 +9,16 @@ const {
 module.exports = {
   name: "guildMemberAdd",
   async execute(GuildMember) {
+    //give member role
+    try {
+      let memberRole = GuildMember.guild.roles.cache.find(
+        (role) => role.name === "Community Guest"
+      );
+      GuildMember.roles.add(memberRole);
+    } catch (error) {
+      global.bugsnag.notify(error);
+    }
+
     const cachedInvites = global.client.invites.get(GuildMember.guild.id);
     const oldinvites = cachedInvites.map((i) => {
       return { code: i.code, uses: i.uses };
