@@ -69,7 +69,7 @@ export class AchievementsModule {
   }
 
   private getRequiredXp(level: number) {
-    return Math.pow(level / 0.2, 2) - Math.pow(level + 1 / 0.2, 2);
+    return Math.pow((level + 1) / 0.2, 2) - Math.pow(level / 0.2, 2);
   }
 
   async GetProfile(memberID: string): Promise<AttachmentBuilder> {
