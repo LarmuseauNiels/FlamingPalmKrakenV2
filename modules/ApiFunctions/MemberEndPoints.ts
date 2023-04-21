@@ -1,12 +1,14 @@
 import { jsonify, authenticateToken } from "./Helpers";
 
 export function memberEndPoints(app) {
-  app.post("/profile", authenticateToken, function (req, res) {
+  let apiPrefix = "/members/";
+
+  app.post(apiPrefix + "profile", authenticateToken, function (req, res) {
     res.send(jsonify(req.user));
   });
 
   //getLibrary for user
-  app.post("/library", authenticateToken, function (req, res) {
+  app.post(apiPrefix + "library", authenticateToken, function (req, res) {
     let user = req.user;
     global.client.prisma.rewardItem
       .findMany({
