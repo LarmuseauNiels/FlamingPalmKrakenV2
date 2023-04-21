@@ -7,7 +7,7 @@ module.exports = {
     .setDescription("shows your referrals"),
 
   async execute(interaction) {
-    interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ ephemeral: true });
     // add the code for showing user's referrals here
     let member = await global.client.prisma.members.findUnique({
       where: { ID: interaction.user.id },
@@ -46,7 +46,7 @@ module.exports = {
         iconURL:
           "https://flamingpalm.com/assets/images/logo/FlamingPalmLogoSmall.png",
       });
-    interaction.reply({ embeds: [embed], ephemeral: true });
+    await interaction.editReply({ embeds: [embed], ephemeral: true });
   },
   isGuild: true,
 };
