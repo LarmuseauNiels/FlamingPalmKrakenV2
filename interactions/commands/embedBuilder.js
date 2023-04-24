@@ -518,11 +518,14 @@ module.exports = {
       const ID = i.customId;
 
       if (ID === "embed_creator_save") {
-        channel
-          .send({
-            embeds: [embedToEdit],
+        await channel
+          .createWebhook({
+            name: interaction.guild.name,
+            avatar: interaction.guild.iconURL(),
           })
-          .catch(() => {});
+          .then(async (_webhook) => {
+            await _webhook.send({ embeds: [embedToEdit] });
+          });
 
         await i
           .reply({
