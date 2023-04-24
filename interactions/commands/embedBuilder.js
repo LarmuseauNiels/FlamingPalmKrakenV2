@@ -521,7 +521,7 @@ module.exports = {
         await channel
           .createWebhook({
             name: interaction.guild.name,
-            avatar: interaction.guild.iconURL(),
+            avatar: "https://flamingpalm.com/assets/icons/icon-144x144.png",
           })
           .then(async (_webhook) => {
             await _webhook.send({ embeds: [embedToEdit] });
