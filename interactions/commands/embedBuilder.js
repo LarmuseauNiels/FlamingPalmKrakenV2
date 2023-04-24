@@ -95,12 +95,7 @@ module.exports = {
             .setCustomId("embed_creator_end")
             .setLabel("End Interaction")
             .setEmoji("🛑")
-            .setStyle(ButtonStyle.Secondary),
-          new ButtonBuilder()
-            .setCustomId("embed_creator_help")
-            .setLabel("Help")
-            .setEmoji("ℹ️")
-            .setStyle(ButtonStyle.Primary)
+            .setStyle(ButtonStyle.Secondary)
         ),
       ],
     });
