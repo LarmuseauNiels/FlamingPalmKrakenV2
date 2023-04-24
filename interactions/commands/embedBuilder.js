@@ -18,9 +18,10 @@ module.exports = {
       option
         .setName("channel")
         .setDescription("Channel to send the embed message to.")
-        .setRequired(false)
+        .setRequired(true)
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+  isGuild: true,
   async execute(interaction) {
     const channel = interaction.guild.channels.cache.get(
       interaction.options.get("channel")?.value || interaction.channel.id
