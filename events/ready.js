@@ -26,7 +26,6 @@ module.exports = {
         .then((invite) => client.invites.set(guild.id, invite))
         .catch((error) => console.log(error));
     }
-
     client.user.setActivity({
       name: "flamingpalm.com",
       type: "STREAMING",
