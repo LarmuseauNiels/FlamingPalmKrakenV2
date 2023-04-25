@@ -28,7 +28,7 @@ module.exports = {
     }
     client.user.setActivity({
       name: "flamingpalm.com",
-      type: "STREAMING",
+      type: "WATCHING",
       url: "https://flamingpalm.com",
     });
   },

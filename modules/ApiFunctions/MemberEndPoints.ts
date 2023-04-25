@@ -103,6 +103,38 @@ export function memberEndPoints(app) {
       })
       .then((rewardItem) => {
         console.log(rewardItem);
+        if (!rewardItem) {
+          return res.status(400).send("No items left");
+        }
+        if (rewardItem.Reward.Price > user.Points) {
+          return res.status(400).send("Not enough points");
+        }
+        global.client.prisma.rewardItem
+          .update({
+            where: {
+              RewardItemID: rewardItem.RewardItemID,
+            },
+            data: {
+              RedeemedBy: user.id,
+              RedemptionTimeStamp: new Date(),
+            },
+          })
+          .then((updatedRewardItem) => {
+            console.log(updatedRewardItem);
+            global.client.prisma.points.update({
+              where: {
+                userid: user.id,
+              },
+              data: {
+                TotalPoints: {
+                  decrement: rewardItem.Reward.Price,
+                },
+                lastComment: "Redeemed " + rewardItem.Reward.Title,
+              },
+            });
+
+            return res.send(jsonify(updatedRewardItem));
+          });
       });
   });
 }
