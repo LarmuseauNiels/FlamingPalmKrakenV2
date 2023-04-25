@@ -1,5 +1,4 @@
 const { Collection } = require("discord.js");
-const { ActivityType } = require("discord-api-types");
 
 module.exports = {
   name: "ready",
@@ -30,7 +29,7 @@ module.exports = {
 
     client.user.setActivity({
       name: "flamingpalm.com",
-      type: ActivityType.Streaming,
+      type: "STREAMING",
       url: "https://flamingpalm.com",
     });
   },
