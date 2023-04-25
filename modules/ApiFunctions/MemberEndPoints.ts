@@ -87,5 +87,22 @@ export function memberEndPoints(app) {
 
   app.post(apiPrefix + "redeemItem", authenticateToken, function (req, res) {
     const { rewardId } = req.body;
+    let user = req.user;
+    global.client.prisma.rewardItem
+      .findFirst({
+        where: {
+          RewardID: rewardId,
+          RedeemedBy: null,
+        },
+        orderBy: {
+          RewardItemID: "asc",
+        } as any,
+        include: {
+          Reward: true,
+        },
+      })
+      .then((rewardItem) => {
+        console.log(rewardItem);
+      });
   });
 }

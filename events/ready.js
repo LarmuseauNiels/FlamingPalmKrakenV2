@@ -1,4 +1,5 @@
 const { Collection } = require("discord.js");
+const { ActivityType } = require("discord-api-types");
 
 module.exports = {
   name: "ready",
@@ -26,5 +27,11 @@ module.exports = {
         .then((invite) => client.invites.set(guild.id, invite))
         .catch((error) => console.log(error));
     }
+
+    client.user.setActivity({
+      name: "flamingpalm.com",
+      type: ActivityType.Streaming,
+      url: "https://flamingpalm.com",
+    });
   },
 };
