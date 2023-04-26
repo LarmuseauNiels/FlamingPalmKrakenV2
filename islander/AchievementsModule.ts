@@ -95,8 +95,7 @@ export class AchievementsModule {
       .setCustomStatusColor("#00FF00")
       .setProgressBar("#00FF00", "COLOR")
       .setBackground("COLOR", "#2b2f35")
-      .setOverlay("#2b2f35", 0.4)
-      .setProgressBarTrack("#2b2f35");
+      .setOverlay("#2b2f35", 0.4);
 
     const data = await rank.build();
     return new AttachmentBuilder(data, {
