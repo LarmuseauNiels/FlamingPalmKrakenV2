@@ -93,9 +93,19 @@ export class AchievementsModule {
       .setRank(1, "RANK", false)
       .setLevel(this.getLevel(member.XP), "LEVEL", true)
       .setCustomStatusColor("#00FF00")
-      .setProgressBar("#00FF00", "COLOR")
+      .setProgressBar("#FF0000", "COLOR")
       .setBackground("COLOR", "#2b2f35")
-      .setOverlay("#2b2f35", 0.4);
+      .setAchievements([]);
+    if (guildMember.id == "178435947816419328") {
+      rank
+        .setOverlay("#2b2f35", 0.4)
+        .setAchievements([
+          {
+            imagePath: "achievementIcons/achievement.png",
+          },
+        ])
+        .setBackground("IMAGE", "achievementIcons/background.png");
+    }
 
     const data = await rank.build();
     return new AttachmentBuilder(data, {
