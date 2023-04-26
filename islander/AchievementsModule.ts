@@ -93,7 +93,7 @@ export class AchievementsModule {
       .setRank(1, "RANK", false)
       .setLevel(this.getLevel(member.XP), "LEVEL", true)
       .setCustomStatusColor("#00FF00")
-      .setProgressBar(["#00FF00", "#00FF00"], "COLOR")
+      .setProgressBar("#00FF00", "COLOR")
       .setBackground("COLOR", "#2b2f35")
       .setOverlay("#2b2f35", 0.4)
       .setProgressBarTrack("#2b2f35");
