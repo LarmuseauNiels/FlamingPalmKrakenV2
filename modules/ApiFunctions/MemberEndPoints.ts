@@ -48,7 +48,7 @@ export function memberEndPoints(app) {
           userid: user.id,
         },
         orderBy: {
-          Timestamp: "desc",
+          TimeStamp: "desc",
         } as any,
       })
       .then((pointHistory) => {
@@ -73,7 +73,9 @@ export function memberEndPoints(app) {
             select: {
               RewardItem: {
                 where: {
-                  RedeemedBy: null,
+                  RedeemedBy: {
+                    equals: null,
+                  },
                 },
               },
             } as any,
