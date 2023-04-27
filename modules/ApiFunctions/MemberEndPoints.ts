@@ -74,7 +74,7 @@ export function memberEndPoints(app) {
               RewardItem: {
                 where: {
                   RedeemedBy: {
-                    in: [null, undefined],
+                    equals: "",
                   },
                 },
               },
@@ -95,7 +95,7 @@ export function memberEndPoints(app) {
         where: {
           RewardID: rewardId,
           RedeemedBy: {
-            in: [null, undefined],
+            equals: "",
           },
         },
         orderBy: {
