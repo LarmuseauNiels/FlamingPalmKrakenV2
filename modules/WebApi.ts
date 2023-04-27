@@ -12,7 +12,7 @@ const prompt = "consent";
 
 export class WebApi {
   constructor() {
-    const middleware = global.client.bugsnag.getPlugin("express");
+    const middleware = global.bugsnag.getPlugin("express");
     passport.use(
       new DiscordStrategy(
         {
