@@ -2,14 +2,14 @@
 # yarn lockfile v1
 
 
-"@bugsnag/browser@^7.20.0":
-  version "7.20.0"
-  resolved "https://registry.npmjs.org/@bugsnag/browser/-/browser-7.20.0.tgz"
-  integrity sha512-LzZWI6q5cWYQSXvfJDcSl287d2xXESVn0L20lK+K5nwo/jXcK9IVZr9L+CYZ40HVXaC9jOmQbqZ18hsbO2QNIw==
+"@bugsnag/browser@^7.20.2":
+  version "7.20.2"
+  resolved "https://registry.npmjs.org/@bugsnag/browser/-/browser-7.20.2.tgz"
+  integrity sha512-4J4s53ZpYr3hHA+QjxUjOI6U+A8+XuUVH45UshE87Jp2Y4mV8ML2DovejqJS8J8yjdbnh2z1Wtg/v3WUNt4ayQ==
   dependencies:
     "@bugsnag/core" "^7.19.0"
 
-"@bugsnag/core@^7.19.0":
+"@bugsnag/core@^7.0.0", "@bugsnag/core@^7.19.0":
   version "7.19.0"
   resolved "https://registry.npmjs.org/@bugsnag/core/-/core-7.19.0.tgz"
   integrity sha512-2KGwdaLD9PhR7Wk7xPi3jGuGsKTatc/28U4TOZIDU3CgC2QhGjubwiXSECel5gwxhZ3jACKcMKSV2ovHhv1NrA==
@@ -25,12 +25,12 @@
   resolved "https://registry.npmjs.org/@bugsnag/cuid/-/cuid-3.0.2.tgz"
   integrity sha512-cIwzC93r3PQ/INeuwtZwkZIG2K8WWN0rRLZQhu+mr48Ay+i6sEki4GYfTsflse7hZ1BeDWrNb/Q9vgY3B31xHQ==
 
-"@bugsnag/js@^7.20.0":
-  version "7.20.0"
-  resolved "https://registry.npmjs.org/@bugsnag/js/-/js-7.20.0.tgz"
-  integrity sha512-lhUUSOveE8fP10RagAINqBmuH+eoOpyUOiTN1WRkjHUevWG0LZjRRUWEGN3AA+ZyTphmC6ljd2qE3/64qfOSGQ==
+"@bugsnag/js@^7.20.2":
+  version "7.20.2"
+  resolved "https://registry.npmjs.org/@bugsnag/js/-/js-7.20.2.tgz"
+  integrity sha512-Q08k0h0h6NFwFGkFmib39Uln2WpvJdqT1EGF1JlyYiGW03Y+VopVb9r37pZrRrN9IY08mxaIEO8la5xeaWAs6A==
   dependencies:
-    "@bugsnag/browser" "^7.20.0"
+    "@bugsnag/browser" "^7.20.2"
     "@bugsnag/node" "^7.19.0"
 
 "@bugsnag/node@^7.19.0":
@@ -44,6 +44,13 @@
     iserror "^0.0.2"
     pump "^3.0.0"
     stack-generator "^2.0.3"
+
+"@bugsnag/plugin-express@^7.19.0":
+  version "7.19.0"
+  resolved "https://registry.npmjs.org/@bugsnag/plugin-express/-/plugin-express-7.19.0.tgz"
+  integrity sha512-2nygX1M6QgLGNLGlYArwI3RN2lL1b4MImeOH7ijGhiKdiEGEDtfnwHWoEZ9S/yBRBrA5iLXxo+agxk3RZ0NZkg==
+  dependencies:
+    iserror "^0.0.2"
 
 "@bugsnag/safe-json-stringify@^6.0.0":
   version "6.0.0"

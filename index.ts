@@ -4,6 +4,7 @@ import { Islander } from "./islander/islander";
 import { AchievementsModule } from "./islander/AchievementsModule";
 import { WebApi } from "./modules/WebApi";
 import Bugsnag from "@bugsnag/js";
+import BugsnagPluginExpress from "@bugsnag/plugin-express";
 
 const fs = require("fs");
 const {
@@ -70,6 +71,7 @@ class FpgClient extends Client {
 
 Bugsnag.start({
   apiKey: process.env.BUGSNAG_API_KEY,
+  plugins: [BugsnagPluginExpress],
   appVersion: process.env.CAPROVER_GIT_COMMIT_SHA.slice(0, 7),
 });
 global.bugsnag = Bugsnag;

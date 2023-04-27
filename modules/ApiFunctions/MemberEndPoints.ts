@@ -45,7 +45,7 @@ export function memberEndPoints(app) {
       .findMany({
         take: 25,
         where: {
-          ID: user.id,
+          userid: user.id,
         },
         orderBy: {
           Timestamp: "desc",

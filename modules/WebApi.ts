@@ -12,6 +12,7 @@ const prompt = "consent";
 
 export class WebApi {
   constructor() {
+    const middleware = global.client.bugsnag.getPlugin("express");
     passport.use(
       new DiscordStrategy(
         {
@@ -36,10 +37,12 @@ export class WebApi {
         }
       )
     );
+    app.use(middleware.requestHandler);
     app.use(cors());
     app.use(passport.initialize());
     app.use(bodyParser.urlencoded({ extended: false }));
     app.use(bodyParser.json());
+    app.use(middleware.errorHandler);
 
     //auth test
     app.get(
