@@ -74,7 +74,7 @@ export function memberEndPoints(app) {
               RewardItem: {
                 where: {
                   RedeemedBy: {
-                    equals: "",
+                    isEmpty: true,
                   },
                 },
               },
