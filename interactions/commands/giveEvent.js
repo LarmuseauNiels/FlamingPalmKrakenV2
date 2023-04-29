@@ -81,7 +81,7 @@ module.exports = {
         interaction.customId === `giveAchievement-${achievement}`;
       const collector = message.createMessageComponentCollector({
         filter,
-        time: 60000,
+        time: 300000,
       });
 
       // listen for selected option
