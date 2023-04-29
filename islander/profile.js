@@ -13,7 +13,7 @@ const abbrev = (num) => {
       var size = Math.pow(10, (i + 1) * 3);
       if (size <= num) {
         num = Math.round((num * decPlaces) / size) / decPlaces;
-        if (num == 1000 && i < abbrev.length - 1) {
+        if (num === 1000 && i < abbrev.length - 1) {
           num = 1;
           i++;
         }
@@ -147,8 +147,7 @@ const Util = class Util {
       return (arr + txt).slice(-length);
     };
 
-    const finalHex = `#${pad(r)}${pad(g)}${pad(b)}`;
-    return finalHex;
+    return `#${pad(r)}${pad(g)}${pad(b)}`;
   }
 
   /**
@@ -358,6 +357,11 @@ export default class Rank {
         data: 0,
         color: "#FFFFFF",
       },
+      achievementToRender: [
+        {
+          imagePath: "achievementIcons/achievement.png",
+        },
+      ],
     };
 
     // Load default fonts
@@ -414,6 +418,11 @@ export default class Rank {
     this.data.username.name = name;
     this.data.username.color =
       color && typeof color === "string" ? color : "#FFFFFF";
+    return this;
+  }
+
+  setAchievements(achievements = []) {
+    this.data.achievementToRender = achievements;
     return this;
   }
 
@@ -772,6 +781,15 @@ export default class Rank {
       ? ctx.fillText(`${name}`, 257 + 18.5, 82)
       : // @ts-ignore
         await Util.renderEmoji(ctx, name, 257 + 18.5, 82);
+
+    let achievementXlocation = 264;
+    //draw achievements
+    for (const achievement of this.data.achievementToRender) {
+      //const index = this.data.achievementsToRender.indexOf(achievement);
+      let badge = await Canvas.loadImage(achievement.imagePath);
+      ctx.drawImage(badge, achievementXlocation, 100, 64, 64);
+      achievementXlocation += 64;
+    }
 
     // draw discriminator
     /*

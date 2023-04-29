@@ -86,14 +86,26 @@ export class AchievementsModule {
     console.log(guildMember);
 
     const rank = new Rank()
+      .setUsername(guildMember.username)
       .setAvatar(guildMember.avatarURL())
       .setCurrentXP(this.getCurrentLevelXp(member.XP))
       .setRequiredXP(this.getRequiredXp(this.getLevel(member.XP)))
       .setRank(1, "RANK", false)
       .setLevel(this.getLevel(member.XP), "LEVEL", true)
-      .setStatus("online")
-      .setProgressBar(["#FF0000", "#FF0000"], "GRADIENT")
-      .setUsername(guildMember.username);
+      .setCustomStatusColor("#00FF00")
+      .setProgressBar("#FF0000", "COLOR")
+      .setBackground("COLOR", "#2b2f35")
+      .setAchievements([]);
+    if (guildMember.id == "178435947816419328") {
+      rank
+        .setOverlay("#2b2f35", 0.4)
+        .setAchievements([
+          {
+            imagePath: "achievementIcons/achievement.png",
+          },
+        ])
+        .setBackground("IMAGE", "achievementIcons/background.png");
+    }
 
     const data = await rank.build();
     return new AttachmentBuilder(data, {

@@ -5,12 +5,14 @@ import jwt from "jsonwebtoken";
 import { legacyEndPoints } from "./ApiFunctions/LegacyEndPoints";
 import { jsonify } from "./ApiFunctions/Helpers";
 import { memberEndPoints } from "./ApiFunctions/MemberEndPoints";
+import bodyParser from "body-parser";
 const DiscordStrategy = require("passport-discord").Strategy;
 const app = express();
 const prompt = "consent";
 
 export class WebApi {
   constructor() {
+    const middleware = global.bugsnag.getPlugin("express");
     passport.use(
       new DiscordStrategy(
         {
@@ -35,8 +37,12 @@ export class WebApi {
         }
       )
     );
+    app.use(middleware.requestHandler);
     app.use(cors());
     app.use(passport.initialize());
+    app.use(bodyParser.urlencoded({ extended: false }));
+    app.use(bodyParser.json());
+    app.use(middleware.errorHandler);
 
     //auth test
     app.get(
