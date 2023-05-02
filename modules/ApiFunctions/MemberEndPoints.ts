@@ -113,6 +113,8 @@ export function memberEndPoints(app) {
     }
 
     let data = await rank.build();
+    // set the content type to PNG
+    res.set("Content-Type", "image/png");
     res.send(data);
   });
 
