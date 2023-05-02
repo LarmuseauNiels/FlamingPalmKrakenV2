@@ -112,7 +112,7 @@ export function memberEndPoints(app) {
       ]);
     }
 
-    let data = rank.build();
+    let data = await rank.build();
     res.send(data);
   });
 
