@@ -1,4 +1,5 @@
 import { jsonify, authenticateToken } from "./Helpers";
+import Rank from "../../islander/profile";
 
 export function memberEndPoints(app) {
   let apiPrefix = "/members/";
@@ -71,13 +72,7 @@ export function memberEndPoints(app) {
           nonSalePrice: true,
           _count: {
             select: {
-              RewardItem: {
-                where: {
-                  RedeemedBy: {
-                    isEmpty: true,
-                  },
-                },
-              },
+              RewardItem: {},
             } as any,
           },
         },
@@ -85,6 +80,40 @@ export function memberEndPoints(app) {
       .then((shopItems) => {
         return res.send(jsonify(shopItems));
       });
+  });
+
+  app.post("profileTester", async function (req, res) {
+    const rank = new Rank()
+      .setUsername("Kraken")
+      .setAvatar(
+        "https://cdn.discordapp.com/avatars/534686392589221898/cb24eca24fbf24e075d2eca04102e070"
+      )
+      .setCurrentXP(9845)
+      .setRequiredXP(1200)
+      .setRank(1, "RANK", false)
+      .setLevel(473, "LEVEL", true)
+      .setCustomStatusColor(req.query.statusColor ?? "#FF0000")
+      .setProgressBar(req.query.progressBarColor ?? "#FF0000", "COLOR")
+      .setBackground("COLOR", req.query.backgroundColor ?? "#2b2f35")
+      .setAchievements([]);
+    if (req.query.backgroundImage) {
+      rank
+        .setOverlay("#2b2f35", 0.4)
+        .setBackground(
+          "IMAGE",
+          `achievementIcons/${req.query.backgroundImage}.png`
+        );
+    }
+    if (req.query.achievement) {
+      rank.setAchievements([
+        {
+          imagePath: `achievementIcons/${req.query.achievement}.png`,
+        },
+      ]);
+    }
+
+    let data = rank.build();
+    res.send(data);
   });
 
   app.post(apiPrefix + "redeemItem", authenticateToken, function (req, res) {
