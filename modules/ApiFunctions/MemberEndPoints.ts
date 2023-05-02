@@ -82,7 +82,7 @@ export function memberEndPoints(app) {
       });
   });
 
-  app.get("profileTester", async function (req, res) {
+  app.get("/profileTester", async function (req, res) {
     const rank = new Rank()
       .setUsername("Kraken")
       .setAvatar(
