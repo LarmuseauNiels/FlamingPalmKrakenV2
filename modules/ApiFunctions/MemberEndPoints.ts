@@ -1,5 +1,6 @@
 import { jsonify, authenticateToken } from "./Helpers";
 import Rank from "../../islander/profile";
+import { Reward } from ".prisma/client";
 
 export function memberEndPoints(app) {
   let apiPrefix = "/members/";
@@ -57,30 +58,32 @@ export function memberEndPoints(app) {
       });
   });
 
-  app.get(apiPrefix + "shopItems", authenticateToken, function (req, res) {
-    global.client.prisma.reward
-      .findMany({
+  app.get(
+    apiPrefix + "shopItems",
+    authenticateToken,
+    async function (req, res) {
+      const shopItems = await global.client.prisma.reward.findMany({
         where: {
           visible: true,
         },
         select: {
-          RewardID: true,
-          Title: true,
-          Description: true,
-          Price: true,
-          imageurl: true,
+          rewardId: true,
+          title: true,
+          description: true,
+          price: true,
+          imageUrl: true,
           nonSalePrice: true,
           _count: {
             select: {
-              RewardItem: {},
-            } as any,
+              RewardItem: true,
+            },
           },
-        },
-      })
-      .then((shopItems) => {
-        return res.send(jsonify(shopItems));
+        } as any,
       });
-  });
+
+      return res.send(jsonify(shopItems));
+    }
+  );
 
   app.get("/profileTester", async function (req, res) {
     const rank = new Rank()
