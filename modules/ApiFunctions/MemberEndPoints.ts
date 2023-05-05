@@ -1,5 +1,6 @@
 import { jsonify, authenticateToken } from "./Helpers";
 import Rank from "../../islander/profile";
+import { EmbedBuilder } from "discord.js";
 
 export function memberEndPoints(app) {
   let apiPrefix = "/members/";
@@ -143,6 +144,8 @@ export function memberEndPoints(app) {
   app.post(apiPrefix + "redeemItem", authenticateToken, function (req, res) {
     const { rewardId } = req.body;
     let user = req.user;
+    if (!rewardId) return res.status(400).send("No rewardId");
+    if (!user) return res.status(400).send("No user");
     global.client.prisma.rewardItem
       .findFirst({
         where: {
@@ -158,12 +161,24 @@ export function memberEndPoints(app) {
           Reward: true,
         },
       })
-      .then((rewardItem) => {
+      .then(async (rewardItem) => {
         console.log(rewardItem);
         if (!rewardItem) {
           return res.status(400).send("No items left");
         }
-        if (rewardItem.Reward.Price > user.Points) {
+
+        let userPoints = (
+          await global.client.prisma.points.findUnique({
+            where: {
+              userid: user.id,
+            },
+            select: {
+              TotalPoints: true,
+            },
+          })
+        ).TotalPoints;
+
+        if (rewardItem.Reward.Price > userPoints) {
           return res.status(400).send("Not enough points");
         }
         global.client.prisma.rewardItem
@@ -178,20 +193,58 @@ export function memberEndPoints(app) {
           })
           .then((updatedRewardItem) => {
             console.log(updatedRewardItem);
-            global.client.prisma.points.update({
-              where: {
-                userid: user.id,
-              },
-              data: {
-                TotalPoints: {
-                  decrement: rewardItem.Reward.Price,
+            global.client.prisma.points
+              .update({
+                where: {
+                  userid: user.id,
                 },
-                lastComment: "Redeemed " + rewardItem.Reward.Title,
-              },
-            });
-
-            return res.send(jsonify(updatedRewardItem));
+                data: {
+                  TotalPoints: {
+                    decrement: rewardItem.Reward.Price,
+                  },
+                  lastComment: "Redeemed " + rewardItem.Reward.Title,
+                },
+              })
+              .then((updatedPoints) => {
+                sendPurchaseToDiscord(updatedRewardItem, user);
+                return res.send(jsonify(updatedRewardItem));
+              });
           });
       });
   });
+
+  function sendPurchaseToDiscord(updatedRewardItem, user) {
+    const embed = new EmbedBuilder()
+      .setColor("#CCCCFF")
+      .setTitle("New Purchase")
+      .setDescription(
+        `${user.username} has purchased ${updatedRewardItem.Reward.Title}`
+      )
+      .addFields([
+        {
+          name: "Game",
+          value: updatedRewardItem.Reward.Title,
+        },
+        {
+          name: "Redemption Text",
+          value: updatedRewardItem.RedemptionText,
+        },
+        {
+          name: "Redeemed At",
+          value: updatedRewardItem.RedemptionTimeStamp,
+        },
+        {
+          name: "Price",
+          value: updatedRewardItem.Reward.Price,
+        },
+        {
+          name: "Redeemed By",
+          value: `${user.username} (${user.id})`,
+        },
+      ]);
+
+    global.client.channels.cache
+      .get("903358430922825748")
+      .send({ embeds: [embed] });
+  }
 }
