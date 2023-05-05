@@ -37,6 +37,7 @@ export class WebApi {
         }
       )
     );
+
     app.use(middleware.requestHandler);
     app.use(cors());
     app.use(passport.initialize());
@@ -79,6 +80,10 @@ export class WebApi {
   }
 
   load() {
+    app.use(function (err, req, res, next) {
+      console.error(err.stack);
+      res.status(500).send("Something broke!");
+    });
     app.listen(3000, () => {
       console.log("WebApi listening on port 3000");
     });
