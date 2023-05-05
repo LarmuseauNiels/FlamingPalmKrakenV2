@@ -9,6 +9,11 @@ export function memberEndPoints(app) {
     res.send(jsonify(req.user));
   });
 
+  app.get("/", (req, res) => {
+    //return current uptime
+    res.send(jsonify({ uptime: process.uptime() }));
+  });
+
   //getLibrary for user
   app.get(apiPrefix + "library", authenticateToken, function (req, res) {
     let user = req.user;
