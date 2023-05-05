@@ -227,26 +227,32 @@ export function memberEndPoints(app) {
         {
           name: "Order ID",
           value: updatedRewardItem.RewardItemID,
+          inline: false,
         },
         {
           name: "Game",
           value: rewardTitle,
+          inline: false,
         },
         {
           name: "Redemption Text",
           value: updatedRewardItem.RedemptionText,
+          inline: false,
         },
         {
           name: "Redeemed At",
           value: updatedRewardItem.RedemptionTimeStamp,
+          inline: false,
         },
         {
           name: "Price",
           value: price,
+          inline: false,
         },
         {
           name: "Redeemed By",
           value: `${user.username} (${user.id})`,
+          inline: false,
         }
       );
 
