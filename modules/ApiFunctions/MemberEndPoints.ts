@@ -206,24 +206,30 @@ export function memberEndPoints(app) {
                 },
               })
               .then((updatedPoints) => {
-                sendPurchaseToDiscord(updatedRewardItem, user);
+                sendPurchaseToDiscord(
+                  updatedRewardItem,
+                  user,
+                  rewardItem.Reward.Title
+                );
                 return res.send(jsonify(updatedRewardItem));
               });
           });
       });
   });
 
-  function sendPurchaseToDiscord(updatedRewardItem, user) {
+  function sendPurchaseToDiscord(updatedRewardItem, user, rewardTitle) {
     const embed = new EmbedBuilder()
       .setColor("#CCCCFF")
       .setTitle("New Purchase")
-      .setDescription(
-        `${user.username} has purchased ${updatedRewardItem.Reward.Title}`
-      )
+      .setDescription(`${user.username} has purchased ${rewardTitle}`)
       .addFields([
         {
+          name: "Order ID",
+          value: updatedRewardItem.RewardItemID,
+        },
+        {
           name: "Game",
-          value: updatedRewardItem.Reward.Title,
+          value: rewardTitle,
         },
         {
           name: "Redemption Text",
