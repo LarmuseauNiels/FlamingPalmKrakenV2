@@ -223,7 +223,7 @@ export function memberEndPoints(app) {
       .setColor("#CCCCFF")
       .setTitle("New Purchase")
       .setDescription(`${user.username} has purchased ${rewardTitle}`)
-      .addFields([
+      .addFields(
         {
           name: "Order ID",
           value: updatedRewardItem.RewardItemID,
@@ -247,8 +247,8 @@ export function memberEndPoints(app) {
         {
           name: "Redeemed By",
           value: `${user.username} (${user.id})`,
-        },
-      ]);
+        }
+      );
 
     global.client.channels.cache
       .get("903358430922825748")
