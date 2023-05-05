@@ -1,6 +1,5 @@
 import { jsonify, authenticateToken } from "./Helpers";
 import Rank from "../../islander/profile";
-import { EmbedBuilder } from "discord.js";
 
 export function memberEndPoints(app) {
   let apiPrefix = "/members/";
@@ -219,7 +218,37 @@ export function memberEndPoints(app) {
   });
 
   function sendPurchaseToDiscord(updatedRewardItem, user, rewardTitle, price) {
-    const embed = new EmbedBuilder()
+    const embed = {
+      color: 0x0099ff,
+      title: "New Purchase",
+      description: `${user.username} has purchased ${rewardTitle}`,
+      fields: [
+        {
+          name: "Order ID",
+          value: updatedRewardItem.RewardItemID,
+          inline: false,
+        },
+        {
+          name: "Game",
+          value: rewardTitle,
+          inline: false,
+        },
+        {
+          name: "Redemption Text",
+          value: updatedRewardItem.RedemptionText,
+        },
+        {
+          name: "Price",
+          value: `${price}`,
+        },
+        {
+          name: "Redeemed By",
+          value: `${user.username} (${user.id})`,
+        },
+      ],
+    };
+    /*
+        new EmbedBuilder()
       .setColor("#CCCCFF")
       .setTitle("New Purchase")
       .setDescription(`${user.username} has purchased ${rewardTitle}`)
@@ -250,7 +279,7 @@ export function memberEndPoints(app) {
           inline: false,
         }
       );
-
+*/
     global.client.channels.cache
       .get("903358430922825748")
       .send({ embeds: [embed] });
