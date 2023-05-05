@@ -209,7 +209,8 @@ export function memberEndPoints(app) {
                 sendPurchaseToDiscord(
                   updatedRewardItem,
                   user,
-                  rewardItem.Reward.Title
+                  rewardItem.Reward.Title,
+                  rewardItem.Reward.Price
                 );
                 return res.send(jsonify(updatedRewardItem));
               });
@@ -217,7 +218,7 @@ export function memberEndPoints(app) {
       });
   });
 
-  function sendPurchaseToDiscord(updatedRewardItem, user, rewardTitle) {
+  function sendPurchaseToDiscord(updatedRewardItem, user, rewardTitle, price) {
     const embed = new EmbedBuilder()
       .setColor("#CCCCFF")
       .setTitle("New Purchase")
@@ -241,7 +242,7 @@ export function memberEndPoints(app) {
         },
         {
           name: "Price",
-          value: updatedRewardItem.Reward.Price,
+          value: price,
         },
         {
           name: "Redeemed By",
