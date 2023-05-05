@@ -1,6 +1,5 @@
 import { jsonify, authenticateToken } from "./Helpers";
 import Rank from "../../islander/profile";
-import { Reward } from ".prisma/client";
 
 export function memberEndPoints(app) {
   let apiPrefix = "/members/";
@@ -72,18 +71,13 @@ export function memberEndPoints(app) {
           visible: true,
         },
         select: {
-          rewardId: true,
-          title: true,
-          description: true,
-          price: true,
-          imageUrl: true,
+          RewardID: true,
+          Title: true,
+          Description: true,
+          Price: true,
+          imageurl: true,
           nonSalePrice: true,
-          _count: {
-            select: {
-              RewardItem: true,
-            },
-          },
-        } as any,
+        },
       });
 
       return res.send(jsonify(shopItems));
