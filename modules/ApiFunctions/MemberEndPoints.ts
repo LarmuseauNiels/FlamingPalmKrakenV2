@@ -240,13 +240,8 @@ export function memberEndPoints(app) {
           inline: false,
         },
         {
-          name: "Redeemed At",
-          value: updatedRewardItem.RedemptionTimeStamp,
-          inline: false,
-        },
-        {
           name: "Price",
-          value: price,
+          value: `${price}`,
           inline: false,
         },
         {
