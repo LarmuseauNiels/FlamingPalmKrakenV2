@@ -43,7 +43,6 @@ export class WebApi {
     app.use(passport.initialize());
     app.use(bodyParser.urlencoded({ extended: false }));
     app.use(bodyParser.json());
-    app.use(middleware.errorHandler);
 
     //auth test
     app.get(
@@ -71,19 +70,14 @@ export class WebApi {
       } // auth success
     );
 
-    memberEndPoints(app);
     legacyEndPoints(app);
-    app.get("/", function (req, res) {
-      res.send("KRAKEN API");
-    });
-    this.load();
-  }
+    memberEndPoints(app);
 
-  load() {
     app.use(function (err, req, res, next) {
       console.error(err.stack);
       res.status(500).send("Something broke!");
     });
+    app.use(middleware.errorHandler);
     app.listen(3000, () => {
       console.log("WebApi listening on port 3000");
     });
