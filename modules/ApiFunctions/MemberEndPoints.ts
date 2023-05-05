@@ -77,10 +77,30 @@ export function memberEndPoints(app) {
           Price: true,
           imageurl: true,
           nonSalePrice: true,
+          RewardItem: {
+            where: {
+              RedeemedBy: "",
+            },
+            select: {
+              RewardItemID: true,
+            },
+          },
         },
       });
 
-      return res.send(jsonify(shopItems));
+      let result = shopItems.map((item) => {
+        return {
+          Id: item.RewardID,
+          Title: item.Title,
+          Description: item.Description,
+          Price: item.Price,
+          imageurl: item.imageurl,
+          nonSalePrice: item.nonSalePrice,
+          stock: item.RewardItem.length,
+        };
+      });
+
+      return res.send(jsonify(result));
     }
   );
 
