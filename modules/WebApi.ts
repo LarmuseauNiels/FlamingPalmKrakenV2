@@ -54,9 +54,9 @@ export class WebApi {
       function (req, res) {}
     );
     app.get(
-      "/callback",
+      "/login",
       passport.authenticate("discord", { session: false }),
-      function (req, res) {
+      async function (req, res) {
         let profile: any = req.user;
         let token = jwt.sign(
           {
@@ -91,5 +91,15 @@ async function logDiscordLogin(profile) {
       DiscordProfile: jsonify(profile),
     },
   });
+  //update avatar is user
+  await global.client.prisma.members.update({
+    where: {
+      ID: profile.id,
+    },
+    data: {
+      avatar: profile.avatar,
+    },
+  });
+
   console.log(`Logged discord login: ${profile.username} ${result.Id}`);
 }

@@ -247,39 +247,7 @@ export function memberEndPoints(app) {
         },
       ],
     };
-    /*
-        new EmbedBuilder()
-      .setColor("#CCCCFF")
-      .setTitle("New Purchase")
-      .setDescription(`${user.username} has purchased ${rewardTitle}`)
-      .addFields(
-        {
-          name: "Order ID",
-          value: updatedRewardItem.RewardItemID,
-          inline: false,
-        },
-        {
-          name: "Game",
-          value: rewardTitle,
-          inline: false,
-        },
-        {
-          name: "Redemption Text",
-          value: updatedRewardItem.RedemptionText,
-          inline: false,
-        },
-        {
-          name: "Price",
-          value: `${price}`,
-          inline: false,
-        },
-        {
-          name: "Redeemed By",
-          value: `${user.username} (${user.id})`,
-          inline: false,
-        }
-      );
-*/
+
     global.client.channels.cache
       .get("903358430922825748")
       .send({ embeds: [embed] });
