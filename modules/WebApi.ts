@@ -66,7 +66,7 @@ export class WebApi {
           },
           process.env.TOKEN
         );
-        res.send(token);
+        res.send(jsonify(token));
       } // auth success
     );
 
