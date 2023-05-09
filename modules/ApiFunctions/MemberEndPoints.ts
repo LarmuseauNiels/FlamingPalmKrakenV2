@@ -8,7 +8,7 @@ export function memberEndPoints(app) {
     res.send(jsonify(req.user));
   });
 
-  app.post(apiPrefix + "points", authenticateToken, async function (req, res) {
+  app.get(apiPrefix + "points", authenticateToken, async function (req, res) {
     let points = await global.client.prisma.points.findFirst({
       where: {
         userid: req.user.id,
