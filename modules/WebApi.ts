@@ -18,7 +18,7 @@ export class WebApi {
         {
           clientID: process.env.CLIENT_ID,
           clientSecret: process.env.OAUTHSECRET,
-          callbackURL: "callback",
+          callbackURL: "http://localhost:4200/login",
           scope: ["identify", "guilds"],
           prompt: prompt,
         },
