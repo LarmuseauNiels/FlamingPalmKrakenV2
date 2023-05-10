@@ -67,7 +67,17 @@ export function memberEndPoints(app) {
         } as any,
       })
       .then((pointHistory) => {
-        return res.send(jsonify(pointHistory));
+        return res.send(
+          jsonify(
+            pointHistory.map((item) => {
+              return {
+                points: item.points,
+                timestamp: item.TimeStamp,
+                comment: item.comment,
+              };
+            })
+          )
+        );
       });
   });
 
@@ -99,13 +109,13 @@ export function memberEndPoints(app) {
 
       let result = shopItems.map((item) => {
         return {
-          Id: item.RewardID,
-          Title: item.Title,
-          Description: item.Description,
-          Price: item.Price,
-          imageurl: item.imageurl,
-          nonSalePrice: item.nonSalePrice,
+          id: item.RewardID,
+          title: item.Title,
+          description: item.Description,
+          price: item.Price,
+          image: item.imageurl,
           stock: item.RewardItem.length,
+          nonSalePrice: item.nonSalePrice,
         };
       });
 
