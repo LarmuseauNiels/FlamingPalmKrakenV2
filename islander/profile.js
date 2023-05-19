@@ -764,7 +764,7 @@ export default class Rank {
     if (!!this.data.overlay.display) {
       ctx.globalAlpha = this.data.overlay.level || 1;
       ctx.fillStyle = this.data.overlay.color;
-      ctx.fillRect(20, 20, canvas.width - 40, canvas.height - 40);
+      ctx.fillRect(10, 10, canvas.width - 20, canvas.height - 20);
     }
 
     // reset transparency
@@ -778,17 +778,17 @@ export default class Rank {
 
     // apply username
     !this.data.renderEmojis
-      ? ctx.fillText(`${name}`, 257 + 18.5, 60)
+      ? ctx.fillText(`${name}`, 257 + 18.5, 50)
       : // @ts-ignore
-        await Util.renderEmoji(ctx, name, 257 + 18.5, 60);
+        await Util.renderEmoji(ctx, name, 257 + 18.5, 50);
 
-    let achievementXlocation = 264;
+    let achievementXlocation = 224;
     //draw achievements
     for (const achievement of this.data.achievementToRender) {
       //const index = this.data.achievementsToRender.indexOf(achievement);
       let badge = await Canvas.loadImage(achievement.imagePath);
-      ctx.drawImage(badge, achievementXlocation, 100, 64, 64);
-      achievementXlocation += 64;
+      ctx.drawImage(badge, achievementXlocation, 100, 128, 128);
+      achievementXlocation += 128;
     }
 
     // draw discriminator
@@ -823,7 +823,7 @@ export default class Rank {
       ctx.fillStyle = this.data.level.color;
       ctx.textAlign = "end";
       // @ts-ignore
-      ctx.fillText(Util.toAbbrev(parseInt(this.data.level.data)), 860, 60);
+      ctx.fillText(Util.toAbbrev(parseInt(this.data.level.data)), 860, 50);
     }
 
     // fill rank
@@ -981,14 +981,14 @@ export default class Rank {
 
     // circle
     ctx.beginPath();
-    ctx.arc(125 + 10, 125 + 20, 100, 0, Math.PI * 2, true);
+    ctx.arc(115 + 10, 125 + 20, 100, 0, Math.PI * 2, true);
     ctx.closePath();
     ctx.clip();
 
     // draw avatar
     ctx.drawImage(
       avatar,
-      35,
+      25,
       45,
       this.data.avatar.width + 20,
       this.data.avatar.height + 20
@@ -999,13 +999,13 @@ export default class Rank {
     if (!!this.data.status.circle) {
       ctx.beginPath();
       ctx.fillStyle = this.data.status.color;
-      ctx.arc(215, 205, 20, 0, 2 * Math.PI);
+      ctx.arc(205, 205, 20, 0, 2 * Math.PI);
       ctx.fill();
       ctx.closePath();
       // @ts-ignore
     } else if (!this.data.status.circle && this.data.status.width !== false) {
       ctx.beginPath();
-      ctx.arc(135, 145, 100, 0, Math.PI * 2, true);
+      ctx.arc(125, 145, 100, 0, Math.PI * 2, true);
       ctx.strokeStyle = this.data.status.color;
       ctx.lineWidth = this.data.status.width;
       ctx.stroke();
