@@ -877,22 +877,33 @@ export default class Rank {
     // draw progressbar
     ctx.beginPath();
     if (!!this.data.progressBar.rounded) {
+      let xCoordinate = 257;
+      let yCoordinate = 180;
+      let radius = 9;
+      let width = 615;
+      let height = 19;
+
       // bg
       ctx.fillStyle = this.data.progressBar.track.color;
       ctx.arc(
-        257 + 18.5,
-        147.5 + 18.5 + 36.25,
-        18.5,
+        xCoordinate + radius,
+        yCoordinate + radius + radius * 2,
+        radius,
         1.5 * Math.PI,
         0.5 * Math.PI,
         true
       );
       ctx.fill();
-      ctx.fillRect(257 + 18.5, 147.5 + 36.25, 615 - 18.5, 37.5);
+      ctx.fillRect(
+        xCoordinate + radius,
+        yCoordinate + radius * 2,
+        width - radius,
+        height
+      );
       ctx.arc(
-        257 + 615,
-        147.5 + 18.5 + 36.25,
-        18.75,
+        xCoordinate + width,
+        yCoordinate + radius + radius * 2,
+        radius,
         1.5 * Math.PI,
         0.5 * Math.PI,
         false
@@ -921,19 +932,24 @@ export default class Rank {
 
       // progress bar
       ctx.arc(
-        257 + 18.5,
-        147.5 + 18.5 + 36.25,
-        18.5,
+        xCoordinate + radius,
+        yCoordinate + radius + radius * 2,
+        radius,
         1.5 * Math.PI,
         0.5 * Math.PI,
         true
       );
       ctx.fill();
-      ctx.fillRect(257 + 18.5, 147.5 + 36.25, this._calculateProgress, 37.5);
+      ctx.fillRect(
+        xCoordinate + radius,
+        yCoordinate + radius * 2,
+        this._calculateProgress,
+        height
+      );
       ctx.arc(
-        257 + 18.5 + this._calculateProgress,
-        147.5 + 18.5 + 36.25,
-        18.75,
+        xCoordinate + radius + this._calculateProgress,
+        yCoordinate + radius + radius * 2,
+        radius,
         1.5 * Math.PI,
         0.5 * Math.PI,
         false
