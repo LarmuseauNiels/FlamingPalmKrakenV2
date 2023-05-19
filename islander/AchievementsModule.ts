@@ -101,7 +101,7 @@ export class AchievementsModule {
         .setOverlay("#2b2f35", 0.4)
         .setAchievements([
           {
-            imagePath: "achievementIcons/achievement.png",
+            imagePath: "achievementIcons/badges/rocket.png",
           },
         ])
         .setBackground("IMAGE", "achievementIcons/background.png");
