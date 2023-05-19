@@ -787,8 +787,8 @@ export default class Rank {
     for (const achievement of this.data.achievementToRender) {
       //const index = this.data.achievementsToRender.indexOf(achievement);
       let badge = await Canvas.loadImage(achievement.imagePath);
-      ctx.drawImage(badge, achievementXlocation, 80, 128, 128);
-      achievementXlocation += 128;
+      ctx.drawImage(badge, achievementXlocation, 80, 128, 150);
+      achievementXlocation += 150;
     }
 
     // draw discriminator
@@ -816,7 +816,7 @@ export default class Rank {
         740 -
           // @ts-ignore
           ctx.measureText(Util.toAbbrev(parseInt(this.data.level.data))).width,
-        60
+        50
       );
 
       ctx.font = `bold 32px ${ops.fontX}`;

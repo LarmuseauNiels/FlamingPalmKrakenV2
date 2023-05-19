@@ -103,6 +103,12 @@ export class AchievementsModule {
           {
             imagePath: "achievementIcons/badges/rocket.png",
           },
+          {
+            imagePath: "achievementIcons/badges/palm.png",
+          },
+          {
+            imagePath: "achievementIcons/badges/soldier.png",
+          },
         ])
         .setBackground("IMAGE", "achievementIcons/background.png");
     }
