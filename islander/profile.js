@@ -787,7 +787,7 @@ export default class Rank {
     for (const achievement of this.data.achievementToRender) {
       //const index = this.data.achievementsToRender.indexOf(achievement);
       let badge = await Canvas.loadImage(achievement.imagePath);
-      ctx.drawImage(badge, achievementXlocation, 80, 128, 150);
+      ctx.drawImage(badge, achievementXlocation, 70, 150, 150);
       achievementXlocation += 150;
     }
 
