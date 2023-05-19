@@ -878,7 +878,7 @@ export default class Rank {
     ctx.beginPath();
     if (!!this.data.progressBar.rounded) {
       let xCoordinate = 257;
-      let yCoordinate = 180;
+      let yCoordinate = 230;
       let radius = 9;
       let width = 615;
       let height = 19;
