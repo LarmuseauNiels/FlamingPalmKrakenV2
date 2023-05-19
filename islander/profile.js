@@ -771,16 +771,16 @@ export default class Rank {
     ctx.globalAlpha = 1;
 
     // draw username
-    ctx.font = `bold 36px ${ops.fontX}`;
+    ctx.font = `bold 32px ${ops.fontX}`;
     ctx.fillStyle = this.data.username.color;
     ctx.textAlign = "start";
-    const name = Util.shorten(this.data.username.name, 16);
+    const name = Util.shorten(this.data.username.name, 20);
 
     // apply username
     !this.data.renderEmojis
-      ? ctx.fillText(`${name}`, 257 + 18.5, 82)
+      ? ctx.fillText(`${name}`, 257 + 18.5, 60)
       : // @ts-ignore
-        await Util.renderEmoji(ctx, name, 257 + 18.5, 82);
+        await Util.renderEmoji(ctx, name, 257 + 18.5, 60);
 
     let achievementXlocation = 264;
     //draw achievements
@@ -809,21 +809,21 @@ export default class Rank {
     */
     // fill level
     if (this.data.level.display && !isNaN(this.data.level.data)) {
-      ctx.font = `bold 36px ${ops.fontX}`;
+      ctx.font = `bold 32px ${ops.fontX}`;
       ctx.fillStyle = this.data.level.textColor;
       ctx.fillText(
         this.data.level.displayText,
         740 -
           // @ts-ignore
           ctx.measureText(Util.toAbbrev(parseInt(this.data.level.data))).width,
-        82
+        60
       );
 
       ctx.font = `bold 32px ${ops.fontX}`;
       ctx.fillStyle = this.data.level.color;
       ctx.textAlign = "end";
       // @ts-ignore
-      ctx.fillText(Util.toAbbrev(parseInt(this.data.level.data)), 860, 82);
+      ctx.fillText(Util.toAbbrev(parseInt(this.data.level.data)), 860, 60);
     }
 
     // fill rank
@@ -868,17 +868,17 @@ export default class Rank {
     ctx.fillText(
       "/ " + Util.toAbbrev(this.data.requiredXP.data),
       720 + ctx.measureText(Util.toAbbrev(this.data.currentXP.data)).width + 15,
-      164
+      228
     );
 
     ctx.fillStyle = this.data.currentXP.color;
-    ctx.fillText(Util.toAbbrev(this.data.currentXP.data), 720, 164);
+    ctx.fillText(Util.toAbbrev(this.data.currentXP.data), 720, 228);
 
     // draw progressbar
     ctx.beginPath();
     if (!!this.data.progressBar.rounded) {
       let xCoordinate = 257;
-      let yCoordinate = 230;
+      let yCoordinate = 222;
       let radius = 9;
       let width = 615;
       let height = 19;
