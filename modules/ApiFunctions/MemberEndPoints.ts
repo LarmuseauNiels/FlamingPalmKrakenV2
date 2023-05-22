@@ -124,6 +124,33 @@ export function memberEndPoints(app) {
   );
 
   app.get("/profileTester", async function (req, res) {
+    var achievements = [];
+    if (req.query.achievement1) {
+      achievements.push({
+        icon: `achievementIcons/badges/${req.query.achievement1}.png`,
+      });
+    }
+    if (req.query.achievement2) {
+      achievements.push({
+        icon: `achievementIcons/badges/${req.query.achievement2}.png`,
+      });
+    }
+    if (req.query.achievement3) {
+      achievements.push({
+        icon: `achievementIcons/badges/${req.query.achievement3}.png`,
+      });
+    }
+    if (req.query.achievement4) {
+      achievements.push({
+        icon: `achievementIcons/badges/${req.query.achievement4}.png`,
+      });
+    }
+    if (req.query.achievement5) {
+      achievements.push({
+        icon: `achievementIcons/badges/${req.query.achievement5}.png`,
+      });
+    }
+
     const rank = new Rank()
       .setUsername("Kraken")
       .setAvatar(
@@ -136,7 +163,7 @@ export function memberEndPoints(app) {
       .setCustomStatusColor(req.query.statusColor ?? "#FF0000")
       .setProgressBar(req.query.progressBarColor ?? "#FF0000", "COLOR")
       .setBackground("COLOR", req.query.backgroundColor ?? "#2b2f35")
-      .setAchievements([]);
+      .setAchievements(achievements);
     if (req.query.backgroundImage) {
       rank
         .setOverlay("#2b2f35", 0.4)
@@ -144,13 +171,6 @@ export function memberEndPoints(app) {
           "IMAGE",
           `achievementIcons/${req.query.backgroundImage}.png`
         );
-    }
-    if (req.query.achievement) {
-      rank.setAchievements([
-        {
-          imagePath: `achievementIcons/${req.query.achievement}.png`,
-        },
-      ]);
     }
 
     let data = await rank.build();
