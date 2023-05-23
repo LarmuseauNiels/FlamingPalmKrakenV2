@@ -74,6 +74,9 @@ export class AchievementsModule {
 
   async GetProfile(memberID: string): Promise<AttachmentBuilder> {
     let member = await global.client.prisma.members.findFirst({
+      include: {
+        Profile: true,
+      },
       where: {
         ID: memberID,
       },
@@ -92,26 +95,48 @@ export class AchievementsModule {
       .setRequiredXP(this.getRequiredXp(this.getLevel(member.XP)))
       .setRank(1, "RANK", false)
       .setLevel(this.getLevel(member.XP), "LEVEL", true)
-      .setCustomStatusColor("#00FF00")
-      .setProgressBar("#FF0000", "COLOR")
+      .setCustomStatusColor(member?.Profile?.StatusColor ?? "#00FF00")
+      .setProgressBar(member?.Profile?.ProgressBarColor ?? "#FF0000", "COLOR")
       .setBackground("COLOR", "#2b2f35")
       .setAchievements([]);
-    if (guildMember.id == "178435947816419328") {
-      rank
-        .setOverlay("#2b2f35", 0.4)
-        .setAchievements([
-          {
-            imagePath: "achievementIcons/badges/rocket.png",
-          },
-          {
-            imagePath: "achievementIcons/badges/palm.png",
-          },
-          {
-            imagePath: "achievementIcons/badges/soldier.png",
-          },
-        ])
-        .setBackground("IMAGE", "achievementIcons/background.png");
+    if (member?.Profile?.BackgroundImage != null) {
+      rank.setBackground(
+        "IMAGE",
+        "achievementIcons/" + member.Profile.BackgroundImage + ".png"
+      );
     }
+    let achievements = [];
+    if (member?.Profile?.Achievement1 != null) {
+      achievements.push({
+        imagePath:
+          "achievementIcons/badges/" + member.Profile.Achievement1 + ".png",
+      });
+    }
+    if (member?.Profile?.Achievement2 != null) {
+      achievements.push({
+        imagePath:
+          "achievementIcons/badges/" + member.Profile.Achievement2 + ".png",
+      });
+    }
+    if (member?.Profile?.Achievement3 != null) {
+      achievements.push({
+        imagePath:
+          "achievementIcons/badges/" + member.Profile.Achievement3 + ".png",
+      });
+    }
+    if (member?.Profile?.Achievement4 != null) {
+      achievements.push({
+        imagePath:
+          "achievementIcons/badges/" + member.Profile.Achievement4 + ".png",
+      });
+    }
+    if (member?.Profile?.Achievement5 != null) {
+      achievements.push({
+        imagePath:
+          "achievementIcons/badges/" + member.Profile.Achievement5 + ".png",
+      });
+    }
+    rank.setOverlay("#2b2f35", 0.4).setAchievements(achievements);
 
     const data = await rank.build();
     return new AttachmentBuilder(data, {
