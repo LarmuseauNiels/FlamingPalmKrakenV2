@@ -8,7 +8,7 @@ export function adminEndPoints(app) {
     authenticateToken,
     async function (req, res) {
       let results = await globalThis.client.prisma
-        .$queryRaw`select timestamp,count(*) as online from VoiceConnected  WHERE VoiceConnected.TimeStamp >= curdate() - INTERVAL DAYOFWEEK(curdate())+6 DAY  group by timestamp`;
+        .$queryRaw`select date(timestamp) as date,count(*) as activity from VoiceConnected  WHERE year(VoiceConnected.TimeStamp) = year(curdate())  group by date(timestamp)`;
       res.send(jsonify(results));
     }
   );
