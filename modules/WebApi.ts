@@ -6,6 +6,7 @@ import { legacyEndPoints } from "./ApiFunctions/LegacyEndPoints";
 import { jsonify } from "./ApiFunctions/Helpers";
 import { memberEndPoints } from "./ApiFunctions/MemberEndPoints";
 import bodyParser from "body-parser";
+import { adminEndPoints } from "./ApiFunctions/AdminEndPoints";
 const DiscordStrategy = require("passport-discord").Strategy;
 const app = express();
 const prompt = "consent";
@@ -72,6 +73,7 @@ export class WebApi {
 
     legacyEndPoints(app);
     memberEndPoints(app);
+    adminEndPoints(app);
 
     app.use(function (err, req, res, next) {
       console.error(err.stack);
