@@ -1,5 +1,6 @@
 import { jsonify, authenticateToken } from "./Helpers";
 import Rank from "../../islander/profile";
+import { AchievementsModule } from "../../islander/AchievementsModule";
 
 export function memberEndPoints(app) {
   let apiPrefix = "/members/";
@@ -291,4 +292,12 @@ export function memberEndPoints(app) {
       .get("903358430922825748")
       .send({ embeds: [embed] });
   }
+
+  app.get(apiPrefix + "profileImage", authenticateToken, function (req, res) {
+    let user = req.user;
+    global.client.achievementsModule.GetProfileBlob(user.id).then((blob) => {
+      res.set("Content-Type", "image/png");
+      res.send(blob);
+    });
+  });
 }

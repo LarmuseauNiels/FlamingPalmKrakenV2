@@ -73,6 +73,13 @@ export class AchievementsModule {
   }
 
   async GetProfile(memberID: string): Promise<AttachmentBuilder> {
+    let data = await this.GetProfileBlob(memberID);
+    return new AttachmentBuilder(data, {
+      name: "profile-image.png",
+    });
+  }
+
+  async GetProfileBlob(memberID: string): Promise<Buffer> {
     let member = await global.client.prisma.members.findFirst({
       include: {
         Profile: true,
@@ -138,9 +145,6 @@ export class AchievementsModule {
     }
     rank.setOverlay("#2b2f35", 0.4).setAchievements(achievements);
 
-    const data = await rank.build();
-    return new AttachmentBuilder(data, {
-      name: "profile-image.png",
-    });
+    return await rank.build();
   }
 }
