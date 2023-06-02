@@ -346,7 +346,7 @@ export function memberEndPoints(app) {
         },
       })
       .then(() => {
-        res.send("ok");
+        res.send(true);
       });
   });
 
