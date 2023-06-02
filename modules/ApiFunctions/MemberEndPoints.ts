@@ -1,6 +1,5 @@
-import { jsonify, authenticateToken } from "./Helpers";
+import { authenticateToken, jsonify } from "./Helpers";
 import Rank from "../../islander/profile";
-import { AchievementsModule } from "../../islander/AchievementsModule";
 
 export function memberEndPoints(app) {
   let apiPrefix = "/members/";
@@ -337,11 +336,15 @@ export function memberEndPoints(app) {
     if (!body) return res.status(400).send("No profile data");
     // @ts-ignore
     global.client.prisma.profile
-      .update({
+      .upsert({
         where: {
           userid: user.id,
         },
-        data: {
+        update: {
+          BackgroundImage: body.fileName,
+        },
+        create: {
+          userid: user.id,
           BackgroundImage: body.fileName,
         },
       })
