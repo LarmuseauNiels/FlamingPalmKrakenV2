@@ -300,4 +300,63 @@ export function memberEndPoints(app) {
       res.send(blob);
     });
   });
+
+  app.post(
+    apiPrefix + "setProfileImage",
+    authenticateToken,
+    function (req, res) {
+      let user = req.user;
+      const { profile } = req.body;
+      if (!profile) return res.status(400).send("No profile data");
+      // @ts-ignore
+      global.client.prisma.profile
+        .update({
+          where: {
+            userid: user.id,
+          },
+          data: {
+            StatusColor: profile.StatusColor,
+            BackgroundImage: profile.BackgroundImage,
+            ProgressBarColor: profile.ProgressBarColor,
+            Achievement1: profile.Achievement1,
+            Achievement2: profile.Achievement2,
+            Achievement3: profile.Achievement3,
+            Achievement4: profile.Achievement4,
+            Achievement5: profile.Achievement5,
+          },
+        })
+        .then(() => {
+          res.send("ok");
+        });
+    }
+  );
+
+  app.post(apiPrefix + "setBackground", authenticateToken, function (req, res) {
+    let user = req.user;
+    const { profile } = req.body;
+    if (!profile) return res.status(400).send("No profile data");
+    // @ts-ignore
+    global.client.prisma.profile
+      .update({
+        where: {
+          userid: user.id,
+        },
+        data: {
+          BackgroundImage: profile.fileName,
+        },
+      })
+      .then(() => {
+        res.send("ok");
+      });
+  });
+
+  app.get(apiPrefix + "getLevel", authenticateToken, async function (req, res) {
+    let member = await global.client.prisma.members.findFirst({
+      where: {
+        ID: req.user.id,
+      },
+    });
+    let level = global.client.achievementsModule.getLevel(member.XP);
+    res.send(jsonify(level));
+  });
 }

@@ -60,7 +60,7 @@ export class AchievementsModule {
     });
   }
 
-  private getLevel(xp: number) {
+  getLevel(xp: number) {
     return Math.floor(0.2 * Math.sqrt(xp));
   }
 
