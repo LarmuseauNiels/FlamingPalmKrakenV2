@@ -333,8 +333,8 @@ export function memberEndPoints(app) {
 
   app.post(apiPrefix + "setBackground", authenticateToken, function (req, res) {
     let user = req.user;
-    const { profile } = req.body;
-    if (!profile) return res.status(400).send("No profile data");
+    const body = req.body;
+    if (!body) return res.status(400).send("No profile data");
     // @ts-ignore
     global.client.prisma.profile
       .update({
@@ -342,7 +342,7 @@ export function memberEndPoints(app) {
           userid: user.id,
         },
         data: {
-          BackgroundImage: profile.fileName,
+          BackgroundImage: body.fileName,
         },
       })
       .then(() => {
