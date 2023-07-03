@@ -19,6 +19,7 @@ model Members {
   LastWebLogon                          DateTime?             @db.DateTime(0)
   XP                                    Int                   @default(0)
   AchievementNotifications              Boolean?
+  Blocked                               Boolean?              @default(false)
   Achievement_History                   Achievement_History[]
   PointHistory                          PointHistory[]
   Points                                Points?
@@ -45,10 +46,11 @@ model PointHistory {
 }
 
 model Points {
-  userid      String  @id @db.VarChar(25)
-  TotalPoints Int     @default(0)
-  lastComment String  @default("") @db.VarChar(255)
-  Members     Members @relation(fields: [userid], references: [ID], onUpdate: Restrict, map: "Points_ibfk_1")
+  userid      String   @id @db.VarChar(25)
+  TotalPoints Int      @default(0)
+  lastComment String   @default("") @db.VarChar(255)
+  Blocked     Boolean? @default(false)
+  Members     Members  @relation(fields: [userid], references: [ID], onUpdate: Restrict, map: "Points_ibfk_1")
 }
 
 model Reward {

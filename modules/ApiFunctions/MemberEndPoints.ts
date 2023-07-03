@@ -14,7 +14,8 @@ export function memberEndPoints(app) {
         userid: req.user.id,
       },
     });
-    res.send(jsonify(points.TotalPoints));
+    if (points.Blocked) res.send(jsonify(0));
+    else res.send(jsonify(points.TotalPoints));
   });
 
   app.get("/", (req, res) => {
@@ -205,16 +206,16 @@ export function memberEndPoints(app) {
           return res.status(400).send("No items left");
         }
 
-        let userPoints = (
-          await global.client.prisma.points.findUnique({
-            where: {
-              userid: user.id,
-            },
-            select: {
-              TotalPoints: true,
-            },
-          })
-        ).TotalPoints;
+        let points = await global.client.prisma.points.findUnique({
+          where: {
+            userid: user.id,
+          },
+        });
+
+        if (points.Blocked) {
+          return res.status(400).send("You are blocked from redeeming items");
+        }
+        let userPoints = points.TotalPoints;
 
         if (rewardItem.Reward.Price > userPoints) {
           return res.status(400).send("Not enough points");
