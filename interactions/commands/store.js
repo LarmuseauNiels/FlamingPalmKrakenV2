@@ -15,6 +15,7 @@ module.exports = {
     let embed = new EmbedBuilder()
       .setColor("#FD8612")
       .setTitle("Store")
+      .setThumbnail("https://flamingpalm.com/assets/sale.png")
       .setAuthor({
         name: interaction.user.username,
         iconURL:
@@ -44,12 +45,19 @@ module.exports = {
             value: `out of stock`,
             inline: true,
           });
-        else
+        else if (reward.nonSalePrice && reward.nonSalePrice > 0)
+          embed.addFields({
+            name: reward.Title,
+            value: `~~${reward.nonSalePrice}~~ **${reward.Price}:palm_tree:**`,
+            inline: true,
+          });
+        else {
           embed.addFields({
             name: reward.Title,
             value: `**${reward.Price}:palm_tree:**`,
             inline: true,
           });
+        }
       }
     });
     let row = new ActionRowBuilder().addComponents(
