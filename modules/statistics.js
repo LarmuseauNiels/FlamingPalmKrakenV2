@@ -94,6 +94,8 @@ module.exports = async function (client) {
             .then((x) => {
               console.log(x);
             });
+
+          global.client.achievementsModule.checkAchievements(members);
         });
         //console.log(members.filter(m => m.presence.status === "online").select(m => m.presence));
 
