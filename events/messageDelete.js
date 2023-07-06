@@ -1,21 +1,50 @@
-const { EmbedBuilder } = require("discord.js");
+const { EmbedBuilder, TextChannel } = require("discord.js");
 module.exports = {
   name: "messageDelete",
   execute(msg) {
     console.log(msg);
-    /*
+
     const removedMessageEmbed = new EmbedBuilder()
       .setTitle("Message removed")
       .setDescription(`${msg?.author?.username}'s message has been removed`)
-      .addFields(
-        { name: "Message", value: msg?.cleanContent, inline: false },
-        { name: "Channel", value: msg.channel?.name, inline: false }
-      )
+      .addFields([
+        {
+          name: "Author",
+          value: msg.author.tag,
+          inline: true,
+        },
+        {
+          name: "Author ID",
+          value: msg.author.id,
+          inline: true,
+        },
+        {
+          name: "Channel",
+          value: msg.channel.name,
+          inline: true,
+        },
+        {
+          name: "Channel ID",
+          value: msg.channelId,
+          inline: true,
+        },
+        {
+          name: "Sent",
+          value: msg.createdAt,
+          inline: true,
+        },
+        {
+          name: "Content",
+          value: msg.content,
+          inline: false,
+        },
+      ])
       .setColor("#FF0000")
       .setTimestamp();
 
-    global.client.logChannel.send({ embeds: [removedMessageEmbed] });
-
-     */
+    let channel = global.client.channels.cache.get("1126413976155205713");
+    if (channel instanceof TextChannel) {
+      channel.send({ embeds: [removedMessageEmbed] });
+    }
   },
 };
