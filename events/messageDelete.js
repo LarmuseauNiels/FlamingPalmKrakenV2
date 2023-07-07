@@ -6,7 +6,7 @@ module.exports = {
 
     let channel = global.client.channels.cache.get("1126413976155205713");
     if (channel instanceof TextChannel) {
-      channel.send("```json  " + JSON.stringify(msg) + "```");
+      channel.send("```json\n" + JSON.stringify(msg) + "```");
     }
   },
 };
