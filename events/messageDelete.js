@@ -3,7 +3,7 @@ module.exports = {
   name: "messageDelete",
   execute(msg) {
     console.log(msg);
-
+    /*
     const removedMessageEmbed = new EmbedBuilder()
       .setTitle("Message removed")
       .setDescription(`${msg?.author?.username}'s message has been removed`)
@@ -41,5 +41,6 @@ module.exports = {
     if (channel instanceof TextChannel) {
       channel.send({ embeds: [removedMessageEmbed] });
     }
+      */
   },
 };
