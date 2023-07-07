@@ -9,11 +9,6 @@ module.exports = {
       .setDescription(`${msg?.author?.username}'s message has been removed`)
       .addFields([
         {
-          name: "Author",
-          value: msg.author.tag,
-          inline: true,
-        },
-        {
           name: "Author ID",
           value: msg.author.id,
           inline: true,
