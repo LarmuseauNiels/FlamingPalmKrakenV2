@@ -4,7 +4,7 @@ module.exports = {
   name: "ready",
   once: true,
   execute(client) {
-    client.logChannel = client.channels.cache.get("894190067747262464");
+    client.logChannel = client.channels.cache.get("1126413976155205713");
     client.log(
       `Ready! Logged in as ${
         client.user.tag
