@@ -72,6 +72,29 @@ export class AchievementsModule {
     return Math.pow((level + 1) / 0.2, 2) - Math.pow(level / 0.2, 2);
   }
 
+  async GetLoginStreak(memberID: string) {
+    let allLogins = await global.client.prisma.achievement_History.findMany({
+      where: {
+        UserID: memberID,
+        AchievementID: 13,
+      },
+    });
+    let timestamps = allLogins
+      .map((x) => x.TimeStamp)
+      .sort((a, b) => a.getTime() - b.getTime());
+    let loginstreak = 0;
+    let lastLogin = new Date();
+    for (let i = 0; i < timestamps.length; i++) {
+      let date = new Date(timestamps[i]);
+      if (date.getDate() == lastLogin.getDate() - 1) {
+        loginstreak++;
+      } else {
+        loginstreak = 0;
+      }
+      lastLogin = date;
+    }
+  }
+
   async GetProfile(memberID: string): Promise<AttachmentBuilder> {
     let data = await this.GetProfileBlob(memberID);
     return new AttachmentBuilder(data, {
@@ -154,6 +177,8 @@ export class AchievementsModule {
         (achievement) =>
           achievement.Type == "VoiceLogin" && achievement.Minimum == 1
       );
+      let startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
       if (DailyLoginAchievement !== null) {
         members
           .filter(
@@ -167,6 +192,9 @@ export class AchievementsModule {
                 where: {
                   UserID: member.id,
                   AchievementID: DailyLoginAchievement.ID,
+                  TimeStamp: {
+                    gte: startOfToday.toDateString(),
+                  },
                 },
               })
               .then((achievement) => {
@@ -181,6 +209,33 @@ export class AchievementsModule {
               });
           });
       }
+      /*
+      let BattleBitSquadSize = achievements.find(
+        (achievement) => achievement.Type == "BattleBitSquadSize"
+      );
+      if (BattleBitSquadSize !== null) {
+        members.filter(
+          (m) =>
+            m.presence?.status !== "offline" &&
+            m.user?.bot === false &&
+            (m.presence?.activities?.filter(
+              (a) => a.applicationId == 437355994125959168
+            ).length ?? 0) > 0
+        );
+
+        const groupedMembers = members.reduce((groups, member) => {
+          const key = member.propertyToGroupBy; // Replace 'propertyToGroupBy' with the actual property name you want to group by
+
+          if (!groups[key]) {
+            groups[key] = [];
+          }
+
+          groups[key].push(member);
+
+          return groups;
+        }, {});
+      }
+      */
     });
   }
 }
