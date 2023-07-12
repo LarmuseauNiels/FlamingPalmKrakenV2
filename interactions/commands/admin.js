@@ -38,19 +38,19 @@ We offer several game-specific roles that can be self-assigned by anyone using t
             .setLabel("Europa Universalis IV")
             .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
-            .setCustomId("toggleRole_EUIV")
+            .setCustomId("toggleRole_HOIIV")
             .setLabel("Hearts of Iron IV")
             .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
-            .setCustomId("toggleRole_EUIV")
+            .setCustomId("toggleRole_CK3")
             .setLabel("Crusader Kings III")
             .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
-            .setCustomId("toggleRole_EUIV")
+            .setCustomId("toggleRole_VIC3")
             .setLabel("Victoria III")
             .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
-            .setCustomId("toggleRole_EUIV")
+            .setCustomId("toggleRole_PARTY")
             .setLabel("Party Games")
             .setStyle(ButtonStyle.Primary)
         );
@@ -98,7 +98,6 @@ Members of our community have the opportunity to earn Achievements through vario
     } catch (e) {
       global.bugsnag.notify(e);
       console.log(e);
-      await interaction.editReply({ content: "error" });
     }
   },
   isGuild: true,
