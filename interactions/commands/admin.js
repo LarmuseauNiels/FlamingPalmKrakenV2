@@ -36,33 +36,33 @@ We offer several game-specific roles that can be self-assigned by anyone using t
           new ButtonBuilder()
             .setCustomId("toggleRole_PARTY")
             .setLabel("Party Games")
-            .setStyle(ButtonStyle.Primary),
+            .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
             .setCustomId("toggleRole_BT")
             .setLabel("Barotrauma")
-            .setStyle(ButtonStyle.Primary),
+            .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
             .setCustomId("toggleRole_BBR")
             .setLabel("BattleBit Remastered")
-            .setStyle(ButtonStyle.Primary)
+            .setStyle(ButtonStyle.Secondary)
         );
         let row1 = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
             .setCustomId("toggleRole_EUIV")
             .setLabel("Europa Universalis IV")
-            .setStyle(ButtonStyle.Primary),
+            .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
             .setCustomId("toggleRole_HOIIV")
             .setLabel("Hearts of Iron IV")
-            .setStyle(ButtonStyle.Primary),
+            .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
             .setCustomId("toggleRole_CK3")
             .setLabel("Crusader Kings III")
-            .setStyle(ButtonStyle.Primary),
+            .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
             .setCustomId("toggleRole_VIC3")
             .setLabel("Victoria III")
-            .setStyle(ButtonStyle.Primary)
+            .setStyle(ButtonStyle.Secondary)
         );
 
         await interaction.channel.send({
@@ -80,7 +80,7 @@ We organize a variety of events on a weekly or biweekly basis. You can find info
           new ButtonBuilder()
             .setCustomId("toggleRole_EventNotification")
             .setLabel("Subscribe to notifications")
-            .setStyle(ButtonStyle.Primary)
+            .setStyle(ButtonStyle.Secondary)
         );
 
         await interaction.channel.send({
