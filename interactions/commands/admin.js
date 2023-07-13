@@ -62,10 +62,6 @@ We offer several game-specific roles that can be self-assigned by anyone using t
           new ButtonBuilder()
             .setCustomId("toggleRole_VIC3")
             .setLabel("Victoria III")
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
-            .setCustomId("toggleRole_PARTY")
-            .setLabel("Party Games")
             .setStyle(ButtonStyle.Primary)
         );
 
