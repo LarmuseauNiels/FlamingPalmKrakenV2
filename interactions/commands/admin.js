@@ -34,6 +34,20 @@ We offer several game-specific roles that can be self-assigned by anyone using t
 
         let row = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
+            .setCustomId("toggleRole_PARTY")
+            .setLabel("Party Games")
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId("toggleRole_BT")
+            .setLabel("Barotrauma")
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId("toggleRole_BBR")
+            .setLabel("BattleBit Remastered")
+            .setStyle(ButtonStyle.Primary)
+        );
+        let row1 = new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
             .setCustomId("toggleRole_EUIV")
             .setLabel("Europa Universalis IV")
             .setStyle(ButtonStyle.Primary),
@@ -57,7 +71,7 @@ We offer several game-specific roles that can be self-assigned by anyone using t
 
         await interaction.channel.send({
           content: text1,
-          components: [row],
+          components: [row, row1],
         });
 
         const text2 = `## :palm_tree: Events
@@ -69,7 +83,7 @@ We organize a variety of events on a weekly or biweekly basis. You can find info
             .setStyle(ButtonStyle.Link),
           new ButtonBuilder()
             .setCustomId("toggleRole_EventNotification")
-            .setLabel("Get DM'd 30 min events")
+            .setLabel("Subscribe to notifications")
             .setStyle(ButtonStyle.Primary)
         );
 
@@ -84,7 +98,11 @@ Members of our community have the opportunity to earn Achievements through vario
         let row3 = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
             .setLabel("Webstore")
-            .setURL("https://flamingpalm.com/store")
+            .setURL("https://flamingpalm.com/members/store")
+            .setStyle(ButtonStyle.Link),
+          new ButtonBuilder()
+            .setLabel("Info page")
+            .setURL("https://flamingpalm.com/members/info")
             .setStyle(ButtonStyle.Link)
         );
 

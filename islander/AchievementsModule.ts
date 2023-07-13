@@ -193,11 +193,13 @@ export class AchievementsModule {
                   UserID: member.id,
                   AchievementID: DailyLoginAchievement.ID,
                   TimeStamp: {
-                    gte: startOfToday.toDateString(),
+                    gte: startOfToday,
                   },
                 },
               })
               .then((achievement) => {
+                console.log(JSON.stringify(achievement));
+                console.log(startOfToday);
                 if (achievement == null) {
                   this.GiveAchievement(
                     member.id,
