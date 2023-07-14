@@ -81,6 +81,7 @@ export class AchievementsModule {
         AchievementID: 13,
       },
     });
+    console.log(allLogins);
     let timestamps = allLogins
       .map((x) => x.TimeStamp)
       .sort((a, b) => a.getTime() - b.getTime());
