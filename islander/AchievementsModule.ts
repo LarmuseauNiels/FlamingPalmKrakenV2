@@ -15,7 +15,9 @@ export class AchievementsModule {
       },
     });
 
-    console.log("Giving achievement: " + achievement.Name + " to " + memberID);
+    global.client.log(
+      "Giving achievement: " + achievement.Name + " to " + memberID
+    );
     await global.client.prisma.achievement_History.create({
       data: {
         UserID: memberID,
@@ -93,6 +95,7 @@ export class AchievementsModule {
       }
       lastLogin = date;
     }
+    return loginstreak;
   }
 
   async GetProfile(memberID: string): Promise<AttachmentBuilder> {
