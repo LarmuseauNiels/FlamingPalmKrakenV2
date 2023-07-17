@@ -78,7 +78,7 @@ export class AchievementsModule {
   }
 
   async GetLoginStreak(memberID: string) {
-    let a = await global.client.prisma.$queryRaw`SELECT MAX(streak)
+    let a = await global.client.prisma.$queryRaw`SELECT MAX(streak) as streak
 FROM (
   SELECT AchievementID, UserId, Timestamp,
          DATEDIFF(NOW(), Timestamp),
@@ -89,7 +89,7 @@ FROM (
   WHERE UserId = ${memberID} AND Timestamp <= NOW() And AchievementID = 13
   ORDER BY Timestamp DESC) AS t`;
     console.log(a);
-    return a[0];
+    return a[0].streak;
   }
 
   async GetProfile(memberID: string): Promise<AttachmentBuilder> {
