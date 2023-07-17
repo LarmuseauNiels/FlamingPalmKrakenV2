@@ -78,28 +78,16 @@ export class AchievementsModule {
   }
 
   async GetLoginStreak(memberID: string) {
-    let allLogins = await global.client.prisma.achievement_History.findMany({
-      where: {
-        UserID: memberID,
-        AchievementID: 13,
-      },
-    });
-    console.log(allLogins);
-    let timestamps = allLogins
-      .map((x) => x.TimeStamp)
-      .sort((a, b) => a.getTime() - b.getTime());
-    let loginstreak = 0;
-    let lastLogin = new Date();
-    for (let i = 0; i < timestamps.length; i++) {
-      let date = new Date(timestamps[i]);
-      if (date.getDate() == lastLogin.getDate() - 1) {
-        loginstreak++;
-      } else {
-        loginstreak = 0;
-      }
-      lastLogin = date;
-    }
-    return loginstreak;
+    return await global.client.prisma.$executeRaw`SELECT MAX(streak)
+FROM (
+  SELECT AchievementID, UserId, Timestamp,
+         DATEDIFF(NOW(), Timestamp),
+         @streak := IF( DATEDIFF(NOW(), Timestamp) - @days_diff > 1, @streak,
+                       IF(@days_diff := DATEDIFF(NOW(), Timestamp), @streak+1, @streak+1))  AS streak
+  FROM Achievement_History
+  CROSS JOIN (SELECT @streak := 0, @days_diff := -1) AS vars
+  WHERE UserId = ${memberID} AND Timestamp <= NOW() And AchievementID = 13
+  ORDER BY Timestamp DESC) AS t`;
   }
 
   async GetProfile(memberID: string): Promise<AttachmentBuilder> {
