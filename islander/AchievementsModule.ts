@@ -16,7 +16,10 @@ export class AchievementsModule {
     });
 
     global.client.log(
-      "Giving achievement: " + achievement.Name + " to " + memberID
+      "Giving achievement: " +
+        achievement.Name +
+        " to " +
+        global.client.idToName(memberID) ?? memberID
     );
     await global.client.prisma.achievement_History.create({
       data: {

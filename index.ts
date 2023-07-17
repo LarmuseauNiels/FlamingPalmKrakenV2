@@ -67,6 +67,10 @@ class FpgClient extends Client {
     console.log(loggText);
     global.client.logChannel.send("```" + loggText + "```");
   }
+
+  idToName(id) {
+    return global.client.users.cache.get(id).username;
+  }
 }
 
 Bugsnag.start({
