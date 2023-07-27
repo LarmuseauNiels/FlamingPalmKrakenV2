@@ -11,7 +11,7 @@ module.exports = {
     .setName("island")
     .setDescription("Check the progress of your island"),
   async execute(interaction) {
-    interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ ephemeral: true });
     global.client.islander.GetMemberIsland(interaction.user.id).then(
       (member) => {
         let island = member.i_Island;
@@ -49,7 +49,6 @@ module.exports = {
               content: text,
               files: [image],
               components: [row],
-              ephemeral: true,
             });
           });
       },
@@ -57,7 +56,6 @@ module.exports = {
         console.log("error island 01" + err);
         interaction.editReply({
           content: "You do not have an island yet.",
-          ephemeral: true,
         });
       }
     );
