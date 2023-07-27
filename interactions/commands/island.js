@@ -45,7 +45,7 @@ module.exports = {
         global.client.islander
           .GetImage(interaction.user.id, island)
           .then((image) => {
-            interaction.reply({
+            interaction.editReply({
               content: text,
               files: [image],
               components: [row],
@@ -55,7 +55,7 @@ module.exports = {
       },
       (err) => {
         console.log("error island 01" + err);
-        interaction.reply({
+        interaction.editReply({
           content: "You do not have an island yet.",
           ephemeral: true,
         });
