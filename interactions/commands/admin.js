@@ -30,59 +30,9 @@ The Flaming Palm is a gaming community that specializes in organizing and hostin
 Respect is key in our community. We have a zero-tolerance policy for spam, recruitment, NSFW content, and extreme toxicity. Failure to comply with these rules may result in post removal, warnings, or even a ban.
 
 ## :palm_tree: Roles
-We offer several game-specific roles that can be self-assigned by anyone using the channels & roles option. By assigning these roles, you gain access to the necessary text channels and receive game event notifications.`;
-        /*
-        let row = new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setCustomId("subscribe_Party")
-            .setLabel("Party Games")
-            .setStyle(ButtonStyle.Secondary),
-          new ButtonBuilder()
-            .setCustomId("subscribe_Baro")
-            .setLabel("Barotrauma")
-            .setStyle(ButtonStyle.Secondary),
-          new ButtonBuilder()
-            .setCustomId("subscribe_BBIT")
-            .setLabel("BattleBit")
-            .setStyle(ButtonStyle.Secondary),
-          new ButtonBuilder()
-            .setCustomId("subscribe_MC")
-            .setLabel("MineCraft")
-            .setStyle(ButtonStyle.Secondary),
-          new ButtonBuilder()
-            .setCustomId("subscribe_ARMA")
-            .setLabel("Arma")
-            .setStyle(ButtonStyle.Secondary)
-        );
-        let row1 = new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setCustomId("subscribe_CK")
-            .setLabel("Crusader Kings")
-            .setStyle(ButtonStyle.Secondary),
-          new ButtonBuilder()
-            .setCustomId("subscribe_EU")
-            .setLabel("Europa Universalis")
-            .setStyle(ButtonStyle.Secondary),
-          new ButtonBuilder()
-            .setCustomId("subscribe_VIC")
-            .setLabel("Victoria")
-            .setStyle(ButtonStyle.Secondary),
-          new ButtonBuilder()
-            .setCustomId("subscribe_HOI")
-            .setLabel("Hearts of Iron")
-            .setStyle(ButtonStyle.Secondary),
-          new ButtonBuilder()
-            .setCustomId("subscribe_STLR")
-            .setLabel("Stellaris")
-            .setStyle(ButtonStyle.Secondary)
-        );
-*/
-        await interaction.channel.send({
-          content: text1,
-          // components: [row, row1],
-        });
+We offer several game-specific roles that can be self-assigned by anyone using the channels & roles option. By assigning these roles, you gain access to the necessary text channels and receive game event notifications.
 
-        const text2 = `## :palm_tree: Events
+## :palm_tree: Events
 We organize a variety of events on a weekly or biweekly basis. You can find information about these events in the Discord Events tab or on our website's calendar.`;
         let row2 = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
@@ -92,7 +42,7 @@ We organize a variety of events on a weekly or biweekly basis. You can find info
         );
 
         await interaction.channel.send({
-          content: text2,
+          content: text1,
           components: [row2],
         });
 
