@@ -27,41 +27,53 @@ module.exports = {
 The Flaming Palm is a gaming community that specializes in organizing and hosting events to foster unity among our members. We are an active community involved in a variety of games and warmly welcome new members to join us.
 
 ## :palm_tree: Rules
-Respect is key in our community. We have a zero-tolerance policy for spam, recruitment, NSFW content, and extreme toxicity. Failure to comply with these rules may result in post removal, warnings, or even a ban. Please note that long periods of inactivity may lead to a kick from the server.
+Respect is key in our community. We have a zero-tolerance policy for spam, recruitment, NSFW content, and extreme toxicity. Failure to comply with these rules may result in post removal, warnings, or even a ban.
 
 ## :palm_tree: Roles
 We offer several game-specific roles that can be self-assigned by anyone using the buttons provided below. By assigning these roles, you gain access to the necessary text channels and receive game event notifications.`;
 
         let row = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
-            .setCustomId("subscribe_PARTY")
+            .setCustomId("subscribe_Party")
             .setLabel("Party Games")
             .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
-            .setCustomId("subscribe_BT")
+            .setCustomId("subscribe_Baro")
             .setLabel("Barotrauma")
             .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
-            .setCustomId("subscribe_BBR")
-            .setLabel("BattleBit Remastered")
+            .setCustomId("subscribe_BBIT")
+            .setLabel("BattleBit")
+            .setStyle(ButtonStyle.Secondary),
+          new ButtonBuilder()
+            .setCustomId("subscribe_MC")
+            .setLabel("MineCraft")
+            .setStyle(ButtonStyle.Secondary),
+          new ButtonBuilder()
+            .setCustomId("subscribe_ARMA")
+            .setLabel("Arma")
             .setStyle(ButtonStyle.Secondary)
         );
         let row1 = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
-            .setCustomId("subscribe_EUIV")
-            .setLabel("Europa Universalis IV")
+            .setCustomId("subscribe_CK")
+            .setLabel("Crusader Kings")
             .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
-            .setCustomId("subscribe_HOIIV")
-            .setLabel("Hearts of Iron IV")
+            .setCustomId("subscribe_EU")
+            .setLabel("Europa Universalis")
             .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
-            .setCustomId("subscribe_CK3")
-            .setLabel("Crusader Kings III")
+            .setCustomId("subscribe_VIC")
+            .setLabel("Victoria")
             .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
-            .setCustomId("subscribe_VIC3")
-            .setLabel("Victoria III")
+            .setCustomId("subscribe_HOI")
+            .setLabel("Hearts of Iron")
+            .setStyle(ButtonStyle.Secondary),
+          new ButtonBuilder()
+            .setCustomId("subscribe_STLR")
+            .setLabel("Stellaris")
             .setStyle(ButtonStyle.Secondary)
         );
 
@@ -76,11 +88,7 @@ We organize a variety of events on a weekly or biweekly basis. You can find info
           new ButtonBuilder()
             .setLabel("Calendar")
             .setURL("https://flamingpalm.com/calendar")
-            .setStyle(ButtonStyle.Link),
-          new ButtonBuilder()
-            .setCustomId("subscribe_EVENTS")
-            .setLabel("Subscribe to all event notifications")
-            .setStyle(ButtonStyle.Secondary)
+            .setStyle(ButtonStyle.Link)
         );
 
         await interaction.channel.send({
