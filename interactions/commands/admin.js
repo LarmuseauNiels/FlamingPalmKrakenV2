@@ -30,8 +30,8 @@ The Flaming Palm is a gaming community that specializes in organizing and hostin
 Respect is key in our community. We have a zero-tolerance policy for spam, recruitment, NSFW content, and extreme toxicity. Failure to comply with these rules may result in post removal, warnings, or even a ban.
 
 ## :palm_tree: Roles
-We offer several game-specific roles that can be self-assigned by anyone using the buttons provided below. By assigning these roles, you gain access to the necessary text channels and receive game event notifications.`;
-
+We offer several game-specific roles that can be self-assigned by anyone using the channels & roles option. By assigning these roles, you gain access to the necessary text channels and receive game event notifications.`;
+        /*
         let row = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
             .setCustomId("subscribe_Party")
@@ -76,10 +76,10 @@ We offer several game-specific roles that can be self-assigned by anyone using t
             .setLabel("Stellaris")
             .setStyle(ButtonStyle.Secondary)
         );
-
+*/
         await interaction.channel.send({
           content: text1,
-          components: [row, row1],
+          // components: [row, row1],
         });
 
         const text2 = `## :palm_tree: Events
@@ -128,6 +128,13 @@ Members of our community have the opportunity to earn Achievements through vario
             console.log(e);
           }
         });
+      }
+
+      if (command === "set channel name") {
+        const channel = await global.client.channels.fetch(
+          "1145716962857603142"
+        );
+        await channel.setName("📥︱3d printing");
       }
 
       if (process.env.ISEVIL === "yes") {
