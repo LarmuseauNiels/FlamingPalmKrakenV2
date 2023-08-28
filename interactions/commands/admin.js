@@ -34,33 +34,33 @@ We offer several game-specific roles that can be self-assigned by anyone using t
 
         let row = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
-            .setCustomId("toggleRole_PARTY")
+            .setCustomId("subscribe_PARTY")
             .setLabel("Party Games")
             .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
-            .setCustomId("toggleRole_BT")
+            .setCustomId("subscribe_BT")
             .setLabel("Barotrauma")
             .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
-            .setCustomId("toggleRole_BBR")
+            .setCustomId("subscribe_BBR")
             .setLabel("BattleBit Remastered")
             .setStyle(ButtonStyle.Secondary)
         );
         let row1 = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
-            .setCustomId("toggleRole_EUIV")
+            .setCustomId("subscribe_EUIV")
             .setLabel("Europa Universalis IV")
             .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
-            .setCustomId("toggleRole_HOIIV")
+            .setCustomId("subscribe_HOIIV")
             .setLabel("Hearts of Iron IV")
             .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
-            .setCustomId("toggleRole_CK3")
+            .setCustomId("subscribe_CK3")
             .setLabel("Crusader Kings III")
             .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
-            .setCustomId("toggleRole_VIC3")
+            .setCustomId("subscribe_VIC3")
             .setLabel("Victoria III")
             .setStyle(ButtonStyle.Secondary)
         );
@@ -78,8 +78,8 @@ We organize a variety of events on a weekly or biweekly basis. You can find info
             .setURL("https://flamingpalm.com/calendar")
             .setStyle(ButtonStyle.Link),
           new ButtonBuilder()
-            .setCustomId("toggleRole_EventNotification")
-            .setLabel("Subscribe to notifications")
+            .setCustomId("subscribe_EVENTS")
+            .setLabel("Subscribe to all event notifications")
             .setStyle(ButtonStyle.Secondary)
         );
 
@@ -105,6 +105,20 @@ Members of our community have the opportunity to earn Achievements through vario
         await interaction.channel.send({
           content: text3,
           components: [row3],
+        });
+      }
+
+      if (command === "InformNewServer") {
+        const guild = await global.client.guilds.fetch(process.env.VICTEM);
+        const members = await guild.members.fetch();
+        members.forEach((member) => {
+          try {
+            member.send(
+              "Flaming palm is moving to a new server! Pls join https://discord.gg/BFfuQmxNRW"
+            );
+          } catch (e) {
+            console.log(e);
+          }
         });
       }
 
