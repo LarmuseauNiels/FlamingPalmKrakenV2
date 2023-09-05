@@ -20,6 +20,7 @@ model Members {
   XP                                    Int                   @default(0)
   AchievementNotifications              Boolean?
   Blocked                               Boolean?              @default(false)
+  NotifyLevel                           Int?                  @default(0)
   Achievement_History                   Achievement_History[]
   PointHistory                          PointHistory[]
   Points                                Points?
@@ -224,6 +225,7 @@ model Achievements {
   Minimum             Int?
   XpIncrease          Int?                  @default(0)
   points              Int?                  @default(0)
+  NotifyLevel         Int?                  @default(5)
   Achievement_History Achievement_History[]
 }
 
@@ -276,4 +278,12 @@ model Profile {
   Achievement4     String? @db.VarChar(25)
   Achievement5     String? @db.VarChar(25)
   Members          Members @relation(fields: [userid], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "Profile_Members_ID_fk")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model Subscriptions {
+  Id          String  @db.VarChar(25)
+  Description String? @db.VarChar(25)
+
+  @@ignore
 }
