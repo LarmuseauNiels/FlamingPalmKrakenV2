@@ -53,7 +53,7 @@ module.exports = async function (client) {
                   return {
                     ID: z.id,
                     ChannelID: z.voice.channelId,
-                    ChannelName: z.voice.channel.name,
+                    ChannelName: cleanString(z.voice.channel.name),
                     deaf: z.voice.deaf,
                     mute: z.voice.mute,
                     streaming: z.voice.streaming,
