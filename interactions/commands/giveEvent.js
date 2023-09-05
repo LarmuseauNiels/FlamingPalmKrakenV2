@@ -86,6 +86,15 @@ module.exports = {
 
       // listen for selected option
       collector.on("collect", async (interaction) => {
+        //check if same user
+        if (interaction.user.id !== interaction.message.interaction.user.id) {
+          await interaction.reply({
+            ephemeral: true,
+            content: `You can't give achievements`,
+          });
+          return;
+        }
+
         const selectedOption = interaction.values[0]; // get the first selected option
 
         await global.client.achievementsModule.GiveAchievement(

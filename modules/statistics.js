@@ -47,7 +47,7 @@ module.exports = async function (client) {
                 .filter(
                   (m) =>
                     m.voice.channel != null &&
-                    m.voice.channelId !== "530539169580318732"
+                    m.voice.channelId !== "1128264365854961766"
                 )
                 .map((z) => {
                   return {
