@@ -12,7 +12,7 @@ module.exports = {
     //give member role
     try {
       let memberRole = GuildMember.guild.roles.cache.find(
-        (role) => role.name === "Community Guest"
+        (role) => role.name === "Guest"
       );
       GuildMember.roles.add(memberRole);
     } catch (error) {
