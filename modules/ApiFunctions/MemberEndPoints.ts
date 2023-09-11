@@ -358,6 +358,8 @@ export function memberEndPoints(app) {
     let user = req.user;
     const body = req.body;
     if (!body) return res.status(400).send("No profile data");
+
+    let badge = body.fileName == "" ? null : body.fileName;
     // @ts-ignore
     global.client.prisma.profile
       .upsert({
@@ -365,11 +367,11 @@ export function memberEndPoints(app) {
           userid: user.id,
         },
         update: {
-          Achievement1: body.fileName,
+          Achievement1: badge,
         },
         create: {
           userid: user.id,
-          Achievement1: body.fileName,
+          Achievement1: badge,
         },
       })
       .then(() => {
