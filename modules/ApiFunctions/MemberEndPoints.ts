@@ -354,6 +354,29 @@ export function memberEndPoints(app) {
       });
   });
 
+  app.post(apiPrefix + "setBadge", authenticateToken, function (req, res) {
+    let user = req.user;
+    const body = req.body;
+    if (!body) return res.status(400).send("No profile data");
+    // @ts-ignore
+    global.client.prisma.profile
+      .upsert({
+        where: {
+          userid: user.id,
+        },
+        update: {
+          Achievement1: body.fileName,
+        },
+        create: {
+          userid: user.id,
+          Achievement1: body.fileName,
+        },
+      })
+      .then(() => {
+        res.send(true);
+      });
+  });
+
   app.get(apiPrefix + "getLevel", authenticateToken, async function (req, res) {
     let member = await global.client.prisma.members.findFirst({
       where: {
