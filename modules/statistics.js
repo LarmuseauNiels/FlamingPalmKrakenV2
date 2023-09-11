@@ -125,14 +125,18 @@ module.exports = async function (client) {
               let eventText =
                 event.name + event.description ? event.description : "";
               guild.roles.fetch().then((roles) => {
+                let announcements = client.channels.cache.get(
+                  "1128266086119374848"
+                );
+
                 let role = roles.find((role) => eventText.includes(role.name));
                 if (role?.id) {
-                  global.client.logChannel.send({
+                  announcements.send({
                     content: "<@&" + role.id + ">",
                     embeds: [eventEmbed],
                   });
                 } else {
-                  global.client.logChannel.send({
+                  announcements.send({
                     embeds: [eventEmbed],
                   });
                 }

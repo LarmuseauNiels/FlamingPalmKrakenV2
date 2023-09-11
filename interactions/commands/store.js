@@ -15,7 +15,6 @@ module.exports = {
     let embed = new EmbedBuilder()
       .setColor("#FD8612")
       .setTitle("Store")
-      .setThumbnail("https://flamingpalm.com/assets/sale.png")
       .setAuthor({
         name: interaction.user.username,
         iconURL:
