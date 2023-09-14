@@ -103,14 +103,6 @@ module.exports = async function (client) {
           client.events = events;
           client.cachUpdated = Date.now();
           client.events.forEach((event) => {
-            guild.roles.fetch().then((roles) => {
-              let eventText =
-                event.name + event.description ? event.description : "";
-              console.log(eventText);
-              let role = roles.find((role) => eventText.includes(role.name));
-              console.log(role);
-            });
-
             let timespanToGo =
               new Date(event.scheduledStartTimestamp).getTime() - Date.now();
             let description =
@@ -133,23 +125,24 @@ module.exports = async function (client) {
               let eventText =
                 event.name + event.description ? event.description : "";
               guild.roles.fetch().then((roles) => {
-                let announcements = client.channels.cache.get(
-                  "1128266086119374848"
-                );
-
-                let role = roles.find((role) => eventText.includes(role.name));
-                if (role?.id) {
-                  announcements.send({
-                    content: "<@&" + role.id + ">",
-                    embeds: [eventEmbed],
+                client.channels
+                  .fetch("1128266086119374848")
+                  .then((announcements) => {
+                    let role = roles.find((role) =>
+                      eventText.includes(role.name)
+                    );
+                    if (role) {
+                      announcements.send({
+                        content: "<@&" + role.id + ">",
+                        embeds: [eventEmbed],
+                      });
+                    } else {
+                      announcements.send({
+                        embeds: [eventEmbed],
+                      });
+                    }
                   });
-                } else {
-                  announcements.send({
-                    embeds: [eventEmbed],
-                  });
-                }
               });
-              //client.channels.cache.get("711936563000508496").send({ embeds: [eventEmbed] });
             }
           });
         });
