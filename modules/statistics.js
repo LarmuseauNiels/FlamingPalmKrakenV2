@@ -103,6 +103,14 @@ module.exports = async function (client) {
           client.events = events;
           client.cachUpdated = Date.now();
           client.events.forEach((event) => {
+            guild.roles.fetch().then((roles) => {
+              let eventText =
+                event.name + event.description ? event.description : "";
+              console.log(eventText);
+              let role = roles.find((role) => eventText.includes(role.name));
+              console.log(role);
+            });
+
             let timespanToGo =
               new Date(event.scheduledStartTimestamp).getTime() - Date.now();
             let description =
