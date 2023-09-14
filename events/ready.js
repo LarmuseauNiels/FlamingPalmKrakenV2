@@ -10,11 +10,6 @@ module.exports = {
         client.user.tag
       }, version ${process.env.CAPROVER_GIT_COMMIT_SHA.slice(0, 7)}`
     );
-    client.channels
-      .fetch("561128481384300554")
-      .then()
-      .then((channel) => channel.messages.fetch({ limit: 100 }))
-      .catch((err) => client.log(err));
     require("../modules/statistics.js")(client);
     // Collection is an enhanced Map which we are going to save our invites to.
     const guildInvites = new Collection();
