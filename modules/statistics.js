@@ -165,26 +165,13 @@ module.exports = async function (client) {
       "https://api.steampowered.com/IGameServersService/GetServerList/v1/?key=315F486717B5586382BEEF04F5C84696&filter=addr\\213.219.142.165:2309";
     http
       .get(apiUrl, (response) => {
-        let data = "";
-
-        // A chunk of data has been received.
-        response.on("data", (chunk) => {
-          data += chunk;
-        });
-
-        // The whole response has been received.
-        response.on("end", () => {
-          try {
-            const jsonData = JSON.parse(data);
-            console.log(jsonData);
-            let prop = jsonData.response.servers[0].players;
-            console.log("The value of propertyName is:", prop);
-            const channel = client.channels.cache.get("1172498969235030047");
-            channel.setName("Arma 3: " + prop + " online");
-          } catch (error) {
-            console.error("Error parsing JSON:", error.message);
-          }
-        });
+        console.log(response);
+        const jsonData = JSON.parse(response);
+        console.log(jsonData);
+        let prop = jsonData.response.servers[0].players;
+        console.log("The value of propertyName is:", prop);
+        const channel = client.channels.cache.get("1172498969235030047");
+        channel.setName("Arma 3: " + prop + " online");
       })
       .on("error", (error) => {
         console.error("Error fetching data:", error.message);
