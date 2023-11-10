@@ -160,7 +160,7 @@ module.exports = async function (client) {
 
   // cron schedule for every 5 minutes
   cron
-    .schedule("15 * * * * *", () => {
+    .schedule("15 /5 * * * *", () => {
       console.log("running arma tracking cron job");
       const apiUrl =
         "https://api.steampowered.com/IGameServersService/GetServerList/v1/?key=315F486717B5586382BEEF04F5C84696&filter=addr\\213.219.142.165:2309";
