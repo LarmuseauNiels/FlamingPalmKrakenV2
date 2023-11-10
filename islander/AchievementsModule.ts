@@ -1,4 +1,4 @@
-import { AttachmentBuilder, User } from "discord.js";
+import { AttachmentBuilder, Embed, EmbedBuilder, User } from "discord.js";
 import Rank from "../islander/profile";
 
 export class AchievementsModule {
@@ -53,6 +53,44 @@ export class AchievementsModule {
             achievement.Name + (description != null ? " " + description : ""),
         },
       });
+    }
+
+    try {
+      //let user = global.client.users.cache.get(memberID)
+      global.client.prisma.members
+        .findFirst({
+          where: {
+            ID: memberID,
+          },
+          select: {
+            AchievementNotifications: true,
+          },
+        })
+        .then((achievementNotifications) => {
+          if (achievementNotifications) {
+            // send notification to user
+            let embed = new EmbedBuilder()
+              .setColor("#00FF00")
+              .setTitle(`Achievement received: ${achievement.Name}`)
+              .setURL("https://flamingpalm.com/")
+              .addFields(
+                { name: "Description", value: achievement.Description },
+                {
+                  name: "Points",
+                  value: achievement.points.toString(),
+                  inline: true,
+                },
+                {
+                  name: "XP",
+                  value: achievement.XpIncrease.toString(),
+                  inline: true,
+                }
+              );
+            global.client.users.cache.get(memberID).send({ embeds: [embed] });
+          }
+        });
+    } catch (err) {
+      global.client.log(err);
     }
   }
 
