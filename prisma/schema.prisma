@@ -89,13 +89,10 @@ model SSLink {
 }
 
 model SSSender {
-  ID        String   @id @db.VarChar(25)
-  HasEU     Boolean  @default(false)
-  HasPaypal Boolean  @default(false)
-  HasINTER  Boolean  @default(false)
-  IsSend    Boolean? @default(false)
-  SSLink    SSLink?
-  Members   Members  @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "SSSender_Members_ID_fk")
+  ID      String   @id @db.VarChar(25)
+  IsSend  Boolean? @default(false)
+  SSLink  SSLink?
+  Members Members  @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "SSSender_Members_ID_fk")
 }
 
 model VoiceConnected {
@@ -192,15 +189,12 @@ model i_Unit_Island {
 }
 
 model SSReceiver {
-  ID             String   @id @db.VarChar(25)
-  Address        String   @db.Text
-  StoreLinks     String   @db.Text
-  RequiresEU     Boolean  @default(false)
-  RequiresPaypal Boolean  @default(false)
-  RequiresINTER  Boolean  @default(false)
-  IsReceived     Boolean? @default(false)
-  SSLink         SSLink?
-  Members        Members  @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "SSReceiver_Members_ID_fk")
+  ID         String   @id @db.VarChar(25)
+  Address    String   @db.Text
+  StoreLinks String   @db.Text
+  IsReceived Boolean? @default(false)
+  SSLink     SSLink?
+  Members    Members  @relation(fields: [ID], references: [ID], onUpdate: Restrict, map: "SSReceiver_Members_ID_fk")
 }
 
 model Refferals {
