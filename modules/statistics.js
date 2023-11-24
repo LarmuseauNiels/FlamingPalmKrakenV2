@@ -172,7 +172,7 @@ module.exports = async function (client) {
           let prop = jsonData.response.servers[0].players;
           console.log("The value of propertyName is:", prop);
           const channel = client.channels.cache.get("1172498969235030047");
-          channel.setName("Arma 3: " + prop + " online");
+          channel.setName("🛜︱Arma: " + prop + " online");
         });
     })
     .on("error", (error) => {
