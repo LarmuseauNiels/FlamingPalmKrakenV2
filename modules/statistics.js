@@ -160,24 +160,23 @@ module.exports = async function (client) {
 
   // cron schedule for every 5 minutes
 
-  cron
-    .schedule("15 0,5,10,15,20,25,30,35,40,45,50,55 * * * *", () => {
-      console.log("running arma tracking cron job");
-      const apiUrl =
-        "https://api.steampowered.com/IGameServersService/GetServerList/v1/?key=315F486717B5586382BEEF04F5C84696&filter=addr\\213.219.142.165:2309";
-      fetch(apiUrl)
-        .then((response) => response.json())
-        .then((jsonData) => {
-          console.log(jsonData);
-          let prop = jsonData.response.servers[0].players;
-          console.log("The value of propertyName is:", prop);
-          const channel = client.channels.cache.get("1172498969235030047");
-          channel.setName("🛜︱Arma: " + prop + " online");
-        });
-    })
-    .on("error", (error) => {
-      console.error("Error fetching data:", error.message);
-    });
+  cron.schedule("15 0,5,10,15,20,25,30,35,40,45,50,55 * * * *", () => {
+    console.log("running arma tracking cron job");
+    const apiUrl =
+      "https://api.steampowered.com/IGameServersService/GetServerList/v1/?key=315F486717B5586382BEEF04F5C84696&filter=addr\\213.219.142.165:2309";
+    fetch(apiUrl)
+      .then((response) => response.json())
+      .then((jsonData) => {
+        console.log(jsonData);
+        let prop = jsonData.response.servers[0].players;
+        console.log("The value of propertyName is:", prop);
+        const channel = client.channels.cache.get("1172498969235030047");
+        channel.setName("🛜︱Arma: " + prop + " online");
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error.message);
+      });
+  });
 };
 
 function cleanString(input) {
