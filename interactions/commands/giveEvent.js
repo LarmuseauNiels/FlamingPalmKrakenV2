@@ -57,7 +57,7 @@ module.exports = {
     hour = hour - getOffset("Europe/Brussels") / 60;
     let results = new Array();
     results = await globalThis.client.prisma.$queryRaw(
-      Prisma.sql`select distinct M.ID, M.DisplayName from VoiceConnected join Members M on M.ID = VoiceConnected.ID where HOUR(TimeStamp) = ${hour} and DATE(TimeStamp) = select DATE(DATE_ADD(NOW(),INTERVAL ${daysAgo} DAY)) `
+      Prisma.sql`select distinct M.ID, M.DisplayName from VoiceConnected join Members M on M.ID = VoiceConnected.ID where HOUR(TimeStamp) = ${hour.toString()} and DATE(TimeStamp) = select DATE(DATE_ADD(NOW(),INTERVAL ${daysAgo.toString()} DAY)) `
     );
     console.log(results);
     if (results.length === 0) {
