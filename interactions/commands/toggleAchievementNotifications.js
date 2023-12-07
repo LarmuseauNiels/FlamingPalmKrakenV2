@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
 module.exports = {
-  name: "website",
+  name: "toggle-achievement-notifications",
   data: new SlashCommandBuilder()
     .setName("toggle-achievement-notifications")
     .setDescription("toggle if you receive notifications for achievements"),
