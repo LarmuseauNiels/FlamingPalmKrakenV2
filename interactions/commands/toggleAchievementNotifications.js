@@ -6,7 +6,6 @@ module.exports = {
     .setDescription("toggle if you receive notifications for achievements"),
   async execute(interaction) {
     let isEnabling = true;
-
     global.client.prisma.members
       .findFirst({
         where: {
@@ -17,6 +16,7 @@ module.exports = {
         },
       })
       .then((result) => {
+        console.log(result);
         if (result) {
           isEnabling = false;
         }
