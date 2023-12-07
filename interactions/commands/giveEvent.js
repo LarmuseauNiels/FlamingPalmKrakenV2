@@ -25,12 +25,10 @@ module.exports = {
         .setRequired(true)
     )
     .addIntegerOption((option) =>
-        option
-            .setName("daysago")
-            .setDescription(
-                "number of days ago"
-            )
-            .setRequired(true)
+      option
+        .setName("daysago")
+        .setDescription("number of days ago")
+        .setRequired(true)
     )
     .addStringOption((option) =>
       option
@@ -52,8 +50,8 @@ module.exports = {
   async execute(interaction) {
     const achievement = +interaction.options.getString("achievement");
     const description = interaction.options.getString("description");
-    let hour = +interaction.options.getString("time");
-    let daysago = +interaction.options.getString("daysago");
+    let hour = +interaction.options.getInteger("time");
+    let daysago = +interaction.options.getInteger("daysago");
     hour = hour - getOffset("Europe/Brussels") / 60;
     let results = new Array();
     results = await globalThis.client.prisma
