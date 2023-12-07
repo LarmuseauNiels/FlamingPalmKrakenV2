@@ -18,11 +18,19 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("give-event")
     .setDescription("give event to users")
-    .addStringOption((option) =>
+    .addIntegerOption((option) =>
       option
         .setName("time")
         .setDescription("The hour the event was at 24h format brussels time")
         .setRequired(true)
+    )
+    .addIntegerOption((option) =>
+        option
+            .setName("daysago")
+            .setDescription(
+                "number of days ago"
+            )
+            .setRequired(true)
     )
     .addStringOption((option) =>
       option
@@ -39,15 +47,17 @@ module.exports = {
         )
         .setRequired(false)
     )
+
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   async execute(interaction) {
     const achievement = +interaction.options.getString("achievement");
     const description = interaction.options.getString("description");
     let hour = +interaction.options.getString("time");
+    let daysago = +interaction.options.getString("daysago");
     hour = hour - getOffset("Europe/Brussels") / 60;
     let results = new Array();
     results = await globalThis.client.prisma
-      .$queryRaw`select distinct M.ID, M.DisplayName from VoiceConnected join Members M on M.ID = VoiceConnected.ID where HOUR(TimeStamp) = ${hour} and DATE(TimeStamp) = DATE(NOW()) `;
+      .$queryRaw`select distinct M.ID, M.DisplayName from VoiceConnected join Members M on M.ID = VoiceConnected.ID where HOUR(TimeStamp) = ${hour} and DATE(TimeStamp) = select DATE(DATE_ADD(NOW(),INTERVAL -${daysago} DAY)) `;
     console.log(results);
     if (results.length === 0) {
       await interaction.reply({
