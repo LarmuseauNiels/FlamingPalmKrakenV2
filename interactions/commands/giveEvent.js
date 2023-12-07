@@ -4,7 +4,6 @@ const {
   ActionRowBuilder,
   StringSelectMenuBuilder,
 } = require("discord.js");
-const { Prisma } = require("@prisma/client");
 
 const getOffset = (timeZone = "UTC", date = new Date()) => {
   const utcDate = new Date(date.toLocaleString("en-US", { timeZone: "UTC" }));
@@ -52,13 +51,13 @@ module.exports = {
     const achievement = +interaction.options.getString("achievement");
     const description = interaction.options.getString("description");
     let hour = interaction.options.getInteger("time");
-    let days = interaction.options.getInteger("daysago");
-    let daysAgo = 0 - days;
+    let daysago = interaction.options.getInteger("daysago");
     hour = hour - getOffset("Europe/Brussels") / 60;
     let results = new Array();
-    results = await globalThis.client.prisma.$queryRaw(
-      Prisma.sql`select distinct M.ID, M.DisplayName from VoiceConnected join Members M on M.ID = VoiceConnected.ID where HOUR(TimeStamp) = ${hour.toString()} and DATE(TimeStamp) = select DATE(DATE_ADD(NOW(),INTERVAL ${daysAgo.toString()} DAY)) `
-    );
+    results = await globalThis.client.prisma
+      .$queryRaw`select distinct M.ID, M.DisplayName from VoiceConnected join Members M on M.ID = VoiceConnected.ID where HOUR(TimeStamp) = ${hour} and DATE(TimeStamp) = DATE(DATE_ADD(NOW(),INTERVAL ${
+      0 - daysago
+    } DAY)) `;
     console.log(results);
     if (results.length === 0) {
       await interaction.reply({
