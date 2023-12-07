@@ -5,6 +5,7 @@ module.exports = {
     .setName("toggle-achievement-notifications")
     .setDescription("toggle if you receive notifications for achievements"),
   async execute(interaction) {
+    console.log("executing toggle achievement notifications");
     let isEnabling = true;
     let result = await global.client.prisma.members.findUnique({
       where: {
