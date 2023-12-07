@@ -51,13 +51,12 @@ module.exports = {
     const achievement = +interaction.options.getString("achievement");
     const description = interaction.options.getString("description");
     let hour = interaction.options.getInteger("time");
-    let daysago = interaction.options.getInteger("daysago");
+    let days = interaction.options.getInteger("daysago");
+    let daysAgo = 0 - days;
     hour = hour - getOffset("Europe/Brussels") / 60;
     let results = new Array();
     results = await globalThis.client.prisma
-      .$queryRaw`select distinct M.ID, M.DisplayName from VoiceConnected join Members M on M.ID = VoiceConnected.ID where HOUR(TimeStamp) = ${hour} and DATE(TimeStamp) = select DATE(DATE_ADD(NOW(),INTERVAL ${
-      0 - daysago
-    } DAY)) `;
+      .$queryRaw`select distinct M.ID, M.DisplayName from VoiceConnected join Members M on M.ID = VoiceConnected.ID where HOUR(TimeStamp) = ${hour} and DATE(TimeStamp) = select DATE(DATE_ADD(NOW(),INTERVAL ${daysAgo} DAY)) `;
     console.log(results);
     if (results.length === 0) {
       await interaction.reply({
