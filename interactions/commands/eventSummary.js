@@ -41,13 +41,17 @@ module.exports = {
       let contentText = "";
       for (let event of events) {
         console.log(event);
-        let eventText = event.name + event.description ? event.description : "";
+        let actualevent = event.first();
+        let eventText =
+          actualevent.name + actualevent.description
+            ? actualevent.description
+            : "";
         let test = {
-          name: "Event: " + event.name,
+          name: "Event: " + actualevent.name,
           value: eventText,
           inline: false,
         };
-        contentText += `${event.url}\n`;
+        contentText += `${actualevent.url}\n`;
       }
       eventEmbed.setTimestamp(Date.now());
 
