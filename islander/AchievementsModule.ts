@@ -67,7 +67,7 @@ export class AchievementsModule {
           },
         })
         .then((result) => {
-          if (result.AchievementNotifications) {
+          if (result?.AchievementNotifications ?? false) {
             // send notification to user
             let embed = new EmbedBuilder()
               .setColor("#00FF00")
