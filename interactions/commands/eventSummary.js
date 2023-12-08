@@ -39,11 +39,12 @@ module.exports = {
         })
         .setDescription("Upcoming events");
       let contentText = "";
-      for (const event of events) {
+      for (let event of events) {
         console.log(event);
+        let eventText = event.name + event.description ? event.description : "";
         eventEmbed.addFields({
-          name: event.name,
-          value: event.description,
+          name: "Event: " + event.name,
+          value: eventText,
           inline: false,
         });
         contentText += `${event.url}\n`;
@@ -53,6 +54,10 @@ module.exports = {
       channel.send({
         content: contentText,
         embeds: [eventEmbed],
+      });
+      interaction.reply({
+        content: `\`✅\` Event summary sent.`,
+        ephemeral: true,
       });
     });
   },
