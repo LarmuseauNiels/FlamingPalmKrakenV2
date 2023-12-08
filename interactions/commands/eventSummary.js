@@ -41,7 +41,7 @@ module.exports = {
       let contentText = "";
       for (let event of events) {
         console.log(event);
-        let actualevent = event.first();
+        let actualevent = event[0];
         let eventText =
           actualevent.name + actualevent.description
             ? actualevent.description
