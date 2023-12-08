@@ -38,18 +38,16 @@ module.exports = {
             "https://flamingpalm.com/assets/images/logo/FlamingPalmLogoSmall.png",
         })
         .setDescription("Upcoming events");
-      let fields = [];
       let contentText = "";
       for (const event of events) {
         console.log(event);
-        fields.push({
+        eventEmbed.addFields({
           name: event.name,
           value: event.description,
-          inline: true,
+          inline: false,
         });
         contentText += `${event.url}\n`;
       }
-      eventEmbed.addFields(fields);
       eventEmbed.setTimestamp(Date.now());
 
       channel.send({
