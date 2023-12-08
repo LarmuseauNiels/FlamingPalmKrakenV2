@@ -42,11 +42,11 @@ module.exports = {
       for (let event of events) {
         console.log(event);
         let eventText = event.name + event.description ? event.description : "";
-        eventEmbed.addFields({
+        let test = {
           name: "Event: " + event.name,
           value: eventText,
           inline: false,
-        });
+        };
         contentText += `${event.url}\n`;
       }
       eventEmbed.setTimestamp(Date.now());
