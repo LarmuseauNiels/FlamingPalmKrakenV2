@@ -29,7 +29,7 @@ module.exports = {
       });
     }
 
-    guild.scheduledEvents.fetch().then((events) => {
+    interaction.guild.scheduledEvents.fetch().then((events) => {
       client.events = events;
       client.cachUpdated = Date.now();
       var contentText = "";
