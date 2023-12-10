@@ -30,7 +30,7 @@ module.exports = {
     }
 
     interaction.guild.scheduledEvents.fetch().then((events) => {
-      events = events.sort(e => e.scheduledStartTimestamp);
+      events = events.sort(e => e.scheduledStartTimestamp).reverse();
       client.events = events;
       client.cachUpdated = Date.now();
       var contentText = "Upcoming events!\n";
