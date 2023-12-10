@@ -32,10 +32,9 @@ module.exports = {
     interaction.guild.scheduledEvents.fetch().then((events) => {
       client.events = events;
       client.cachUpdated = Date.now();
-      var contentText = "";
+      var contentText = "Upcoming events!\n";
       client.events.forEach((event) => {
-        contentText += `${event.name}: ${event.date}\n`;
-        contentText += `${event.url}\n`
+        contentText += `${event.name}:\n${event.url}\n`;
       });
 
       channel.send({
