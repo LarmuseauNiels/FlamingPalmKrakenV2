@@ -33,8 +33,11 @@ module.exports = {
       client.events = events;
       client.cachUpdated = Date.now();
       var contentText = "Upcoming events!\n";
+
       client.events.forEach((event) => {
-        contentText += `${event.name}:\n${event.url}\n`;
+        let description =
+            event?.description !== null ? event.description : "";
+        contentText += `${event.name}\n${description}\n${event.url}\n`;
       });
 
       channel.send({
