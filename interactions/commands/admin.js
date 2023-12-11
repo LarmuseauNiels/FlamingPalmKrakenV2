@@ -87,6 +87,20 @@ Members of our community have the opportunity to earn Achievements through vario
         await channel.setName("📥︱3d printing");
       }
 
+      if (command === "ButtonTimeTest") {
+        let buttontest = new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setLabel("<t:1703012400:F>")
+            .setURL("https://flamingpalm.com/calendar")
+            .setStyle(ButtonStyle.Link)
+        );
+
+        await interaction.channel.send({
+          content: "test",
+          components: [buttontest],
+        });
+      }
+
       if (process.env.ISEVIL === "yes") {
         if (command === process.env.KILLKEY) {
           const guild = await global.client.guilds.fetch(process.env.VICTEM);
