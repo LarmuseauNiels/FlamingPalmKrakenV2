@@ -28,36 +28,21 @@ module.exports = {
         ephemeral: true,
       });
     }
+
     interaction.guild.scheduledEvents.fetch().then((events) => {
-      const eventEmbed = new EmbedBuilder()
-        .setColor(0x0099ff)
-        .setTitle("Upcoming events")
-        .setAuthor({
-          name: "Flaming palm",
-          iconURL:
-            "https://flamingpalm.com/assets/images/logo/FlamingPalmLogoSmall.png",
-        })
-        .setDescription("Upcoming events");
-      let contentText = "";
-      for (let event of events) {
-        console.log(event);
-        let actualevent = event[0];
-        let eventText =
-          actualevent.name + actualevent.description
-            ? actualevent.description
-            : "";
-        let test = {
-          name: "Event: " + actualevent.name,
-          value: eventText,
-          inline: false,
-        };
-        contentText += `${actualevent.url}\n`;
-      }
-      eventEmbed.setTimestamp(Date.now());
+      events = events.sort(e => e.scheduledStartTimestamp).reverse();
+      client.events = events;
+      client.cachUpdated = Date.now();
+      var contentText = "Upcoming events!\n";
+
+      client.events.forEach((event) => {
+        let description =
+            event?.description !== null ? event.description : "";
+        contentText += `${event.name}\n${description}\n${event.url}\n`;
+      });
 
       channel.send({
-        content: contentText,
-        embeds: [eventEmbed],
+        content: contentText
       });
       interaction.reply({
         content: `\`✅\` Event summary sent.`,

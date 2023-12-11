@@ -11,8 +11,6 @@ const getOffset = (timeZone = "UTC", date = new Date()) => {
   return (tzDate.getTime() - utcDate.getTime()) / 6e4;
 };
 
-class BuildersSelectMenuOption {}
-
 module.exports = {
   name: "give-event",
   data: new SlashCommandBuilder()
