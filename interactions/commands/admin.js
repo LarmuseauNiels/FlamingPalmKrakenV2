@@ -4,6 +4,7 @@ const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  EmbedBuilder,
 } = require("discord.js");
 module.exports = {
   name: "admin",
@@ -88,6 +89,20 @@ Members of our community have the opportunity to earn Achievements through vario
       }
 
       if (command === "ButtonTimeTest") {
+        let embed = new EmbedBuilder()
+          .setColor("#FD8612")
+          .setTitle(`<t:1703012400:F>`)
+          .addFields({
+            name: `<t:1703012400:F>`,
+            value: `<t:1703012400:F>`,
+            inline: false,
+          })
+          .setTimestamp()
+          .setFooter({
+            text: "Niels2398 FPG kraken bot",
+            iconURL: "https://flamingpalm.com/images/FlamingPalmLogoSmall.png",
+          });
+
         let buttontest = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
             .setLabel("<t:1703012400:F>")
@@ -96,7 +111,8 @@ Members of our community have the opportunity to earn Achievements through vario
         );
 
         await interaction.channel.send({
-          content: "test",
+          content: "<t:1703012400:F>",
+          embeds: [embed],
           components: [buttontest],
         });
       }
