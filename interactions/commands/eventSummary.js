@@ -30,19 +30,17 @@ module.exports = {
     }
 
     interaction.guild.scheduledEvents.fetch().then((events) => {
-      events = events.sort(e => e.scheduledStartTimestamp).reverse();
+      events = events.sort((e) => e.scheduledStartTimestamp).reverse();
       client.events = events;
       client.cachUpdated = Date.now();
       var contentText = "Upcoming events!\n";
 
       client.events.forEach((event) => {
-        let description =
-            event?.description !== null ? event.description : "";
-        contentText += `${event.name}\n${description}\n${event.url}\n`;
+        contentText += `${event.url}\n`;
       });
 
       channel.send({
-        content: contentText
+        content: contentText,
       });
       interaction.reply({
         content: `\`✅\` Event summary sent.`,
