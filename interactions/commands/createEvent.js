@@ -13,14 +13,14 @@ module.exports = {
     )
     .addIntegerOption((option) =>
       option
-        .setName("minPlayers")
+        .setName("minplayers")
         .setDescription("The minimum attendees of your event")
         .setRequired(true)
     ),
   isGuild: true,
   async execute(interaction) {
     const title = interaction.options.getString("title");
-    const minPlayers = interaction.options.getInteger("minPlayers");
+    const minPlayers = interaction.options.getInteger("minplayers");
 
     await globalThis.client.prisma.pocketEvents.create({
       data: {
