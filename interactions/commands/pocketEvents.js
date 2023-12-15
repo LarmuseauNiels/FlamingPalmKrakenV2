@@ -1,4 +1,9 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  StringSelectMenuBuilder,
+  ActionRowBuilder,
+} = require("discord.js");
 
 module.exports = {
   name: "pocket-events",
@@ -32,16 +37,27 @@ module.exports = {
           "https://flamingpalm.com/assets/images/logo/FlamingPalmLogoSmall.png",
       });
 
+    const select = new StringSelectMenuBuilder()
+      .setCustomId("event-signup")
+      .setPlaceholder("Select event to sign up");
+
     events.forEach((event) => {
       embed.addFields({
         name: event.Title,
         value: `Min Players: ${event.MinPlayers}`,
         inline: true,
       });
+      select.addOptions({
+        label: event.Title,
+        value: event.ID.toString(),
+      });
     });
+
+    const row = new ActionRowBuilder().addComponents(select);
 
     interaction.reply({
       embeds: [embed],
+      components: [row],
       ephemeral: true,
     });
   },
