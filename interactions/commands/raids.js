@@ -6,17 +6,17 @@ const {
 } = require("discord.js");
 
 module.exports = {
-  name: "pocket-events",
+  name: "raids",
   data: new SlashCommandBuilder()
-    .setName("pocket-events")
+    .setName("raids")
     .setDescription("See all the available pocket party events!"),
   isGuild: true,
   async execute(interaction) {
-    const events = await globalThis.client.prisma.pocketEvents.findMany({
+    const raids = await globalThis.client.prisma.raids.findMany({
       where: { Status: 1 },
     });
 
-    if (events.length === 0) {
+    if (raids.length === 0) {
       interaction.reply({
         content:
           "There are no pocket party events at the moment, consider creating one!",
@@ -28,28 +28,28 @@ module.exports = {
     // make an embed with all the events
     const embed = new EmbedBuilder()
       .setColor("#FD8612")
-      .setTitle("Pocket Party Events")
-      .setDescription("All the available pocket party events!")
+      .setTitle("Party Raids")
+      .setDescription("All the available party raids!")
       .setTimestamp()
       .setFooter({
-        text: "Flamingpalm pocket party events",
+        text: "Flamingpalm party raids",
         iconURL:
           "https://flamingpalm.com/assets/images/logo/FlamingPalmLogoSmall.png",
       });
 
     const select = new StringSelectMenuBuilder()
-      .setCustomId("event-signup")
-      .setPlaceholder("Select event to sign up");
+      .setCustomId("raidsignup")
+      .setPlaceholder("Select a raid to sign up");
 
-    events.forEach((event) => {
+    raids.forEach((raid) => {
       embed.addFields({
-        name: event.Title,
-        value: `Min Players: ${event.MinPlayers}`,
-        inline: true,
+        name: raid.Title,
+        value: `Min Players: ${raid.MinPlayers}`,
+        inline: false,
       });
       select.addOptions({
-        label: event.Title,
-        value: event.ID.toString(),
+        label: raid.Title,
+        value: raid.ID.toString(),
       });
     });
 

@@ -22,11 +22,12 @@ model Members {
   Blocked                               Boolean?              @default(false)
   NotifyLevel                           Int?                  @default(0)
   Achievement_History                   Achievement_History[]
-  PocketEvents                          PocketEvents[]
   PointHistory                          PointHistory[]
   Points                                Points?
   Presence                              Presence[]
   Profile                               Profile?
+  RaidAttendees                         RaidAttendees[]
+  Raids                                 Raids[]
   Refferals_MembersToRefferals_userid   Refferals[]           @relation("MembersToRefferals_userid")
   Refferals_MembersToRefferals_refferer Refferals[]           @relation("MembersToRefferals_refferer")
   SSReceiver                            SSReceiver?
@@ -275,14 +276,26 @@ model Profile {
   Members          Members @relation(fields: [userid], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "Profile_Members_ID_fk")
 }
 
-model PocketEvents {
-  ID           Int       @id @default(autoincrement())
-  Title        String?   @db.VarChar(100)
-  MinPlayers   Int?      @default(4)
-  Creator      String    @db.VarChar(25)
+model RaidAttendees {
+  RaidId       Int
+  MemberId     String    @db.VarChar(25)
   CreationTime DateTime? @default(now()) @db.DateTime(0)
-  Status       Int?      @db.TinyInt
-  Members      Members   @relation(fields: [Creator], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "PocketEvents_Members_ID_fk")
+  Members      Members   @relation(fields: [MemberId], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "PocketEventAttendees_Members_ID_fk")
+  Raids        Raids     @relation(fields: [RaidId], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "PocketEventAttendees_PocketEvents_ID_fk")
+
+  @@id([RaidId, MemberId])
+  @@index([MemberId], map: "PocketEventAttendees_Members_ID_fk")
+}
+
+model Raids {
+  ID            Int             @id @default(autoincrement())
+  Title         String?         @db.VarChar(100)
+  MinPlayers    Int?            @default(4)
+  Creator       String          @db.VarChar(25)
+  CreationTime  DateTime?       @default(now()) @db.DateTime(0)
+  Status        Int?            @default(1) @db.TinyInt
+  RaidAttendees RaidAttendees[]
+  Members       Members         @relation(fields: [Creator], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "PocketEvents_Members_ID_fk")
 
   @@index([Creator], map: "PocketEvents_Members_ID_fk")
 }

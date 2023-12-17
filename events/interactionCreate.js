@@ -12,8 +12,12 @@ module.exports = {
         let buttonId = interaction.customId.split("_")[0];
         let button = global.client.buttons.get(buttonId);
         if (button) await button.execute(interaction);
-      }
-      if (interaction.isMessageContextMenuCommand()) {
+      } else if (interaction.isStringSelectMenu()) {
+        console.log(interaction.customId);
+        let selectID = interaction.customId;
+        let select = global.client.selects.get(selectID);
+        if (select) await select.execute(interaction);
+      } else if (interaction.isMessageContextMenuCommand()) {
         console.log(interaction.commandName);
         let menu = global.client.contextMenus.get(interaction.commandName);
         if (menu) await menu.execute(interaction);

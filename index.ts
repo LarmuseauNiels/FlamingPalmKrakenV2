@@ -20,6 +20,7 @@ class FpgClient extends Client {
   declare prisma: PrismaClient;
   declare commands: typeof Collection;
   declare buttons: typeof Collection;
+  declare selects: typeof Collection;
   declare modals: typeof Collection;
   declare contextMenus: typeof Collection;
   declare chats: Map<any, any>;
@@ -56,6 +57,7 @@ class FpgClient extends Client {
     this.cachUpdated;
     this.commands = new Collection();
     this.buttons = new Collection();
+    this.selects = new Collection();
     this.modals = new Collection();
     this.contextMenus = new Collection();
     this.achievementsModule = new AchievementsModule();
@@ -87,6 +89,7 @@ async function loadCommands(): Promise<void> {
   global.client.buttons = await loadInteractionActions("buttons");
   global.client.modals = await loadInteractionActions("modals");
   global.client.contextMenus = await loadInteractionActions("contextmenus");
+  global.client.selects = await loadInteractionActions("selects");
 }
 
 declare global {
