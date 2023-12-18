@@ -7,8 +7,8 @@ module.exports = {
 
     await global.client.prisma.raidAttendees.create({
       data: {
-        memberId: UserId,
-        raidId: SelectedRaid
+        MemberId: UserId,
+        RaidId: SelectedRaid
       }
     });
 
