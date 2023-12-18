@@ -4,8 +4,16 @@ module.exports = {
     let UserId = interaction.user.id;
     let SelectedRaid = interaction.values[0];
 
+
+    await global.client.prisma.RaidAttendees.create({
+      data: {
+        memberId: UserId,
+        raidId: SelectedRaid
+      }
+    })
+
     interaction.reply({
-      content: "id: " + UserId + " raid: " + SelectedRaid
+      content: "Signed up to raid"
     })
   },
 };
