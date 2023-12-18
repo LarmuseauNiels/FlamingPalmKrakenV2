@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require("discord.js");
 
 module.exports = {
-  name: "create-event",
+  name: "create-raid",
   data: new SlashCommandBuilder()
     .setName("create-raid")
     .setDescription("Add a new raid to the available raids list!")

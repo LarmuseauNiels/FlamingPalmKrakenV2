@@ -10,10 +10,10 @@ module.exports = {
         memberId: UserId,
         raidId: SelectedRaid
       }
-    })
+    });
 
     interaction.reply({
       content: "Signed up to raid"
-    })
+    });
   },
 };
