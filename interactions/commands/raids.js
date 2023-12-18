@@ -49,7 +49,7 @@ module.exports = {
       });
       select.addOptions({
         label: raid.Title,
-        value: raid.ID.toString(),
+        value: raid.ID,
       });
     });
 
