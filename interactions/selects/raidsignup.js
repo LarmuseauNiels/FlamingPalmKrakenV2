@@ -5,7 +5,7 @@ module.exports = {
     let SelectedRaid = interaction.values[0];
 
 
-    await global.client.prisma.RaidAttendees.create({
+    await global.client.prisma.raidAttendees.create({
       data: {
         memberId: UserId,
         raidId: SelectedRaid

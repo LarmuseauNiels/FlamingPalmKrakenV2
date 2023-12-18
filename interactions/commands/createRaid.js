@@ -22,7 +22,7 @@ module.exports = {
     const title = interaction.options.getString("title");
     const minPlayers = interaction.options.getInteger("minplayers");
 
-    await globalThis.client.prisma.raids.create({
+    await global.client.prisma.raids.create({
       data: {
         Title: title,
         MinPlayers: minPlayers,
