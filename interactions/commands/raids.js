@@ -13,6 +13,7 @@ module.exports = {
   isGuild: true,
   async execute(interaction) {
     const raids = await globalThis.client.prisma.raids.findMany({
+      include: { RaidAttendees: true },
       where: { Status: 1 },
     });
 
@@ -42,9 +43,10 @@ module.exports = {
       .setPlaceholder("Select a raid to sign up");
 
     raids.forEach((raid) => {
+      let attending = raid.RaidAttendees.includes(r => r.MemberId === interaction.user.id)
       embed.addFields({
         name: raid.Title,
-        value: `Min Players: ${raid.MinPlayers}`,
+        value: `Attendees: ${raid.RaidAttendees.length}/${raid.MinPlayers} Attending: ${attending? '✅' : '❌'}`,
         inline: false,
       });
       select.addOptions({

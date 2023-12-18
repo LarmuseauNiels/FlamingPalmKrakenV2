@@ -12,7 +12,8 @@ module.exports = {
     });
 
     interaction.reply({
-      content: "Signed up to raid"
+      content: "Signed up to raid",
+      ephemeral: true
     });
   },
 };
