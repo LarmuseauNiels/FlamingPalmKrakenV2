@@ -43,7 +43,7 @@ module.exports = {
       .setPlaceholder("Select a raid to sign up");
 
     raids.forEach((raid) => {
-      let attending = raid.RaidAttendees.includes(r => r.MemberId === interaction.user.id)
+      let attending = raid.RaidAttendees.some(r => r.MemberId === interaction.user.id);
       embed.addFields({
         name: raid.Title,
         value: `Attendees: ${raid.RaidAttendees.length}/${raid.MinPlayers} Attending: ${attending? '✅' : '❌'}`,
