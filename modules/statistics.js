@@ -172,23 +172,24 @@ module.exports = async function (client) {
         let prop = jsonData.response.servers[0].players;
         console.log("The value of propertyName is:", prop);
         const channel = client.channels.cache.get("1172498969235030047");
-        channel.setName("🛜︱Arma: " + prop + " online");
+
+        Gamedig.query({
+          type: 'minecraft',
+          host: 'mc.flamingpalm.com'
+        }).then(state => {
+          channel.setName("🛜︱A3:" + prop + " MC:"+ state.players.length);
+        }).catch(error => {
+          console.log("minecraft server offline");
+          console.log(error)
+        })
+
+
 
       })
       .catch((error) => {
         console.error("Error fetching data:", error.message);
       });
-    Gamedig.query({
-      type: 'minecraft',
-      host: 'mc.flamingpalm.com'
-    }).then(state => {
-      console.log(state);
-      let infoChannel = client.channels.cache.get("1128264365460701276");
-      infoChannel.setName("📌︱Info MC:" + state.players.length)
-    }).catch(error => {
-      console.log("minecraft server offline");
-      console.log(error)
-    })
+
 
 
 
