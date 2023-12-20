@@ -1,6 +1,7 @@
 const cron = require("node-cron");
 const { Collection, EmbedBuilder } = require("discord.js");
 const http = require("http");
+const Gamedig = require('gamedig');
 
 module.exports = async function (client) {
   var knownuserCache = [];
@@ -172,12 +173,32 @@ module.exports = async function (client) {
         console.log("The value of propertyName is:", prop);
         const channel = client.channels.cache.get("1172498969235030047");
         channel.setName("🛜︱Arma: " + prop + " online");
+
       })
       .catch((error) => {
         console.error("Error fetching data:", error.message);
       });
+    Gamedig.query({
+      type: 'minecraft',
+      host: 'mc.flamingpalm.com'
+    }).then(state => {
+      console.log(state);
+      let infoChannel = client.channels.cache.get("1128264365460701276");
+      infoChannel.setName("📌︱Info MC:" + state.players.length)
+    }).catch(error => {
+      console.log("minecraft server offline");
+      console.log(error)
+    })
+
+
+
   });
 };
+
+async function queryMC(){
+
+}
+
 
 function cleanString(input) {
   if (input === null || input === undefined) return "";

@@ -1,16 +1,7 @@
 module.exports = {
   name: "raidsignup",
   async execute(interaction) {
-    let UserId = interaction.user.id;
-    let SelectedRaid = parseInt(interaction.values[0]);
-
-    await global.client.prisma.raidAttendees.create({
-      data: {
-        MemberId: UserId,
-        RaidId: SelectedRaid
-      }
-    });
-
+    await global.client.raidModule.AddUserToRaid(interaction.user.id, parseInt(interaction.values[0]))
     interaction.reply({
       content: "Signed up to raid",
       ephemeral: true
