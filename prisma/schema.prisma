@@ -27,6 +27,7 @@ model Members {
   Presence                              Presence[]
   Profile                               Profile?
   RaidAttendees                         RaidAttendees[]
+  RaidAvailability                      RaidAvailability[]
   Raids                                 Raids[]
   Refferals_MembersToRefferals_userid   Refferals[]           @relation("MembersToRefferals_userid")
   Refferals_MembersToRefferals_refferer Refferals[]           @relation("MembersToRefferals_refferer")
@@ -288,14 +289,35 @@ model RaidAttendees {
 }
 
 model Raids {
-  ID            Int             @id @default(autoincrement())
-  Title         String?         @db.VarChar(100)
-  MinPlayers    Int?            @default(4)
-  Creator       String          @db.VarChar(25)
-  CreationTime  DateTime?       @default(now()) @db.DateTime(0)
-  Status        Int?            @default(1) @db.TinyInt
-  RaidAttendees RaidAttendees[]
-  Members       Members         @relation(fields: [Creator], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "PocketEvents_Members_ID_fk")
+  ID                   Int                    @id @default(autoincrement())
+  Title                String?                @db.VarChar(100)
+  MinPlayers           Int?                   @default(4)
+  Creator              String                 @db.VarChar(25)
+  CreationTime         DateTime?              @default(now()) @db.DateTime(0)
+  Status               Int?                   @default(1) @db.TinyInt
+  RaidAttendees        RaidAttendees[]
+  RaidSchedulingOption RaidSchedulingOption[]
+  Members              Members                @relation(fields: [Creator], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "PocketEvents_Members_ID_fk")
 
   @@index([Creator], map: "PocketEvents_Members_ID_fk")
+}
+
+model RaidAvailability {
+  MemberId             String               @db.VarChar(25)
+  SchedulingOptionId   Int
+  Members              Members              @relation(fields: [MemberId], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "RaidAvailability_Members_ID_fk")
+  RaidSchedulingOption RaidSchedulingOption @relation(fields: [SchedulingOptionId], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "RaidAvailability_RaidSchedulingOption_ID_fk")
+
+  @@id([SchedulingOptionId, MemberId])
+  @@index([MemberId], map: "RaidAvailability_Members_ID_fk")
+}
+
+model RaidSchedulingOption {
+  RaidId           Int?
+  Timestamp        DateTime?          @db.DateTime(0)
+  ID               Int                @id @default(autoincrement())
+  RaidAvailability RaidAvailability[]
+  Raids            Raids?             @relation(fields: [RaidId], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "RaidSchedulingOption_Raids_ID_fk")
+
+  @@index([RaidId], map: "RaidSchedulingOption_Raids_ID_fk")
 }
