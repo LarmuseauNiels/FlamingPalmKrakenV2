@@ -317,6 +317,7 @@ model RaidSchedulingOption {
   Timestamp        DateTime?          @db.DateTime(0)
   ID               Int                @id @default(autoincrement())
   Option           String?            @db.VarChar(1)
+  OptionUtf        String?            @db.VarChar(1)
   RaidAvailability RaidAvailability[]
   Raids            Raids?             @relation(fields: [RaidId], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "RaidSchedulingOption_Raids_ID_fk")
 
