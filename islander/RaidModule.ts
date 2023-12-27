@@ -2,7 +2,8 @@ import { EmbedBuilder } from "discord.js";
 
 export class RaidModule {
   async AddUserToRaid(userId: string, raidId: number) {
-    this.SchedulingCreationCheck(raidId);
+    console.log("Adding user to raid");
+    await this.SchedulingCreationCheck(raidId);
     return global.client.prisma.raidAttendees.create({
       data: {
         MemberId: userId,
@@ -12,6 +13,7 @@ export class RaidModule {
   }
 
   async SchedulingCreationCheck(raidId: number) {
+    console.log("Checking if raid is ready for scheduling");
     let raid = await global.client.prisma.raids.findFirst({
       include: {
         RaidAttendees: true,
@@ -167,6 +169,8 @@ export class RaidModule {
       });
     });
   }
+
+
 
   async CollectSchedulingVotes(raidId: number) {
     let raid = await global.client.prisma.raids.findFirst({
