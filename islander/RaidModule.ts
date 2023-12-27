@@ -3,13 +3,14 @@ import { EmbedBuilder } from "discord.js";
 export class RaidModule {
   async AddUserToRaid(userId: string, raidId: number) {
     console.log("Adding user to raid");
-    await this.SchedulingCreationCheck(raidId);
-    return global.client.prisma.raidAttendees.create({
+    await global.client.prisma.raidAttendees.create({
       data: {
         MemberId: userId,
         RaidId: raidId,
       },
     });
+    await this.SchedulingCreationCheck(raidId);
+    return;
   }
 
   async SchedulingCreationCheck(raidId: number) {
