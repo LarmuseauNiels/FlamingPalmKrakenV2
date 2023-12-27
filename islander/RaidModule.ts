@@ -72,47 +72,47 @@ export class RaidModule {
         {
           RaidId: raidId,
           Timestamp: tuesday.setHours(15, 0, 0, 0).toString(),
-          Option: "🇦",
+          Option: "A",
         },
         {
           RaidId: raidId,
           Timestamp: tuesday.setHours(20, 0, 0, 0).toString(),
-          Option: "🇧",
+          Option: "B",
         },
         {
           RaidId: raidId,
           Timestamp: tuesday.setHours(23, 0, 0, 0).toString(),
-          Option: "🇨",
+          Option: "C",
         },
         {
           RaidId: raidId,
           Timestamp: wendesday.setHours(15, 0, 0, 0).toString(),
-          Option: "🇩",
+          Option: "D",
         },
         {
           RaidId: raidId,
           Timestamp: wendesday.setHours(20, 0, 0, 0).toString(),
-          Option: "🇪",
+          Option: "E",
         },
         {
           RaidId: raidId,
           Timestamp: wendesday.setHours(23, 0, 0, 0).toString(),
-          Option: "🇫",
+          Option: "F",
         },
         {
           RaidId: raidId,
           Timestamp: thursday.setHours(15, 0, 0, 0).toString(),
-          Option: "🇬",
+          Option: "G",
         },
         {
           RaidId: raidId,
           Timestamp: thursday.setHours(20, 0, 0, 0).toString(),
-          Option: "🇭",
+          Option: "H",
         },
         {
           RaidId: raidId,
           Timestamp: thursday.setHours(23, 0, 0, 0).toString(),
-          Option: "🇮",
+          Option: "I",
         },
       ],
     });
@@ -151,7 +151,7 @@ export class RaidModule {
     raid.RaidSchedulingOption.forEach((option) => {
       let unixTime = Math.floor(option.Timestamp.getTime() / 1000);
       embed.addFields({
-        name: option.Option,
+        name: this.getUniCodeEmoji(option.Option),
         value: "<t:" + unixTime + ":F>",
         inline: true,
       });
@@ -196,7 +196,7 @@ export class RaidModule {
 
           raid.RaidSchedulingOption.forEach((option) => {
             message.reactions
-              .resolve(option.Option)
+              .resolve(this.getUniCodeEmoji(option.Option))
               .users.fetch()
               .then(async (users) => {
                 if (users.some((u) => u.id == attendee.MemberId)) {
@@ -213,4 +213,32 @@ export class RaidModule {
       });
     });
   }
+
+  getUniCodeEmoji(char: string) {
+    switch (char) {
+      case "A":
+        return "🇦";
+      case "B":
+        return "🇧";
+      case "C":
+        return "🇨";
+      case "D":
+        return "🇩";
+      case "E":
+        return "🇪";
+      case "F":
+        return "🇫";
+      case "G":
+        return "🇬";
+      case "H":
+        return "🇭";
+      case "I":
+        return "🇮";
+      default:
+        return char;
+    }
+  }
+
 }
+
+
