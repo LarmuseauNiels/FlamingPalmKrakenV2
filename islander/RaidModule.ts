@@ -29,6 +29,7 @@ export class RaidModule {
       return;
     }
 
+    console.log("Raid found with " + raid.RaidAttendees.length + " attendees out of " + raid.MinPlayers + " required");
     if (raid.RaidAttendees.length >= raid.MinPlayers) {
       console.log("Raid is starting scheduling");
 
@@ -51,10 +52,11 @@ export class RaidModule {
       if (FirstSchedlingOption.getTime() - new Date().getTime() < 432000000) {
         FirstSchedlingOption.setDate(FirstSchedlingOption.getDate() + 7);
       }
-      console.log(FirstSchedlingOption);
+      console.log("Scheduling starts on " + FirstSchedlingOption);
 
       await this.AddDayToRaidSchedulingOptions(raidId, FirstSchedlingOption);
 
+      console.log("Sending scheduling message");
       await this.SendSchedulingMessage(raidId);
       return;
     }
@@ -169,6 +171,8 @@ export class RaidModule {
       });
     });
   }
+
+
 
 
 
