@@ -65,11 +65,11 @@ export class RaidModule {
   }
 
   async AddDayToRaidSchedulingOptions(raidId: number, day: Date) {
-    let tuesday = new Date(day.getDay());
-    let wendesday = new Date(day.getDay() + 1);
-    let thursday = new Date(day.getDay() + 2);
-    let test = tuesday.setHours(15, 0, 0, 0);
-    let tester = new Date(test);
+    let tuesday = day;
+    let wednesday = new Date(day.getTime());
+    wednesday.setDate(day.getDay() + 1);
+    let thursday = new Date(day.getTime());
+    thursday.setDate(day.getDay() + 2);
 
     return global.client.prisma.raidSchedulingOption.createMany({
       data: [
@@ -90,17 +90,17 @@ export class RaidModule {
         },
         {
           RaidId: raidId,
-          Timestamp: new Date(wendesday.setHours(15, 0, 0, 0)),
+          Timestamp: new Date(wednesday.setHours(15, 0, 0, 0)),
           Option: "D",
         },
         {
           RaidId: raidId,
-          Timestamp: new Date(wendesday.setHours(20, 0, 0, 0)),
+          Timestamp: new Date(wednesday.setHours(20, 0, 0, 0)),
           Option: "E",
         },
         {
           RaidId: raidId,
-          Timestamp: new Date(wendesday.setHours(23, 0, 0, 0)),
+          Timestamp: new Date(wednesday.setHours(23, 0, 0, 0)),
           Option: "F",
         },
         {
@@ -167,7 +167,7 @@ export class RaidModule {
           .send({ embeds: [embed], content: raid.ID.toString() })
           .then((message) => {
             raid.RaidSchedulingOption.forEach((option) => {
-              message.react(option.Option);
+              message.react(this.getUniCodeEmoji(option.Option));
             });
           })
           .catch((err) => {
