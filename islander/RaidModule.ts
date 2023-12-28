@@ -1,4 +1,5 @@
 import { EmbedBuilder } from "discord.js";
+import {RaidSchedulingOption} from "@prisma/client";
 
 export class RaidModule {
   async AddUserToRaid(userId: string, raidId: number) {
@@ -67,51 +68,54 @@ export class RaidModule {
     let tuesday = new Date(day.getDay());
     let wendesday = new Date(day.getDay() + 1);
     let thursday = new Date(day.getDay() + 2);
+    let test = tuesday.setHours(15, 0, 0, 0);
+    let tester = new Date(test);
+
     return global.client.prisma.raidSchedulingOption.createMany({
       data: [
         {
           RaidId: raidId,
-          Timestamp: tuesday.setHours(15, 0, 0, 0).toString(),
-          Option: "A",
+          Timestamp: new Date(tuesday.setHours(15, 0, 0, 0)),
+          Option: "A"
         },
         {
           RaidId: raidId,
-          Timestamp: tuesday.setHours(20, 0, 0, 0).toString(),
+          Timestamp: new Date(tuesday.setHours(20, 0, 0, 0)),
           Option: "B",
         },
         {
           RaidId: raidId,
-          Timestamp: tuesday.setHours(23, 0, 0, 0).toString(),
+          Timestamp: new Date(tuesday.setHours(23, 0, 0, 0)),
           Option: "C",
         },
         {
           RaidId: raidId,
-          Timestamp: wendesday.setHours(15, 0, 0, 0).toString(),
+          Timestamp: new Date(wendesday.setHours(15, 0, 0, 0)),
           Option: "D",
         },
         {
           RaidId: raidId,
-          Timestamp: wendesday.setHours(20, 0, 0, 0).toString(),
+          Timestamp: new Date(wendesday.setHours(20, 0, 0, 0)),
           Option: "E",
         },
         {
           RaidId: raidId,
-          Timestamp: wendesday.setHours(23, 0, 0, 0).toString(),
+          Timestamp: new Date(wendesday.setHours(23, 0, 0, 0)),
           Option: "F",
         },
         {
           RaidId: raidId,
-          Timestamp: thursday.setHours(15, 0, 0, 0).toString(),
+          Timestamp: new Date(thursday.setHours(15, 0, 0, 0)),
           Option: "G",
         },
         {
           RaidId: raidId,
-          Timestamp: thursday.setHours(20, 0, 0, 0).toString(),
+          Timestamp: new Date(thursday.setHours(20, 0, 0, 0)),
           Option: "H",
         },
         {
           RaidId: raidId,
-          Timestamp: thursday.setHours(23, 0, 0, 0).toString(),
+          Timestamp: new Date(thursday.setHours(23, 0, 0, 0)),
           Option: "I",
         },
       ],
