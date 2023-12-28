@@ -65,7 +65,7 @@ export class RaidModule {
   }
 
   async AddDayToRaidSchedulingOptions(raidId: number, day: Date) {
-    let tuesday = day;
+    let tuesday = new Date(day.getTime());
     let wednesday = new Date(tuesday.getTime());
     wednesday.setDate(tuesday.getDay() + 1);
     let thursday = new Date(tuesday.getTime());
