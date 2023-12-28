@@ -20,7 +20,7 @@ module.exports = {
     if (raids.length === 0) {
       interaction.reply({
         content:
-          "There are no pocket party events at the moment, consider creating one!",
+          "There are no raids at the moment, consider creating one!",
         ephemeral: true,
       });
       return;
