@@ -75,47 +75,47 @@ export class RaidModule {
       data: [
         {
           RaidId: raidId,
-          Timestamp: new Date(tuesday.setHours(15, 0, 0, 0)),
+          Timestamp: new Date(tuesday.setHours(16, 0, 0, 0)),
           Option: "A"
         },
         {
           RaidId: raidId,
-          Timestamp: new Date(tuesday.setHours(20, 0, 0, 0)),
+          Timestamp: new Date(tuesday.setHours(19, 0, 0, 0)),
           Option: "B",
         },
         {
           RaidId: raidId,
-          Timestamp: new Date(tuesday.setHours(23, 0, 0, 0)),
+          Timestamp: new Date(tuesday.setHours(22, 0, 0, 0)),
           Option: "C",
         },
         {
           RaidId: raidId,
-          Timestamp: new Date(wednesday.setHours(15, 0, 0, 0)),
+          Timestamp: new Date(wednesday.setHours(16, 0, 0, 0)),
           Option: "D",
         },
         {
           RaidId: raidId,
-          Timestamp: new Date(wednesday.setHours(20, 0, 0, 0)),
+          Timestamp: new Date(wednesday.setHours(19, 0, 0, 0)),
           Option: "E",
         },
         {
           RaidId: raidId,
-          Timestamp: new Date(wednesday.setHours(23, 0, 0, 0)),
+          Timestamp: new Date(wednesday.setHours(22, 0, 0, 0)),
           Option: "F",
         },
         {
           RaidId: raidId,
-          Timestamp: new Date(thursday.setHours(15, 0, 0, 0)),
+          Timestamp: new Date(thursday.setHours(16, 0, 0, 0)),
           Option: "G",
         },
         {
           RaidId: raidId,
-          Timestamp: new Date(thursday.setHours(20, 0, 0, 0)),
+          Timestamp: new Date(thursday.setHours(19, 0, 0, 0)),
           Option: "H",
         },
         {
           RaidId: raidId,
-          Timestamp: new Date(thursday.setHours(23, 0, 0, 0)),
+          Timestamp: new Date(thursday.setHours(22, 0, 0, 0)),
           Option: "I",
         },
       ],
@@ -157,7 +157,7 @@ export class RaidModule {
       embed.addFields({
         name: this.getUniCodeEmoji(option.Option),
         value: "<t:" + unixTime + ":F>",
-        inline: true,
+        inline: false,
       });
     });
 
