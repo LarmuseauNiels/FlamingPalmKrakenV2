@@ -1,9 +1,4 @@
-import {
-  ActionRowBuilder,
-  ModalBuilder,
-  TextInputBuilder,
-  TextInputStyle,
-} from "discord.js";
+
 
 module.exports = {
   name: "template",

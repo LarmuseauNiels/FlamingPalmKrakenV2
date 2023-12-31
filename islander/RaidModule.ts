@@ -67,9 +67,9 @@ export class RaidModule {
   async AddDayToRaidSchedulingOptions(raidId: number, day: Date) {
     let tuesday = new Date(day.getTime());
     let wednesday = new Date(tuesday.getTime());
-    wednesday.setDate(tuesday.getDay() + 1);
+    wednesday.setDate(tuesday.getDate() + 1);
     let thursday = new Date(tuesday.getTime());
-    thursday.setDate(tuesday.getDay() + 2);
+    thursday.setDate(tuesday.getDate() + 2);
 
     return global.client.prisma.raidSchedulingOption.createMany({
       data: [
@@ -157,7 +157,7 @@ export class RaidModule {
       embed.addFields({
         name: this.getUniCodeEmoji(option.Option),
         value: "<t:" + unixTime + ":F>",
-        inline: false,
+        inline: true,
       });
     });
 
@@ -177,8 +177,48 @@ export class RaidModule {
     });
   }
 
+  async CollectSchedulingVotesForAllRaids() {
+    console.log("Collecting scheduling votes for all raids");
+    let raids = await global.client.prisma.raids.findMany({
+      include: {
+        RaidAttendees: true,
+        RaidSchedulingOption: true,
+      },
+      where: {
+        Status: 2,
+      },
+    });
+
+    raids.forEach((raid) => {
+      console.log("Collecting raid " + raid.ID);
+      this.CollectSchedulingVotes(raid.ID);
+    });
+  }
 
 
+  async CollectSchedulingRaids() {
+    console.log("Collecting scheduling raids");
+    let raids = await global.client.prisma.raids.findMany({
+      include: {
+        RaidAttendees: true,
+        RaidSchedulingOption: true,
+      },
+      where: {
+        Status: 2,
+      },
+    });
+
+    raids.forEach((raid) => {
+      let finishTime = new Date();
+      finishTime.setDate(finishTime.getDate() + 3);
+      finishTime.setHours(23, 0, 0, 0);
+
+      if (raid.RaidSchedulingOption[0].Timestamp.getTime() < finishTime.getTime()) {
+        console.log("Collecting raid " + raid.ID);
+        this.CollectSchedulingVotes(raid.ID);
+      }
+    });
+  }
 
 
   async CollectSchedulingVotes(raidId: number) {
@@ -242,7 +282,6 @@ export class RaidModule {
         return char;
     }
   }
-
 }
 
 
