@@ -1,10 +1,14 @@
+const { RaidModule } = require("../../islander/RaidModule");
 module.exports = {
   name: "raidsignup",
   async execute(interaction) {
-    await global.client.raidModule.AddUserToRaid(interaction.user.id, parseInt(interaction.values[0]))
+    await RaidModule.AddUserToRaid(
+      interaction.user.id,
+      parseInt(interaction.values[0])
+    );
     interaction.reply({
-      content: "Signed up to raid",
-      ephemeral: true
+      content: "Successfully signed up for the raid!",
+      ephemeral: true,
     });
   },
 };

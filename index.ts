@@ -5,7 +5,7 @@ import { AchievementsModule } from "./islander/AchievementsModule";
 import { WebApi } from "./modules/WebApi";
 import Bugsnag from "@bugsnag/js";
 import BugsnagPluginExpress from "@bugsnag/plugin-express";
-import {RaidModule} from "./islander/RaidModule";
+import { RaidModule } from "./islander/RaidModule";
 
 const fs = require("fs");
 const {
@@ -63,7 +63,6 @@ class FpgClient extends Client {
     this.modals = new Collection();
     this.contextMenus = new Collection();
     this.achievementsModule = new AchievementsModule();
-    this.raidModule = new RaidModule();
     this.chats = new Map();
     this.webapi = new WebApi();
   }

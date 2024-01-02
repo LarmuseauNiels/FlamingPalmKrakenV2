@@ -31,7 +31,7 @@ module.exports = {
     });
 
     interaction.reply({
-      content: "Raid created!",
+      content: "New raid created, use /raids to see the list!",
       ephemeral: true,
     });
   },

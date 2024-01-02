@@ -1,7 +1,8 @@
 const cron = require("node-cron");
 const { Collection, EmbedBuilder } = require("discord.js");
 const http = require("http");
-const Gamedig = require('gamedig');
+const Gamedig = require("gamedig");
+const { RaidModule } = require("../islander/RaidModule");
 
 module.exports = async function (client) {
   var knownuserCache = [];
@@ -157,6 +158,14 @@ module.exports = async function (client) {
       global.bugsnag.notify(e);
       console.log(e);
     }
+
+    console.log("running scheduling checker");
+    try {
+      RaidModule.checkSchedules();
+    } catch (e) {
+      global.bugsnag.notify(e);
+      console.log(e);
+    }
   });
 
   // cron schedule for every 5 minutes
@@ -174,32 +183,24 @@ module.exports = async function (client) {
         const channel = client.channels.cache.get("1172498969235030047");
 
         Gamedig.query({
-          type: 'minecraft',
-          host: 'mc.flamingpalm.com'
-        }).then(state => {
-          channel.setName("🛜︱A3:" + prop + " MC:"+ state.players.length);
-        }).catch(error => {
-          console.log("minecraft server offline");
-          console.log(error)
+          type: "minecraft",
+          host: "mc.flamingpalm.com",
         })
-
-
-
+          .then((state) => {
+            channel.setName("🛜︱A3:" + prop + " MC:" + state.players.length);
+          })
+          .catch((error) => {
+            console.log("minecraft server offline");
+            console.log(error);
+          });
       })
       .catch((error) => {
         console.error("Error fetching data:", error.message);
       });
-
-
-
-
   });
 };
 
-async function queryMC(){
-
-}
-
+async function queryMC() {}
 
 function cleanString(input) {
   if (input === null || input === undefined) return "";
