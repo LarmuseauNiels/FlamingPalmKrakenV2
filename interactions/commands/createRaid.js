@@ -17,7 +17,7 @@ module.exports = {
         .setDescription("The minimum attendees of your raid")
         .setRequired(true)
     ),
-  isGuild: true,
+  isGuild: false,
   async execute(interaction) {
     const title = interaction.options.getString("title");
     const minPlayers = interaction.options.getInteger("minplayers");

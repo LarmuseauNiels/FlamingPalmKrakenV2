@@ -10,7 +10,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("raids")
     .setDescription("See all the available raids!"),
-  isGuild: true,
+  isGuild: false,
   async execute(interaction) {
     const raids = await globalThis.client.prisma.raids.findMany({
       include: { RaidAttendees: true },
@@ -31,8 +31,8 @@ module.exports = {
       .setColor("#FD8612")
       .setTitle("Party Raids")
       .setDescription(
-        "Join one of the following raids by selecting it in the box below! /n  When enough people sign up you will receive a message to vote on a time and date" +
-          " /n If you want to add a raid use /create-raid"
+        "Join one of the following raids by selecting it in the box below! \n  When enough people sign up you will receive a message to vote on a time and date" +
+          " \n If you want to add a raid use /create-raid"
       )
       .setTimestamp()
       .setFooter({

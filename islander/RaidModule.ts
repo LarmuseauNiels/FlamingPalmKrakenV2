@@ -148,7 +148,7 @@ export abstract class RaidModule {
     let embed = new EmbedBuilder()
       .setTitle("Scheduling for raid: " + raid.Title)
       .setDescription(
-        "Vote for all times you are available! /n The raid will be scheduled for the first time that everyone can make."
+        "Vote for all times you are available! \n The raid will be scheduled for the first time that everyone can make."
       )
       .setFooter({
         text: "Scheduling closes ",
