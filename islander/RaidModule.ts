@@ -57,7 +57,7 @@ export abstract class RaidModule {
           ((2 + 7 - FirstSchedlingOption.getDay()) % 7)
       );
       // if next tuesday is in less the 5 days, add 7 days
-      if (FirstSchedlingOption.getTime() - new Date().getTime() < 432000000) {
+      if (FirstSchedlingOption.getTime() - new Date().getTime() < 259200000) {
         FirstSchedlingOption.setDate(FirstSchedlingOption.getDate() + 7);
       }
       console.log("Scheduling starts on " + FirstSchedlingOption);
@@ -148,7 +148,7 @@ export abstract class RaidModule {
     let embed = new EmbedBuilder()
       .setTitle("Scheduling for raid: " + raid.Title)
       .setDescription(
-        "Please press the reaction for all times you are available for the raid!"
+        "Vote for all times you are available! /n The raid will be scheduled for the first time that everyone can make."
       )
       .setFooter({
         text: "Scheduling closes ",
@@ -237,7 +237,7 @@ export abstract class RaidModule {
       console.log("No consensus reached for raid " + raid.ID);
       // check if raid options are still valid
       let finishingTime = new Date(raid.RaidSchedulingOption[0].Timestamp);
-      finishingTime.setDate(finishingTime.getDate() - 2);
+      finishingTime.setDate(finishingTime.getDate() - 1);
       finishingTime.setHours(0, 0, 0, 0);
       // if current time is past finishing time, cancel raid
       if (new Date().getTime() > finishingTime.getTime()) {

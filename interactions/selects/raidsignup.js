@@ -7,7 +7,8 @@ module.exports = {
       parseInt(interaction.values[0])
     );
     interaction.reply({
-      content: "Successfully signed up for the raid!",
+      content:
+        "Successfully signed up for the raid! Use /raids again to see changes!",
       ephemeral: true,
     });
   },
