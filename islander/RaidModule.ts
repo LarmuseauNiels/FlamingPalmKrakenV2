@@ -261,12 +261,12 @@ export abstract class RaidModule {
     });
 
     for (const attendee of raid.RaidAttendees) {
-      console.log("Collecting votes for " + attendee.MemberId);
       let user = await global.client.users.fetch(attendee.MemberId);
-      console.log("user found: " + user.username);
-      console.log(user.dmChannel);
+      if (!user.dmChannel) {
+        await user.createDM();
+      }
       let messages = await user.dmChannel.messages.fetch({ limit: 100 });
-      console.log(messages);
+      console.log(messages.size);
       let message = messages.find((m) => m.content == raid.ID.toString());
       for (const option of raid.RaidSchedulingOption) {
         let users = await message.reactions
