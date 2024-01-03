@@ -264,7 +264,9 @@ export abstract class RaidModule {
       console.log("Collecting votes for " + attendee.MemberId);
       let user = await global.client.users.fetch(attendee.MemberId);
       console.log("user found: " + user.username);
+      console.log(user.dmChannel);
       let messages = await user.dmChannel.messages.fetch({ limit: 100 });
+      console.log(messages);
       let message = messages.find((m) => m.content == raid.ID.toString());
       for (const option of raid.RaidSchedulingOption) {
         let users = await message.reactions
