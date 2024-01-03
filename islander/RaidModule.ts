@@ -141,7 +141,7 @@ export abstract class RaidModule {
     });
 
     let finishTime = new Date(raid.RaidSchedulingOption[0].Timestamp.getTime());
-    finishTime.setDate(finishTime.getDate() - 2);
+    finishTime.setDate(finishTime.getDate() - 1);
     finishTime.setHours(0, 0, 0, 0);
 
     //make discord embed
