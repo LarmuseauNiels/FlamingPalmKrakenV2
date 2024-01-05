@@ -15,9 +15,10 @@ module.exports = {
   isGuild: false,
   async execute(interaction) {
     const raidID = interaction.options.getInteger("raid");
+    interaction.deferReply({ ephemeral: true });
     let results = await RaidModule.showVotes(raidID);
 
-    interaction.reply({
+    interaction.editReply({
       embeds: [results],
       ephemeral: true,
     });
