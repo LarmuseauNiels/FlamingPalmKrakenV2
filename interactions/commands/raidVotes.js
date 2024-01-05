@@ -18,7 +18,6 @@ module.exports = {
     let results = RaidModule.showVotes(raidID);
 
     interaction.reply({
-      content: "",
       embeds: [results],
       ephemeral: true,
     });
