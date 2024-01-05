@@ -144,11 +144,17 @@ export abstract class RaidModule {
     finishTime.setDate(finishTime.getDate() - 1);
     finishTime.setHours(0, 0, 0, 0);
 
+    let participants = "";
+    raid.RaidAttendees.forEach((attendee) => {
+      participants += "<@" + attendee.MemberId + ">\n";
+    });
+
     //make discord embed
     let embed = new EmbedBuilder()
       .setTitle("Scheduling for raid: " + raid.Title)
       .setDescription(
-        "Vote for all times you are available! \n The raid will be scheduled for the first time that everyone can make."
+        "Vote for all times you are available! \n The raid will be scheduled for the first time that everyone can make.\n Participants: \n" +
+          participants
       )
       .setFooter({
         text: "Scheduling closes ",

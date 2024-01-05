@@ -49,11 +49,15 @@ module.exports = {
       let attending = raid.RaidAttendees.some(
         (r) => r.MemberId === interaction.user.id
       );
+      let participants = "";
+      raid.RaidAttendees.forEach((attendee) => {
+        participants += "<@" + attendee.MemberId + ">\n";
+      });
       embed.addFields({
         name: raid.Title,
         value: `Attendees: ${raid.RaidAttendees.length}/${
           raid.MinPlayers
-        } Attending: ${attending ? "✅" : "❌"}`,
+        } Attending: ${attending ? "✅" : "❌"} \n ${participants}`,
         inline: false,
       });
       select.addOptions({
