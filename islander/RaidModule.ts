@@ -266,6 +266,29 @@ export abstract class RaidModule {
       votes.set(option, []);
     });
 
+    const attendeesPromises = raid.RaidAttendees.map(async (attendee) => {
+      const user = await global.client.users.fetch(attendee.MemberId);
+      if (!user.dmChannel) {
+        await user.createDM();
+      }
+      const messages = await user.dmChannel.messages.fetch({ limit: 50 });
+      console.log(messages.size);
+      const message = messages.find((m) => m.content == raid.ID.toString());
+      const optionVotesPromises = raid.RaidSchedulingOption.map(
+        async (option) => {
+          const users = await message.reactions
+            .resolve(this.getUniCodeEmoji(option.Option))
+            .users.fetch();
+          if (users.some((u) => u.id == attendee.MemberId)) {
+            votes.get(option).push(attendee.MemberId);
+          }
+        }
+      );
+      await Promise.all(optionVotesPromises);
+    });
+    await Promise.all(attendeesPromises);
+    return votes;
+    /*
     for (const attendee of raid.RaidAttendees) {
       let user = await global.client.users.fetch(attendee.MemberId);
       if (!user.dmChannel) {
@@ -284,6 +307,7 @@ export abstract class RaidModule {
       }
     }
     return votes;
+    */
   }
 
   static async CreateRaid(
