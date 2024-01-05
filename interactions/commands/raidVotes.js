@@ -15,7 +15,7 @@ module.exports = {
   isGuild: false,
   async execute(interaction) {
     const raidID = interaction.options.getInteger("raid");
-    let results = RaidModule.showVotes(raidID);
+    let results = await RaidModule.showVotes(raidID);
 
     interaction.reply({
       embeds: [results],

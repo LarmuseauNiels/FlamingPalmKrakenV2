@@ -387,7 +387,7 @@ export abstract class RaidModule {
     let votes = await this.CollectSchedulingVotes(raid);
     let embed = new EmbedBuilder()
       .setTitle("Votes for raid: " + raid.Title)
-      .setDescription("The following votes have been cast:")
+      .setDescription("The following votes have been cast: ")
       .setColor("#0099ff");
 
     votes.forEach((value, key) => {
