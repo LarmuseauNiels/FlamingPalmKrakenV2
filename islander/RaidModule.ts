@@ -374,6 +374,43 @@ export abstract class RaidModule {
     global.client.log("Raid " + raid.ID + " failed scheduling: " + raid.Title);
   }
 
+  static async showVotes(raidId: number) {
+    let raid = await global.client.prisma.raids.findFirst({
+      include: {
+        RaidAttendees: true,
+        RaidSchedulingOption: true,
+      },
+      where: {
+        ID: raidId,
+      },
+    });
+    let votes = await this.CollectSchedulingVotes(raid);
+    let embed = new EmbedBuilder()
+      .setTitle("Votes for raid: " + raid.Title)
+      .setDescription("The following votes have been cast:")
+      .setColor("#0099ff");
+
+    votes.forEach((value, key) => {
+      let participants = "";
+      if (value.length == 0) {
+        participants = "No votes";
+      }
+      value.forEach((user) => {
+        participants += "<@" + user + ">\n";
+      });
+      embed.addFields({
+        name:
+          this.getUniCodeEmoji(key.Option) +
+          " <t:" +
+          Math.floor(key.Timestamp.getTime() / 1000) +
+          ":F>",
+        value: participants,
+        inline: false,
+      });
+    });
+    return embed;
+  }
+
   static getUniCodeEmoji(char: string) {
     switch (char) {
       case "A":

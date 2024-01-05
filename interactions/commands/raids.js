@@ -50,14 +50,15 @@ module.exports = {
         (r) => r.MemberId === interaction.user.id
       );
       let participants = "";
+      if (raid.RaidAttendees.length > 4) participants = "Too many to list!";
       raid.RaidAttendees.forEach((attendee) => {
-        participants += "<@" + attendee.MemberId + ">\n";
+        participants += "<@" + attendee.MemberId + "> ";
       });
       embed.addFields({
         name: raid.Title,
         value: `Attendees: ${raid.RaidAttendees.length}/${
           raid.MinPlayers
-        } Attending: ${attending ? "✅" : "❌"} \n ${participants}`,
+        } Attending: ${attending ? "✅" : "❌"} \n ${participants} \n`,
         inline: false,
       });
       select.addOptions({
