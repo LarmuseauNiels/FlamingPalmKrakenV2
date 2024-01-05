@@ -271,7 +271,7 @@ export abstract class RaidModule {
       if (!user.dmChannel) {
         await user.createDM();
       }
-      let messages = await user.dmChannel.messages.fetch({ limit: 100 });
+      let messages = await user.dmChannel.messages.fetch({ limit: 50 });
       console.log(messages.size);
       let message = messages.find((m) => m.content == raid.ID.toString());
       for (const option of raid.RaidSchedulingOption) {
