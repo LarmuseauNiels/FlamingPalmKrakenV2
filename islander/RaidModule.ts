@@ -1,4 +1,9 @@
-import { EmbedBuilder } from "discord.js";
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  EmbedBuilder,
+} from "discord.js";
 import { RaidAttendees, Raids, RaidSchedulingOption } from "@prisma/client";
 
 export abstract class RaidModule {
@@ -173,11 +178,21 @@ export abstract class RaidModule {
         inline: true,
       });
     });
+    let row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId("raidVotes")
+        .setLabel("See Votes")
+        .setStyle(ButtonStyle.Secondary)
+    );
 
     raid.RaidAttendees.forEach((attendee) => {
       global.client.users.fetch(attendee.MemberId).then((user) => {
         user
-          .send({ embeds: [embed], content: raid.ID.toString() })
+          .send({
+            embeds: [embed],
+            content: raid.ID.toString(),
+            components: [row],
+          })
           .then((message) => {
             raid.RaidSchedulingOption.forEach((option) => {
               message.react(this.getUniCodeEmoji(option.Option));
@@ -288,26 +303,6 @@ export abstract class RaidModule {
     });
     await Promise.all(attendeesPromises);
     return votes;
-    /*
-    for (const attendee of raid.RaidAttendees) {
-      let user = await global.client.users.fetch(attendee.MemberId);
-      if (!user.dmChannel) {
-        await user.createDM();
-      }
-      let messages = await user.dmChannel.messages.fetch({ limit: 50 });
-      console.log(messages.size);
-      let message = messages.find((m) => m.content == raid.ID.toString());
-      for (const option of raid.RaidSchedulingOption) {
-        let users = await message.reactions
-          .resolve(this.getUniCodeEmoji(option.Option))
-          .users.fetch();
-        if (users.some((u) => u.id == attendee.MemberId)) {
-          votes.get(option).push(attendee.MemberId);
-        }
-      }
-    }
-    return votes;
-    */
   }
 
   static async CreateRaid(
