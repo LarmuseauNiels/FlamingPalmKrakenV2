@@ -2,7 +2,7 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  EmbedBuilder,
+  EmbedBuilder, StringSelectMenuBuilder,
 } from "discord.js";
 import { RaidAttendees, Raids, RaidSchedulingOption } from "@prisma/client";
 
@@ -454,4 +454,54 @@ export abstract class RaidModule {
         return char;
     }
   }
+
+  static async getRaidMessage(){
+    const raids = await globalThis.client.prisma.raids.findMany({
+      include: { RaidAttendees: true },
+      where: { Status: 1 },
+    });
+
+    // make an embed with all the events
+    const embed = new EmbedBuilder()
+        .setColor("#FD8612")
+        .setTitle("Party Raids")
+        .setDescription(
+            "Join one of the following raids by selecting it in the box below! \n  When enough people sign up you will receive a message to vote on a time and date" +
+            " \n If you want to add a raid use /create-raid"
+        )
+        .setTimestamp()
+        .setFooter({
+          text: "Flamingpalm raids",
+          iconURL:
+              "https://flamingpalm.com/assets/images/logo/FlamingPalmLogoSmall.png",
+        });
+
+    const select = new StringSelectMenuBuilder()
+        .setCustomId("raidsignup")
+        .setPlaceholder("Select a raid to sign up");
+
+    raids.forEach((raid) => {
+      let participants = "";
+      if (raid.RaidAttendees.length > 4) participants = "Too many to list!";
+      raid.RaidAttendees.forEach((attendee) => {
+        participants += "<@" + attendee.MemberId + "> ";
+      });
+      embed.addFields({
+        name: raid.Title,
+        value: `Attendees: ${raid.RaidAttendees.length}/${
+            raid.MinPlayers
+        } \n ${participants} \n`,
+        inline: false,
+      });
+      select.addOptions({
+        label: raid.Title,
+        value: raid.ID.toString(),
+      });
+    });
+
+    const row = new ActionRowBuilder().addComponents(select);
+    return { embeds: [embed], components: [row] };
+  }
+
+
 }
