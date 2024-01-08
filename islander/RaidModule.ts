@@ -86,7 +86,7 @@ export abstract class RaidModule {
       data: [
         {
           RaidId: raidId,
-          Timestamp: new Date(tuesday.setHours(16, 0, 0, 0)),
+          Timestamp: new Date(tuesday.setHours(17, 0, 0, 0)),
           Option: "A",
         },
         {
@@ -96,12 +96,12 @@ export abstract class RaidModule {
         },
         {
           RaidId: raidId,
-          Timestamp: new Date(tuesday.setHours(22, 0, 0, 0)),
+          Timestamp: new Date(tuesday.setHours(21, 0, 0, 0)),
           Option: "C",
         },
         {
           RaidId: raidId,
-          Timestamp: new Date(wednesday.setHours(16, 0, 0, 0)),
+          Timestamp: new Date(wednesday.setHours(17, 0, 0, 0)),
           Option: "D",
         },
         {
@@ -111,12 +111,12 @@ export abstract class RaidModule {
         },
         {
           RaidId: raidId,
-          Timestamp: new Date(wednesday.setHours(22, 0, 0, 0)),
+          Timestamp: new Date(wednesday.setHours(21, 0, 0, 0)),
           Option: "F",
         },
         {
           RaidId: raidId,
-          Timestamp: new Date(thursday.setHours(16, 0, 0, 0)),
+          Timestamp: new Date(thursday.setHours(17, 0, 0, 0)),
           Option: "G",
         },
         {
@@ -126,7 +126,7 @@ export abstract class RaidModule {
         },
         {
           RaidId: raidId,
-          Timestamp: new Date(thursday.setHours(22, 0, 0, 0)),
+          Timestamp: new Date(thursday.setHours(21, 0, 0, 0)),
           Option: "I",
         },
       ],
