@@ -78,9 +78,9 @@ export abstract class RaidModule {
   static async AddDayToRaidSchedulingOptions(raidId: number, day: Date) {
     let tuesday = new Date(day.getTime());
     let wednesday = new Date(tuesday.getTime());
-    wednesday.setDate(tuesday.getDate() + 1);
+    wednesday.setDate(tuesday.getDate() + 2);
     let thursday = new Date(tuesday.getTime());
-    thursday.setDate(tuesday.getDate() + 2);
+    thursday.setDate(tuesday.getDate() + 5);
 
     return global.client.prisma.raidSchedulingOption.createMany({
       data: [
