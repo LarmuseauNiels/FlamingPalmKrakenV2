@@ -10,5 +10,9 @@ module.exports = {
         },
       },
     });
+    interaction.reply({
+      content: "Successfully unsubscribed from the raid!",
+      ephemeral: true,
+    });
   },
 };
