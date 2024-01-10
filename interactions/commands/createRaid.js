@@ -4,17 +4,19 @@ module.exports = {
   name: "create-raid",
   data: new SlashCommandBuilder()
     .setName("create-raid")
-    .setDescription("Add a new raid to the available raids list!")
+    .setDescription("Initiate a new raid and add it to the list!")
     .addStringOption((option) =>
       option
         .setName("title")
-        .setDescription("Game or name of the raid")
+        .setDescription("Name of the game/raid")
         .setRequired(true)
     )
     .addIntegerOption((option) =>
       option
         .setName("minplayers")
-        .setDescription("The minimum attendees of your raid")
+        .setDescription(
+          "The minimum players needed to start scheduling the raid"
+        )
         .setRequired(true)
     ),
   isGuild: false,
@@ -31,7 +33,8 @@ module.exports = {
     });
 
     interaction.reply({
-      content: "New raid created, use /raids to see the list!",
+      content:
+        "Successfully created a new raid! Check out the updated list by typing /raids.",
       ephemeral: true,
     });
   },

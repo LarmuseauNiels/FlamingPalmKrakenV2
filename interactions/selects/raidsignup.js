@@ -20,7 +20,7 @@ module.exports = {
 
       interaction.reply({
         content:
-          "You are already signed up for this raid! U can press the button below to remove yourself from the raid.",
+          "You've previously enlisted for the raid! Should you wish to opt out, simply hit the button below to withdraw your participation.",
         components: [row],
         ephemeral: true,
       });
@@ -33,7 +33,7 @@ module.exports = {
     );
     interaction.reply({
       content:
-        "Successfully signed up for the raid! Use /raids again to see changes!",
+        "You've successfully enlisted for the raid! Type /raids again to view any updates or changes.",
       ephemeral: true,
     });
   },

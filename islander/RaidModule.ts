@@ -2,7 +2,8 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  EmbedBuilder, StringSelectMenuBuilder,
+  EmbedBuilder,
+  StringSelectMenuBuilder,
 } from "discord.js";
 import { RaidAttendees, Raids, RaidSchedulingOption } from "@prisma/client";
 
@@ -158,7 +159,7 @@ export abstract class RaidModule {
     let embed = new EmbedBuilder()
       .setTitle("Scheduling for raid: " + raid.Title)
       .setDescription(
-        "Vote for all times you are available! \n The raid will be scheduled for the first time that everyone can make.\n Participants: \n" +
+        "Cast your votes for all your available time slots! \n The raid will be scheduled for the first time that suits everyone.\n Participants: \n" +
           participants
       )
       .setFooter({
@@ -181,7 +182,7 @@ export abstract class RaidModule {
     let row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId("raidVotes")
-        .setLabel("See Votes")
+        .setLabel("View Participants' Chosen Times")
         .setStyle(ButtonStyle.Secondary)
     );
 
@@ -333,7 +334,7 @@ export abstract class RaidModule {
     //create discord event
     let embed = new EmbedBuilder()
       .setTitle("Raid: " + raid.Title)
-      .setDescription("This raid has been scheduled!")
+      .setDescription("A timeslot has been chosen!")
       .setColor("#0099ff");
     let participants = "";
     raid.RaidAttendees.forEach((attendee) => {
@@ -373,7 +374,7 @@ export abstract class RaidModule {
     let embed = new EmbedBuilder()
       .setTitle("Scheduling for raid: " + raid.Title)
       .setDescription(
-        "No consensus was reached for this raid. Consider making or joining a new one."
+        "Unable to find a suitable timeslot for the raid; it will be canceled. To attempt scheduling again, join or create a new raid."
       )
       .setColor("#0099ff");
     raid.RaidAttendees.forEach((attendee) => {
@@ -455,7 +456,7 @@ export abstract class RaidModule {
     }
   }
 
-  static async getRaidMessage(){
+  static async getRaidMessage() {
     const raids = await globalThis.client.prisma.raids.findMany({
       include: { RaidAttendees: true },
       where: { Status: 1 },
@@ -463,22 +464,21 @@ export abstract class RaidModule {
 
     // make an embed with all the events
     const embed = new EmbedBuilder()
-        .setColor("#FD8612")
-        .setTitle("Party Raids")
-        .setDescription(
-            "Join one of the following raids by selecting it in the box below! \n  When enough people sign up you will receive a message to vote on a time and date" +
-            " \n If you want to add a raid use /create-raid"
-        )
-        .setTimestamp()
-        .setFooter({
-          text: "Flamingpalm raids",
-          iconURL:
-              "https://flamingpalm.com/assets/images/logo/FlamingPalmLogoSmall.png",
-        });
+      .setColor("#FD8612")
+      .setTitle("Party Raids")
+      .setDescription(
+        "Join one of the available raids by selecting it in the box below! \n Once enough participants sign up, you'll receive a message to vote on a time and date.\n To add a new raid, use /create-raid."
+      )
+      .setTimestamp()
+      .setFooter({
+        text: "Flamingpalm raids",
+        iconURL:
+          "https://flamingpalm.com/assets/images/logo/FlamingPalmLogoSmall.png",
+      });
 
     const select = new StringSelectMenuBuilder()
-        .setCustomId("raidsignup")
-        .setPlaceholder("Select a raid to sign up");
+      .setCustomId("raidsignup")
+      .setPlaceholder("Select a raid to enlist");
 
     raids.forEach((raid) => {
       let participants = "";
@@ -488,9 +488,7 @@ export abstract class RaidModule {
       });
       embed.addFields({
         name: raid.Title,
-        value: `Attendees: ${raid.RaidAttendees.length}/${
-            raid.MinPlayers
-        } \n ${participants} \n`,
+        value: `Attendees: ${raid.RaidAttendees.length}/${raid.MinPlayers} \n ${participants} \n`,
         inline: false,
       });
       select.addOptions({
@@ -502,6 +500,4 @@ export abstract class RaidModule {
     const row = new ActionRowBuilder().addComponents(select);
     return { embeds: [embed], components: [row] };
   }
-
-
 }
