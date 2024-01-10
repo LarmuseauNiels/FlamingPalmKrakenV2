@@ -1,15 +1,12 @@
 const {
   ContextMenuCommandBuilder,
   ApplicationCommandType,
-  EmbedBuilder,
-  PermissionFlagsBits,
 } = require("discord.js");
 module.exports = {
   name: "profile",
   data: new ContextMenuCommandBuilder()
     .setName("profile")
-    .setType(ApplicationCommandType.User)
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    .setType(ApplicationCommandType.User),
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
     global.client.achievementsModule
