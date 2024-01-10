@@ -467,7 +467,7 @@ export abstract class RaidModule {
       .setColor("#FD8612")
       .setTitle("Party Raids")
       .setDescription(
-        "Join one of the available raids by selecting it in the box below! \n Once enough participants sign up, you'll receive a message to vote on a time and date.\n To add a new raid, use /create-raid."
+        "Join one of the available raids by selecting it in the box below! \n Once enough participants sign up, you'll receive a message to vote on a timeslot.\n To add a new raid, use /create-raid."
       )
       .setTimestamp()
       .setFooter({
