@@ -54,6 +54,7 @@ class FpgClient extends Client {
 
     this.prisma = new PrismaClient();
     this.logChannel;
+    this.updateChannel;
     this.islander = new Islander();
     this.events = null;
     this.cachUpdated;
