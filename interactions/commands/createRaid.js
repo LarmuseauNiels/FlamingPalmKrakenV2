@@ -1,4 +1,5 @@
 const { SlashCommandBuilder } = require("discord.js");
+const { ChannelUpdates } = require("../../islander/ChannelUpdates");
 
 module.exports = {
   name: "create-raid",
@@ -31,7 +32,7 @@ module.exports = {
         Creator: interaction.user.id,
       },
     });
-
+    ChannelUpdates.MessageWithRaid("New raid created: " + title);
     interaction.reply({
       content:
         "Successfully created a new raid! Check out the updated list by typing /raids.",
