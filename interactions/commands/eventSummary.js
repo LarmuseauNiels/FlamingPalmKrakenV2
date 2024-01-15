@@ -3,7 +3,7 @@ const {
   SlashCommandBuilder,
   PermissionFlagsBits,
 } = require("discord.js");
-const {RaidModule} = require("../../islander/RaidModule");
+const { RaidModule } = require("../../islander/RaidModule");
 
 module.exports = {
   name: "event-summary",
@@ -36,7 +36,10 @@ module.exports = {
       client.cachUpdated = Date.now();
       var contentText = "Upcoming events!\n";
 
-      client.events.forEach((event) => {
+      let sortedEvents = client.events.sort((a, b) => {
+        return a.scheduledStartTimestamp - b.scheduledStartTimestamp;
+      });
+      sortedEvents.forEach((event) => {
         contentText += `${event.url}\n`;
       });
 
@@ -44,7 +47,7 @@ module.exports = {
       channel.send({
         content: contentText,
         embeds: raids.embeds,
-        components: raids.components
+        components: raids.components,
       });
       interaction.reply({
         content: `\`✅\` Event summary sent.`,
