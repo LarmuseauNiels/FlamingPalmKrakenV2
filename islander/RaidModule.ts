@@ -22,11 +22,10 @@ export abstract class RaidModule {
         ID: raidId,
       },
     });
-
-    await this.SchedulingCreationCheck(raidId);
-    ChannelUpdates.MessageWithRaid(
+    await ChannelUpdates.MessageWithRaid(
       `<@${userId}> has joined the raid: ${raid.Title}`
     );
+    await this.SchedulingCreationCheck(raidId);
     return;
   }
 
