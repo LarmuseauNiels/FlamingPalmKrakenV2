@@ -6,6 +6,7 @@ import {
   StringSelectMenuBuilder,
 } from "discord.js";
 import { RaidAttendees, Raids, RaidSchedulingOption } from "@prisma/client";
+import { ChannelUpdates } from "../islander/ChannelUpdates";
 
 export abstract class RaidModule {
   static async AddUserToRaid(userId: string, raidId: number) {
@@ -16,7 +17,16 @@ export abstract class RaidModule {
         RaidId: raidId,
       },
     });
+    let raid = await global.client.prisma.raids.findFirst({
+      where: {
+        ID: raidId,
+      },
+    });
+
     await this.SchedulingCreationCheck(raidId);
+    ChannelUpdates.MessageWithRaid(
+      `<@${userId}> has joined the raid: ${raid.Title}`
+    );
     return;
   }
 
@@ -204,6 +214,20 @@ export abstract class RaidModule {
           });
       });
     });
+
+    let updateEmbed = new EmbedBuilder()
+      .setTitle("Raid has entered scheduling: " + raid.Title)
+      .setDescription("Participants: \n" + participants)
+      .setFooter({
+        text: "Scheduling closes ",
+        iconURL:
+          "https://flamingpalm.com/assets/images/logo/FlamingPalmLogoSmall.png",
+      })
+      .setTimestamp(finishTime)
+      .setColor("#0099ff");
+    global.client.updateChannel.send({
+      embeds: [updateEmbed],
+    });
   }
 
   static async checkSchedules() {
@@ -334,7 +358,7 @@ export abstract class RaidModule {
     //create discord event
     let embed = new EmbedBuilder()
       .setTitle("Raid: " + raid.Title)
-      .setDescription("A timeslot has been chosen!")
+      .setDescription("Raid has been scheduled!")
       .setColor("#0099ff");
     let participants = "";
     raid.RaidAttendees.forEach((attendee) => {
@@ -362,6 +386,9 @@ export abstract class RaidModule {
         Math.floor(key.Timestamp.getTime() / 1000) +
         ":F>"
     );
+    global.client.updateChannel.send({
+      embeds: [embed],
+    });
   }
 
   static async cancelRaid(

@@ -1,5 +1,6 @@
 import { AttachmentBuilder, Embed, EmbedBuilder, User } from "discord.js";
 import Rank from "../islander/profile";
+import { ChannelUpdates } from "../islander/ChannelUpdates";
 
 export class AchievementsModule {
   async GiveAchievement(
@@ -43,6 +44,11 @@ export class AchievementsModule {
     }
     //check if achievement gives points
     if (achievement.points > 0) {
+      ChannelUpdates.MessageWithProfile(
+        `<@${memberID}>recieved an achievement!: ${achievement.Name} \n${description}`,
+        memberID
+      );
+
       await global.client.prisma.points.update({
         where: {
           userid: memberID,
