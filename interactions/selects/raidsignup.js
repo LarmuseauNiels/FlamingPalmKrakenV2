@@ -3,6 +3,20 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 module.exports = {
   name: "raidsignup",
   async execute(interaction) {
+    let raid = await global.client.prisma.raids.findUnique({
+      where: {
+        ID: parseInt(interaction.values[0]),
+      },
+    });
+
+    if (raid.Status !== 1) {
+      interaction.reply({
+        content: "This raid is no longer accepting signups.",
+        ephemeral: true,
+      });
+      return;
+    }
+
     let attending = await global.client.prisma.raidAttendees.count({
       where: {
         RaidId: parseInt(interaction.values[0]),
