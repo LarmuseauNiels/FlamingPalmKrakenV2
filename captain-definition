@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "dockerfileLines": [
-                        "FROM node:hydrogen-alpine3.16",
+                        "FROM node:21-alpine",
                         "COPY ./fonts/Manrope-Bold.ttf ./",
                         "COPY ./fonts/Manrope-Regular.ttf ./",
                         "RUN mkdir -p /usr/share/fonts/truetype/",
