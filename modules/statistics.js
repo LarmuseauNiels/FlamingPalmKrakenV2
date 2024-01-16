@@ -170,37 +170,36 @@ module.exports = async function (client) {
 
   // cron schedule for every 5 minutes
 
-  cron.schedule("15 0,5,10,15,20,25,30,35,40,45,50,55 * * * *", () => {
+  cron.schedule("15 0,5,10,15,20,25,30,35,40,45,50,55 * * * *", async () => {
     console.log("running arma tracking cron job");
-    const apiUrl =
-      "https://api.steampowered.com/IGameServersService/GetServerList/v1/?key=315F486717B5586382BEEF04F5C84696&filter=addr\\213.219.142.165:2309";
-    fetch(apiUrl)
-      .then((response) => response.json())
-      .then((jsonData) => {
-        console.log(jsonData);
-        let prop = jsonData.response.servers[0].players;
-        console.log("The value of propertyName is:", prop);
-        const channel = client.channels.cache.get("1172498969235030047");
+    let prop = "❌";
+    try {
+      const apiUrl =
+        "https://api.steampowered.com/IGameServersService/GetServerList/v1/?key=315F486717B5586382BEEF04F5C84696&filter=addr\\213.219.142.165:2309";
+      let response = await fetch(apiUrl);
+      let jsonData = await response.json();
+      console.log(jsonData);
+      prop = jsonData.response.servers[0].players;
+      console.log("The value of propertyName is:", prop);
+    } catch (e) {
+      console.log(e);
+    }
 
-        Gamedig.query({
-          type: "minecraft",
-          host: "mc.flamingpalm.com",
-        })
-          .then((state) => {
-            channel.setName("🛜︱A3:" + prop + " MC:" + state.players.length);
-          })
-          .catch((error) => {
-            console.log("minecraft server offline");
-            console.log(error);
-          });
-      })
-      .catch((error) => {
-        console.error("Error fetching data:", error.message);
+    let mcPlayers = "❌";
+    try {
+      let state = await Gamedig.query({
+        type: "minecraft",
+        host: "mc.flamingpalm.com",
       });
+      mcPlayers = state.players.length;
+    } catch (e) {
+      console.log(e);
+    }
+
+    const channel = client.channels.cache.get("1172498969235030047");
+    channel.setName("🛜︱A3:" + prop + " MC:" + mcPlayers);
   });
 };
-
-async function queryMC() {}
 
 function cleanString(input) {
   if (input === null || input === undefined) return "";
