@@ -44,10 +44,21 @@ module.exports = {
     } catch (error) {
       global.bugsnag.notify(error);
       global.client.log(error);
-      await interaction.reply({
-        content: "Issue executing, alerting niels",
-        ephemeral: true,
-      });
+      try {
+        await interaction.reply({
+          content: "A problem occurred. Error has been logged and reported.",
+          ephemeral: true,
+        });
+      } catch (e) {
+        try {
+          await interaction.editReply({
+            content: "A problem occurred. Error has been logged and reported.",
+            ephemeral: true,
+          });
+        } catch (e) {
+          console.log(e);
+        }
+      }
     }
     global.bugsnag.pauseSession();
   },
