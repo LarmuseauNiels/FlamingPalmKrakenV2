@@ -24,7 +24,7 @@ module.exports = {
         iconURL:
           "https://flamingpalm.com/assets/images/logo/FlamingPalmLogoSmall.png",
       });
-    let playernames = "";
+    let playernames = state.players.length > 0 ? "" : "no players online";
     state.players.forEach((player) => {
       playernames += player.name + "\n";
     });

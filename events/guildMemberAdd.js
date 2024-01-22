@@ -43,42 +43,6 @@ module.exports = {
       if (moreUses.length === 1) usedInvite = newInvites.get(moreUses[0].code);
       else if (removed.length === 1)
         usedInvite = cachedInvites.get(removed[0].code);
-      //console.log(cachedInvites);
-      /*
-      console.log("got invites");
-      let usedInvite;
-      console.log(
-        newInvites.find(
-          (invite) =>
-            cachedInvites.find((i) => i.code === invite.code).uses < invite.uses
-        )
-      );
-      let possibleInvites = newInvites.filter(
-        (invite) =>
-          cachedInvites.find((i) => i.code === invite.code).uses < invite.uses
-      ).size;
-      console.log(possibleInvites + " possible invites");
-      if (possibleInvites === 1) {
-        usedInvite = newInvites.find(
-          (invite) =>
-            oldinvites.find((i) => i.code === invite.code).uses < invite.uses
-        );
-      }
-      if (possibleInvites === 0) {
-        console.log("invite not found checking for removed invite");
-        let removedInvites = cachedInvites.filter(
-          (inv) =>
-            newInvites.filter((ninv) => ninv.code === inv.code).size === 0
-        );
-        if (removedInvites.size === 1) usedInvite = removedInvites[0];
-        if (removedInvites.size > 1) {
-          console.log("could not pin down single removed invite");
-          console.log(removedInvites);
-        }
-      }
-      console.log(usedInvite);
-      */
-
       global.client.invites.set(GuildMember.guild.id, newInvites);
 
       let embed = new EmbedBuilder()
@@ -139,6 +103,13 @@ module.exports = {
             refferer: usedInvite.inviter.id,
           },
         });
+
+        await global.client.achievementsModule.GiveAchievement(
+          usedInvite.inviter.username,
+          14,
+          "system",
+          GuildMember.user.username
+        );
       } catch (error) {
         global.bugsnag.notify(error);
         console.log(error);

@@ -289,7 +289,7 @@ export function memberEndPoints(app) {
     };
 
     global.client.channels.cache
-      .get("903358430922825748")
+      .get("1128264366182125664")
       .send({ embeds: [embed] });
   }
 
