@@ -313,6 +313,11 @@ export abstract class RaidModule {
       const messages = await user.dmChannel.messages.fetch({ limit: 50 });
       console.log(messages.size);
       const message = messages.find((m) => m.content == raid.ID.toString());
+      if (!message) {
+        console.log("No message found for user " + user.id);
+        return;
+      }
+      console.log(message);
       const optionVotesPromises = raid.RaidSchedulingOption.map(
         async (option) => {
           const users = await message.reactions
