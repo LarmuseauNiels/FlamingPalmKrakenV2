@@ -1,5 +1,8 @@
 import { authenticateToken, jsonify } from "./Helpers";
 import Rank from "../../islander/profile";
+import { DashBoardModel } from "./ViewModels/dash-board-model";
+import { PointHistoryItem } from "./ViewModels/point-history-item";
+import { PointHistory } from ".prisma/client";
 
 export function memberEndPoints(app) {
   let apiPrefix = "/members/";
@@ -388,4 +391,54 @@ export function memberEndPoints(app) {
     let level = global.client.achievementsModule.getLevel(member.XP);
     res.send(jsonify(level));
   });
+
+  app.get(
+    apiPrefix + "dashboard",
+    authenticateToken,
+    async function (req, res) {
+      let dashboard = new DashBoardModel();
+      let points = await global.client.prisma.points.findFirst({
+        where: {
+          userid: req.user.id,
+        },
+      });
+      dashboard.dashboardPoints = points.TotalPoints;
+
+      let raids = await global.client.prisma.raids.findMany({
+        include: {
+          RaidAttendees: true,
+        },
+        where: {
+          Status: {
+            equals: 1,
+          },
+        },
+        take: 5,
+      });
+
+      dashboard.raids = raids.map((raid) => {
+        return {
+          ID: raid.ID,
+          Title: raid.Title,
+          MinPlayers: raid.MinPlayers,
+          CreationTime: raid.CreationTime,
+          Status: raid.Status,
+          Attending: raid.RaidAttendees.length,
+        };
+      });
+
+      let pointHistory = await global.client.prisma.pointHistory.findMany({
+        where: {
+          userid: req.user.id,
+        },
+        take: 5,
+        orderBy: {
+          TimeStamp: "desc",
+        } as any,
+      });
+      dashboard.pointHistory = pointHistory;
+
+      res.send(jsonify(dashboard));
+    }
+  );
 }
