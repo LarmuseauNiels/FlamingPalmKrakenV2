@@ -143,8 +143,8 @@ export abstract class RaidModule {
     });
   }
 
-  static async SendSchedulingMessage(raidId: number) {
-    let raid = await global.client.prisma.raids.findFirst({
+  static async getRaid(raidId: number) {
+    return global.client.prisma.raids.findFirst({
       include: {
         RaidAttendees: true,
         RaidSchedulingOption: true,
@@ -154,7 +154,14 @@ export abstract class RaidModule {
         Status: 2,
       },
     });
+  }
 
+  static async buildSchedulingMessage(
+    raid: Raids & {
+      RaidAttendees: RaidAttendees[];
+      RaidSchedulingOption: RaidSchedulingOption[];
+    }
+  ) {
     let finishTime = new Date(raid.RaidSchedulingOption[0].Timestamp.getTime());
     finishTime.setDate(finishTime.getDate() - 1);
     finishTime.setHours(0, 0, 0, 0);
@@ -188,6 +195,15 @@ export abstract class RaidModule {
         inline: true,
       });
     });
+
+    return embed;
+  }
+
+  static async SendSchedulingMessage(raidId: number) {
+    let raid = await this.getRaid(raidId);
+
+    let embed = await this.buildSchedulingMessage(raid);
+
     let row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId("raidVotes")
@@ -195,6 +211,7 @@ export abstract class RaidModule {
         .setStyle(ButtonStyle.Secondary)
     );
 
+    //send message to all attendees
     raid.RaidAttendees.forEach((attendee) => {
       global.client.users.fetch(attendee.MemberId).then((user) => {
         user
@@ -209,9 +226,21 @@ export abstract class RaidModule {
             });
           })
           .catch((err) => {
+            global.log(
+              "Error sending scheduling message for raid " +
+                raid.ID +
+                "  to <@" +
+                user.id +
+                ">"
+            );
             console.log(err);
           });
       });
+    });
+
+    let participants = "";
+    raid.RaidAttendees.forEach((attendee) => {
+      participants += "<@" + attendee.MemberId + ">\n";
     });
 
     let updateEmbed = new EmbedBuilder()
@@ -222,7 +251,6 @@ export abstract class RaidModule {
         iconURL:
           "https://flamingpalm.com/assets/images/logo/FlamingPalmLogoSmall.png",
       })
-      .setTimestamp(finishTime)
       .setColor("#0099ff");
     global.client.updateChannel.send({
       embeds: [updateEmbed],
@@ -314,7 +342,12 @@ export abstract class RaidModule {
       console.log(messages.size);
       const message = messages.find((m) => m.content == raid.ID.toString());
       if (!message) {
-        console.log("No message found for user " + user.id);
+        global.client.log(
+          "No scheduling message found for user <@" +
+            user.id +
+            "> for raid " +
+            raid.ID
+        );
         return;
       }
       console.log(message);
@@ -530,5 +563,34 @@ export abstract class RaidModule {
 
     const row = new ActionRowBuilder().addComponents(select);
     return { embeds: [embed], components: [row] };
+  }
+
+  static async resendRaid(raidID: number, user) {
+    let raid = await this.getRaid(raidID);
+
+    let embed = await this.buildSchedulingMessage(raid);
+
+    let row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId("raidVotes")
+        .setLabel("View Participants' Chosen Times")
+        .setStyle(ButtonStyle.Secondary)
+    );
+
+    user
+      .send({
+        embeds: [embed],
+        content: raid.ID.toString(),
+        components: [row],
+      })
+      .then((message) => {
+        raid.RaidSchedulingOption.forEach((option) => {
+          message.react(this.getUniCodeEmoji(option.Option));
+        });
+      })
+      .catch((err: any) => {
+        return err.toString();
+      });
+    return "success";
   }
 }
