@@ -1,6 +1,7 @@
 import { AttachmentBuilder, Embed, EmbedBuilder, User } from "discord.js";
 import Rank from "../islander/profile";
 import { ChannelUpdates } from "../islander/ChannelUpdates";
+import type * as Prisma from "@prisma/client";
 
 export class AchievementsModule {
   async GiveAchievement(
@@ -280,5 +281,22 @@ FROM (
       }
       */
     });
+  }
+
+  getBadgeUnlocks(achievements: any[]) {
+    let badgeUnlocks: string[] = [];
+    if (achievements.filter((a) => a.AchievementID == 1).length > 5) {
+      badgeUnlocks.push("party5");
+    }
+    if (achievements.filter((a) => a.AchievementID == 16).length > 5) {
+      badgeUnlocks.push("arma5");
+    }
+    if (achievements.filter((a) => a.AchievementID == 18).length > 5) {
+      badgeUnlocks.push("raid5");
+    }
+    if (achievements.filter((a) => a.AchievementID == 11).length > 5) {
+      badgeUnlocks.push("refReg1");
+    }
+    return badgeUnlocks;
   }
 }

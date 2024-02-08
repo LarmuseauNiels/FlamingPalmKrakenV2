@@ -471,6 +471,26 @@ export function memberEndPoints(app) {
   });
 
   app.get(
+    apiPrefix + "getBadgeUnlocks",
+    authenticateToken,
+    async function (req, res) {
+      let member = await global.client.prisma.members.findFirst({
+        where: {
+          ID: req.user.id,
+        },
+        include: {
+          Achievement_History: true,
+        },
+      });
+
+      let badges = global.client.achievementsModule.getBadgeUnlocks(
+        member.Achievement_History
+      );
+      res.send(jsonify(badges));
+    }
+  );
+
+  app.get(
     apiPrefix + "dashboard",
     authenticateToken,
     async function (req, res) {
