@@ -83,4 +83,10 @@ export function legacyEndPoints(app) {
       res.send(jsonify(globalThis.client.events));
     }
   });
+
+  app.get("/dailyAll", async function (req, res) {
+    let results = await globalThis.client.prisma
+      .$queryRaw`select  DATE(timestamp) as date, count(*) as online from VoiceConnected  group by date`;
+    res.send(jsonify(results));
+  });
 }
