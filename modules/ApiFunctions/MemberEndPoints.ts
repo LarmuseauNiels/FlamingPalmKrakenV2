@@ -483,12 +483,10 @@ export function memberEndPoints(app) {
         },
       });
 
-      res.send(jsonify(member));
-
-      /*let badges = global.client.achievementsModule.getBadgeUnlocks(
+      let badges = global.client.achievementsModule.getBadgeUnlocks(
         member.Achievement_History
       );
-      res.send(jsonify(badges));*/
+      res.send(jsonify(badges));
     }
   );
 
