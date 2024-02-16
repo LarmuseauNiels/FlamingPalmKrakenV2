@@ -105,7 +105,7 @@ module.exports = {
         });
 
         await global.client.achievementsModule.GiveAchievement(
-          usedInvite.inviter.username,
+          usedInvite.inviter.id,
           14,
           "178435947816419328",
           GuildMember.user.username
