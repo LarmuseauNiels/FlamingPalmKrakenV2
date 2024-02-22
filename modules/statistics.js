@@ -175,7 +175,7 @@ module.exports = async function (client) {
     let prop = "❌";
     try {
       const apiUrl =
-        "https://api.steampowered.com/IGameServersService/GetServerList/v1/?key=315F486717B5586382BEEF04F5C84696&filter=addr\\212.233.45.77:27017";
+        "https://api.steampowered.com/IGameServersService/GetServerList/v1/?key=315F486717B5586382BEEF04F5C84696&filter=addr\\212.233.45.197:27017";
       let response = await fetch(apiUrl);
       let jsonData = await response.json();
       console.log(jsonData);
@@ -189,7 +189,7 @@ module.exports = async function (client) {
     try {
       let state = await Gamedig.query({
         type: "minecraft",
-        host: "mc.flamingpalm.com",
+        host: "server.flamingpalm.com",
       });
       mcPlayers = state.players.length;
     } catch (e) {
