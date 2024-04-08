@@ -175,7 +175,7 @@ module.exports = async function (client) {
     let prop = "❌";
     try {
       const apiUrl =
-        "https://api.steampowered.com/IGameServersService/GetServerList/v1/?key=315F486717B5586382BEEF04F5C84696&filter=addr\\212.233.45.197:27017";
+        "https://api.steampowered.com/IGameServersService/GetServerList/v1/?key=315F486717B5586382BEEF04F5C84696&filter=addr\\213.219.148.97:2309";
       let response = await fetch(apiUrl);
       let jsonData = await response.json();
       console.log(jsonData);
@@ -197,7 +197,7 @@ module.exports = async function (client) {
     }
 
     const channel = client.channels.cache.get("1172498969235030047");
-    channel.setName("🛜︱ICA:" + prop + " MC:" + mcPlayers);
+    channel.setName("🛜︱ANTISTASI: " + prop + " online" );
   });
 };
 
