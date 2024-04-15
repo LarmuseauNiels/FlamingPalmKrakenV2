@@ -175,7 +175,7 @@ module.exports = async function (client) {
     let prop = "❌";
     try {
       const apiUrl =
-        "https://api.steampowered.com/IGameServersService/GetServerList/v1/?key=315F486717B5586382BEEF04F5C84696&filter=addr\\213.219.148.97:2309";
+        "https://api.steampowered.com/IGameServersService/GetServerList/v1/?key=315F486717B5586382BEEF04F5C84696&filter=addr\\109.236.142.163:2309";
       let response = await fetch(apiUrl);
       let jsonData = await response.json();
       console.log(jsonData);
