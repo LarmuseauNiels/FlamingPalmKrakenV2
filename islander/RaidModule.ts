@@ -638,6 +638,11 @@ export abstract class RaidModule {
     }
 
     static async AddAttendeeToRaid(raidId: number, id) {
-        
+        return global.client.prisma.raidAttendees.create({
+            data: {
+                RaidId: raidId,
+                MemberId: id,
+            },
+        });
     }
 }
