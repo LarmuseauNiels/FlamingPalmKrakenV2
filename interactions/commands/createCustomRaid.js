@@ -33,7 +33,7 @@ module.exports = {
                 Status: 5
             },
         });
-        interaction.respond({
+        interaction.reply({
             content:
                 "Successfully created a custom raid! you can add your own scheduling options to raid id: " + newraid.ID + " by typing /add-schedule",
             ephemeral: true,

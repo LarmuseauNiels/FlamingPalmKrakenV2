@@ -184,7 +184,7 @@ module.exports = async function (client) {
     } catch (e) {
       console.log(e);
     }
-
+    /*
     let mcPlayers = "❌";
     try {
       let state = await Gamedig.query({
@@ -195,7 +195,7 @@ module.exports = async function (client) {
     } catch (e) {
       console.log(e);
     }
-
+*/
     const channel = client.channels.cache.get("1172498969235030047");
     channel.setName("🛜︱ANTISTASI: " + prop + " online" );
   });
