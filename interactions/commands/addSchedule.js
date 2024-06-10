@@ -16,7 +16,7 @@ module.exports = {
         )
         .addIntegerOption((option) =>
             option
-                .setName("Month")
+                .setName("month")
                 .setDescription("Month")
                 .setRequired(true)
                 .setMinValue(1)
@@ -24,7 +24,7 @@ module.exports = {
         )
         .addIntegerOption((option) =>
             option
-                .setName("Day")
+                .setName("day")
                 .setDescription("Day")
                 .setRequired(true)
                 .setMinValue(1)
@@ -32,7 +32,7 @@ module.exports = {
         )
         .addIntegerOption((option) =>
             option
-                .setName("Hour")
+                .setName("hour")
                 .setDescription("Hour")
                 .setRequired(true)
                 .setMinValue(0)
@@ -40,7 +40,7 @@ module.exports = {
         )
         .addIntegerOption((option) =>
             option
-                .setName("Minute")
+                .setName("minute")
                 .setDescription("Minute")
                 .setRequired(true)
                 .setMinValue(0)
@@ -67,10 +67,10 @@ module.exports = {
         const raidId = interaction.options.getInteger("raid");
         //const schedule = interaction.options.getString("datetime");
         const timezone = interaction.options.getString("timezone");
-        const month = interaction.options.getInteger("Month");
-        const day = interaction.options.getInteger("Day");
-        const hour = interaction.options.getInteger("Hour");
-        const minute = interaction.options.getInteger("Minute");
+        const month = interaction.options.getInteger("month");
+        const day = interaction.options.getInteger("day");
+        const hour = interaction.options.getInteger("hour");
+        const minute = interaction.options.getInteger("minute");
         let year = new Date().getFullYear();
         const currentMonth = new Date().getMonth() + 1;
         if (month < currentMonth) {
