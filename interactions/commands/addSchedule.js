@@ -14,11 +14,37 @@ module.exports = {
                 .setAutocomplete(true)
                 .setRequired(true)
         )
-        .addStringOption((option) =>
+        .addIntegerOption((option) =>
             option
-                .setName("datetime")
-                .setDescription("YYYY-MM-DD HH:MM")
+                .setName("Month")
+                .setDescription("Month")
                 .setRequired(true)
+                .setMinValue(1)
+                .setMaxValue(12)
+        )
+        .addIntegerOption((option) =>
+            option
+                .setName("Day")
+                .setDescription("Day")
+                .setRequired(true)
+                .setMinValue(1)
+                .setMaxValue(31)
+        )
+        .addIntegerOption((option) =>
+            option
+                .setName("Hour")
+                .setDescription("Hour")
+                .setRequired(true)
+                .setMinValue(0)
+                .setMaxValue(23)
+        )
+        .addIntegerOption((option) =>
+            option
+                .setName("Minute")
+                .setDescription("Minute")
+                .setRequired(true)
+                .setMinValue(0)
+                .setMaxValue(59)
         )
         .addStringOption((option) =>
                 option
@@ -39,9 +65,18 @@ module.exports = {
         ),
     async execute(interaction) {
         const raidId = interaction.options.getInteger("raid");
-        const schedule = interaction.options.getString("datetime");
+        //const schedule = interaction.options.getString("datetime");
         const timezone = interaction.options.getString("timezone");
-
+        const month = interaction.options.getInteger("Month");
+        const day = interaction.options.getInteger("Day");
+        const hour = interaction.options.getInteger("Hour");
+        const minute = interaction.options.getInteger("Minute");
+        let year = new Date().getFullYear();
+        const currentMonth = new Date().getMonth() + 1;
+        if (month < currentMonth) {
+            year++;
+        }
+        const schedule = `${year}-${month}-${day} ${hour}:${minute}`;
         const date = moment.tz(schedule, timezone);
         await RaidModule.AddSingleSchedulingOptionToRaid(raidId, date.toDate());
 

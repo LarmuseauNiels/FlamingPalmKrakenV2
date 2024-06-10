@@ -1,6 +1,4 @@
 const { SlashCommandBuilder } = require("discord.js");
-const { ChannelUpdates } = require("../../islander/ChannelUpdates");
-
 module.exports = {
     name: "custom-raid",
     data: new SlashCommandBuilder()
@@ -16,7 +14,7 @@ module.exports = {
             option
                 .setName("minplayers")
                 .setDescription(
-                    "The minimum players needed to start scheduling the raid"
+                    "The minimum players needed to pick a time"
                 )
                 .setRequired(true)
         ),
