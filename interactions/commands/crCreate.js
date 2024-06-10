@@ -1,9 +1,9 @@
 const { SlashCommandBuilder } = require("discord.js");
 module.exports = {
-    name: "custom-raid",
+    name: "cr-create",
     data: new SlashCommandBuilder()
-        .setName("custom-raid")
-        .setDescription("Initiate a new raid without preset times, so you can add your own!")
+        .setName("cr-create")
+        .setDescription("Initiate a custom raid that allows you to manually set scheduling options and attendees!")
         .addStringOption((option) =>
             option
                 .setName("title")
@@ -12,16 +12,16 @@ module.exports = {
         )
         .addIntegerOption((option) =>
             option
-                .setName("minplayers")
+                .setName("min-attendees")
                 .setDescription(
-                    "The minimum players needed to pick a time"
+                    "The minimum attendees needed to pick a time"
                 )
                 .setRequired(true)
         ),
     isGuild: false,
     async execute(interaction) {
         const title = interaction.options.getString("title");
-        const minPlayers = interaction.options.getInteger("minplayers");
+        const minPlayers = interaction.options.getInteger("min-attendees");
 
         let newraid = await global.client.prisma.raids.create({
             data: {

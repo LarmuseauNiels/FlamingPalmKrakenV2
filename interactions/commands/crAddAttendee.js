@@ -3,26 +3,26 @@ const moment = require('moment-timezone');
 const {RaidModule} = require("../../islander/RaidModule");
 
 module.exports = {
-    name: "add-attendee",
+    name: "cr-add-attendee",
     data: new SlashCommandBuilder()
-        .setName("add-attendee")
-        .setDescription("Add a schedule option to a custom raid")
+        .setName("cr-add-attendee")
+        .setDescription("add a attendee to the raid")
         .addIntegerOption((option) =>
             option
                 .setName("raid")
-                .setDescription("The raid to add a schedule to")
+                .setDescription("The raid to add attendee to")
                 .setAutocomplete(true)
                 .setRequired(true)
         )
         .addUserOption((option) =>
             option
-                .setName("user")
-                .setDescription("User to add to the raid")
+                .setName("attendee")
+                .setDescription("Attendee to add to the raid")
                 .setRequired(true)
         ),
     async execute(interaction) {
         const raidId = interaction.options.getInteger("raid");
-        const user = interaction.options.getUser("user");
+        const user = interaction.options.getUser("attendee");
 
         await RaidModule.AddAttendeeToRaid(raidId, user.id);
 

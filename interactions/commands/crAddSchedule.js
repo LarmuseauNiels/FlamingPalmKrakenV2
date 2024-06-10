@@ -3,9 +3,9 @@ const moment = require('moment-timezone');
 const {RaidModule} = require("../../islander/RaidModule");
 
 module.exports = {
-    name: "add-schedule",
+    name: "cr-add-schedule",
     data: new SlashCommandBuilder()
-        .setName("add-schedule")
+        .setName("cr-add-schedule")
         .setDescription("Add a schedule option to a custom raid")
         .addIntegerOption((option) =>
             option

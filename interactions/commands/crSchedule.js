@@ -2,14 +2,14 @@ const { SlashCommandBuilder } = require("discord.js");
 const {RaidModule} = require("../../islander/RaidModule");
 
 module.exports = {
-    name: "custom-raid-schedule",
+    name: "cr-schedule",
     data: new SlashCommandBuilder()
-        .setName("custom-raid-schedule")
-        .setDescription("Set a custom raid to scheduling")
+        .setName("cr-schedule")
+        .setDescription("Move custom raid to scheduling phase!")
         .addIntegerOption((option) =>
             option
                 .setName("raid")
-                .setDescription("The raid to add a schedule to")
+                .setDescription("The raid move to scheduling phase")
                 .setAutocomplete(true)
                 .setRequired(true)
         ),
@@ -43,9 +43,9 @@ module.exports = {
             });
             return;
         }
-        if (raid.RaidSchedulingOption.length < 2) {
+        if (raid.RaidSchedulingOption.length < 1) {
             interaction.reply({
-                content: `Raid ${raidId} needs at least 2 scheduling options to start scheduling!`,
+                content: `Raid ${raidId} needs at least 1 scheduling options to start scheduling!`,
                 ephemeral: true,
             });
             return;
