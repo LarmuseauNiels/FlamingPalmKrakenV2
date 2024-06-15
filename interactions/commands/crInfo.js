@@ -55,8 +55,8 @@ module.exports = {
             .addFields({
             name: "Minimum Players",
             value: raid.MinPlayers.toString(),
-            inline: true},
-                {
+            inline: true
+                },{
             name: "Status",
             value: raid.Status.toString(),
             inline: true
