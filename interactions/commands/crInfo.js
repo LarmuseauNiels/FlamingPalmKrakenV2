@@ -53,28 +53,27 @@ module.exports = {
             .setColor("#FD8612")
             .setTitle(raid.Title)
             .addFields({
-            name: "Minimum Players",
-            value: raid.MinPlayers.toString(),
-            inline: true
-                },{
-            name: "Status",
-            value: raid.Status.toString(),
-            inline: true
-                },{
-            name: "Creator",
-            value: raid.Creator.toString(),
-            inline: true
-                },{
-            name: "Attendees",
-            value: attendees,
-            inline: true
-                },{
-            name: "Scheduling Options",
-            value: scheduleOptions,
-            inline: true
-            }
-        );
-
+        name: "Minimum Players",
+        value: raid.MinPlayers ? raid.MinPlayers.toString() : "N/A", // Use "N/A" if raid.MinPlayers is undefined, null or empty
+        inline: true
+    },{
+        name: "Status",
+        value: raid.Status ? raid.Status.toString() : "N/A", // Use "N/A" if raid.Status is undefined, null or empty
+        inline: true
+    },{
+        name: "Creator",
+        value: raid.Creator ? raid.Creator.toString() : "N/A", // Use "N/A" if raid.Creator is undefined, null or empty
+        inline: true
+    },{
+        name: "Attendees",
+        value: attendees || "N/A", // Use "N/A" if attendees is undefined, null or empty
+        inline: true
+    },{
+        name: "Scheduling Options",
+        value: scheduleOptions || "N/A", // Use "N/A" if scheduleOptions is undefined, null or empty
+        inline: true
+    }
+);
         interaction.reply({ embeds: [embed] });
 
     },
