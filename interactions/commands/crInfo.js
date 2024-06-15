@@ -50,6 +50,9 @@ module.exports = {
             .setColor("#FD8612")
             .setTitle(raid.Title)
 
+        let attendees = raid.RaidAttendees.map((attendee) => attendee.Members.DisplayName).join(",")
+        let scheduleOptions = raid.RaidSchedulingOption.map((option) => `${option.Option}:${option.Timestamp}` ).join(",")
+
         embed.addFields({
             name: "Minimum Players",
             value: raid.MinPlayers.toString(),
@@ -64,11 +67,11 @@ module.exports = {
             inline: true
         },{
             name: "Attendees",
-            value: raid.RaidAttendees.map((attendee) => attendee.Members.DisplayName).join(","),
+            value: attendees,
             inline: true
         },{
             name: "Scheduling Options",
-            value: raid.RaidSchedulingOption.map((option) => `${option.Option}:${option.Timestamp}` ).join(","),
+            value: scheduleOptions,
             inline: true
         }
         );
