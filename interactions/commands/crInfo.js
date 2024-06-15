@@ -50,31 +50,28 @@ module.exports = {
             .setColor("#FD8612")
             .setTitle(raid.Title)
 
-        embed.addFields({
+        embed.addFields([{
             name: "Minimum Players",
             value: raid.MinPlayers.toString(),
             inline: true
-        });
-        embed.addFields({
+        },{
             name: "Status",
             value: raid.Status.toString(),
             inline: true
-        });
-        embed.addFields({
+        },{
             name: "Creator",
             value: raid.Creator.toString(),
             inline: true
-        });
-        embed.addFields({
+        },{
             name: "Attendees",
             value: raid.RaidAttendees.map((attendee) => attendee.Members.DisplayName).join(","),
             inline: true
-        });
-        embed.addFields({
+        },{
             name: "Scheduling Options",
             value: raid.RaidSchedulingOption.map((option) => `${option.Option}:${option.Timestamp}` ).join(","),
             inline: true
-        });
+        }
+        ]);
 
         interaction.reply({ embeds: [embed] });
 
