@@ -61,20 +61,16 @@ module.exports = {
         value: raid.Status ? raid.Status.toString() : "N/A", // Use "N/A" if raid.Status is undefined, null or empty
         inline: true
     },{
-        name: "Creator",
-        value: raid.Creator ? raid.Creator.toString() : "N/A", // Use "N/A" if raid.Creator is undefined, null or empty
-        inline: true
-    },{
         name: "Attendees",
         value: attendees || "N/A", // Use "N/A" if attendees is undefined, null or empty
-        inline: true
+        inline: false
     },{
         name: "Scheduling Options",
         value: scheduleOptions || "N/A", // Use "N/A" if scheduleOptions is undefined, null or empty
-        inline: true
+        inline: false
     }
 );
-        interaction.reply({ embeds: [embed] });
+        interaction.reply({ embeds: [embed], ephemeral: true});
 
     },
     /**
