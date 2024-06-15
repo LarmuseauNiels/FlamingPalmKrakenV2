@@ -50,7 +50,7 @@ module.exports = {
             .setColor("#FD8612")
             .setTitle(raid.Title)
 
-        embed.addFields([{
+        embed.addFields({
             name: "Minimum Players",
             value: raid.MinPlayers.toString(),
             inline: true
@@ -71,7 +71,7 @@ module.exports = {
             value: raid.RaidSchedulingOption.map((option) => `${option.Option}:${option.Timestamp}` ).join(","),
             inline: true
         }
-        ]);
+        );
 
         interaction.reply({ embeds: [embed] });
 
