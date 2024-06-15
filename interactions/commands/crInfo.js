@@ -46,22 +46,33 @@ module.exports = {
                 }
             }
         });
-        const embed = new EmbedBuilder()
-            .setColor("#FD8612")
-            .setTitle(raid.Title)
-
         let attendees = raid.RaidAttendees.map((attendee) => attendee.Members.DisplayName).join(",")
         let scheduleOptions = raid.RaidSchedulingOption.map((option) => `${option.Option}:${option.Timestamp}` ).join(",")
 
-        embed.addFields({
+        const embed = new EmbedBuilder()
+            .setColor("#FD8612")
+            .setTitle(raid.Title)
+            .addFields({
+            name: "Minimum Players",
+            value: raid.MinPlayers.toString(),
+            inline: true},
+                {
+            name: "Status",
+            value: raid.Status.toString(),
+            inline: true
+                },{
+            name: "Creator",
+            value: raid.Creator.toString(),
+            inline: true
+                },{
             name: "Attendees",
             value: attendees,
             inline: true
-        },{
+                },{
             name: "Scheduling Options",
             value: scheduleOptions,
             inline: true
-        }
+            }
         );
 
         interaction.reply({ embeds: [embed] });
