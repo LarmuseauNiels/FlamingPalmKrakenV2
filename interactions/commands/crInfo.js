@@ -54,18 +54,6 @@ module.exports = {
         let scheduleOptions = raid.RaidSchedulingOption.map((option) => `${option.Option}:${option.Timestamp}` ).join(",")
 
         embed.addFields({
-            name: "Minimum Players",
-            value: raid.MinPlayers.toString(),
-            inline: true
-        },{
-            name: "Status",
-            value: raid.Status.toString(),
-            inline: true
-        },{
-            name: "Creator",
-            value: raid.Creator.toString(),
-            inline: true
-        },{
             name: "Attendees",
             value: attendees,
             inline: true
