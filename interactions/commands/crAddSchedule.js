@@ -102,11 +102,11 @@ module.exports = {
                             {name : "Mountain Time (Denver)", value : "America/Denver"},
                             {name : "Central Time (Chicago)", value : "America/Chicago"},
                             {name : "Eastern Time (NY)", value : "America/New_York"},
-                            {name : "BST (London)", value : "Europe/London"},
-                            {name : "CET (Brussels)", value : "Europe/Brussels"},
-                            {name : "EET (Sofia)", value : "Europe/Sofia"},
-                            {name : "MSK (Moscow)", value : "Asia/Beirut"},
-                            {name : "UAE-ST (Dubai)", value : "Asia/Dubai" },
+                            {name : "Europe/London", value : "Europe/London"},
+                            {name : "Europe/Brussels", value : "Europe/Brussels"},
+                            {name : "Europe/Sofia", value : "Europe/Sofia"},
+                            {name : "Asia/Beirut", value : "Asia/Beirut"},
+                            {name : "Asia/Dubai", value : "Asia/Dubai" },
                     )
         ),
     async execute(interaction) {
@@ -123,7 +123,12 @@ module.exports = {
             year++;
         }
         const schedule = `${year}-${month}-${day} ${hour}:${minute}`;
-        const date = moment.tz(schedule, timezone).utc();
+        console.log(schedule);
+        console.log(timezone);
+        const date = moment.tz(schedule, timezone);
+        console.log(date);
+        date.utc();
+        console.log(date);
         await RaidModule.AddSingleSchedulingOptionToRaid(raidId, date.toDate());
 
         interaction.reply({
