@@ -111,7 +111,6 @@ module.exports = {
         ),
     async execute(interaction) {
         const raidId = interaction.options.getInteger("raid");
-        //const schedule = interaction.options.getString("datetime");
         const timezone = interaction.options.getString("timezone");
         const month = interaction.options.getInteger("month");
         const day = interaction.options.getInteger("day");
@@ -123,12 +122,8 @@ module.exports = {
             year++;
         }
         const schedule = `${year}-${month}-${day} ${hour}:${minute}`;
-        console.log(schedule);
-        console.log(timezone);
         const date = moment.tz(schedule, "YYYY-M-D h:m" ,  timezone);
-        console.log(date);
         date.utc();
-        console.log(date);
         await RaidModule.AddSingleSchedulingOptionToRaid(raidId, date.toDate());
 
         interaction.reply({
