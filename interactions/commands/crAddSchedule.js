@@ -123,7 +123,7 @@ module.exports = {
             year++;
         }
         const schedule = `${year}-${month}-${day} ${hour}:${minute}`;
-        const date = moment.tz(schedule, timezone);
+        const date = moment.tz(schedule, timezone).utc();
         await RaidModule.AddSingleSchedulingOptionToRaid(raidId, date.toDate());
 
         interaction.reply({
