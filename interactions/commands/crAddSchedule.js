@@ -125,7 +125,7 @@ module.exports = {
         const schedule = `${year}-${month}-${day} ${hour}:${minute}`;
         console.log(schedule);
         console.log(timezone);
-        const date = moment.tz(schedule, timezone);
+        const date = moment.tz(schedule, "YYYY-M-D h:m" ,  timezone);
         console.log(date);
         date.utc();
         console.log(date);
