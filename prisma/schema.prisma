@@ -267,7 +267,7 @@ model Login_History {
 model Profile {
   userid           String  @id @db.VarChar(25)
   StatusColor      String? @db.VarChar(10)
-  BackgroundImage  String? @db.VarChar(25)
+  BackgroundImage  String? @db.VarChar(50)
   ProgressBarColor String? @db.VarChar(10)
   Achievement1     String? @db.VarChar(25)
   Achievement2     String? @db.VarChar(25)
@@ -322,4 +322,11 @@ model RaidSchedulingOption {
   Raids            Raids?             @relation(fields: [RaidId], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "RaidSchedulingOption_Raids_ID_fk")
 
   @@index([RaidId], map: "RaidSchedulingOption_Raids_ID_fk")
+}
+
+model FreeKeys {
+  Id          Int     @id @default(autoincrement())
+  Redeemer    String? @db.VarChar(10)
+  Description String? @db.VarChar(255)
+  Key         String? @db.VarChar(255)
 }
