@@ -166,7 +166,7 @@ export class Assistant {
             console.log(e[0]);
             let event = globalThis.client.events.get(e[0]);
             console.log(event);
-            string += `Event: ${event.name} - Date: <t:${event.scheduledStartTimestamp}:F> - Description: ${event.description} \n`;
+            string += `Event: ${event.name} - Date: ${new Date(event.scheduledStartTimestamp).toString()} - Description: ${event.description} - Link: ${event.url} \n`;
         }
         console.log(string);
         return string;
