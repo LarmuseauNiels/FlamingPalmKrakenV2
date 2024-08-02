@@ -44,7 +44,14 @@ export class Assistant {
                         name: "getEvents",
                         description: "Get the events for the week"
                     },
-                }
+                },
+                {
+                    type: "function",
+                    function: {
+                        name: "getRaids",
+                        description: "Get the current available raids to join"
+                    },
+                },
             ],
             model: "gpt-4o-mini",
         });
@@ -62,7 +69,6 @@ export class Assistant {
 
 
 
-    // Method to create and poll a run
     async createAndPollRun() {
         try {
             let run = await this.openai.beta.threads.runs.createAndPoll(this.thread.id, {
@@ -74,7 +80,6 @@ export class Assistant {
         }
     }
 
-    // Method to handle the run status
     async handleRunStatus(run) {
         switch (run.status) {
             case "completed":
@@ -86,7 +91,6 @@ export class Assistant {
         }
     }
 
-    // Method to handle a completed run
     async handleCompletedRun() {
         try {
             let messages = await this.openai.beta.threads.messages.list(this.thread.id);
@@ -96,68 +100,88 @@ export class Assistant {
         }
     }
 
-    // Method to handle runs that require action
     async handleRequiresAction(run) {
-        // Check if there are tools that require outputs
         if (
             run.required_action &&
             run.required_action.submit_tool_outputs &&
             run.required_action.submit_tool_outputs.tool_calls
         ) {
-            const toolOutputs = this.collectToolOutputs(run.required_action.submit_tool_outputs.tool_calls);
-            console.log("Tool outputs collected:", toolOutputs);
-            // Submit all tool outputs if any are collected
-            if (toolOutputs.length > 0) {
-                try {
+            try {
+                const toolOutputs = await this.collectToolOutputs(run.required_action.submit_tool_outputs.tool_calls);
+                console.log("Tool outputs collected:", toolOutputs);
+
+                if (toolOutputs.length > 0) {
                     run = await this.submitToolOutputs(run, toolOutputs);
                     console.log("Tool outputs submitted successfully.");
-                } catch (error) {
-                    console.error("Error submitting tool outputs:", error);
+                } else {
+                    console.log("No tool outputs to submit.");
                 }
-            } else {
-                console.log("No tool outputs to submit.");
-            }
 
-            // Recheck status after submitting tool outputs
-            return this.handleRunStatus(run);
+                return this.handleRunStatus(run);
+            } catch (error) {
+                console.error("Error handling requires action:", error);
+            }
         }
     }
 
-    // Helper method to collect tool outputs based on tool function names
-     collectToolOutputs(toolCalls) {
+    // Helper method to collect tool outputs asynchronously
+    async collectToolOutputs(toolCalls) {
         console.log(toolCalls);
-        return toolCalls.map((tool) => {
+        // Wait for all asynchronous tool calls to complete
+        const toolOutputs = await Promise.all(toolCalls.map(async (tool) => {
             switch (tool.function.name) {
                 case "getEvents":
                     return {
                         tool_call_id: tool.id,
-                        output: this.getEventsString(), // Example temperature output
+                        output: await this.getEventsString(),
+                    };
+                case "getRaids":
+                    return {
+                        tool_call_id: tool.id,
+                        output: await this.getRaidsString(),
                     };
                 default:
                     return null; // Return null if no matching tool found
             }
-        }).filter(output => output !== null); // Filter out null values
+        }));
+
+        return toolOutputs.filter(output => output !== null);
     }
 
-     getEventsString(): string {
+    async getRaidsString(): Promise<string> {
+        const raids = await globalThis.client.prisma.raids.findMany({
+            include: {RaidAttendees: true},
+            where: {Status: 1},
+        });
         let string = "";
-        for (let e of globalThis.client.events){
+        raids.forEach((raid) => {
+            string += `Raid: ${raid.Title} - Attendees: ${raid.RaidAttendees.length}/${raid.MinPlayers} \n`;
+        });
+        return string;
+    }
+
+    async getEventsString(): Promise<string> {
+        let string = "";
+        for (let e of globalThis.client.events) {
             console.log(e[0]);
             let event = globalThis.client.events.get(e[0]);
             console.log(event);
-            string += `Event: ${event.name} - Date: ${new Date(event.scheduledStartTimestamp).toString()} - Description: ${event.description} \n`;
+            string += `Event: ${event.name} - Date: <t:${event.scheduledStartTimestamp}:F> - Description: ${event.description} \n`;
         }
         console.log(string);
         return string;
     }
 
-    // Helper method to submit tool outputs and poll for updates
     async submitToolOutputs(run, toolOutputs) {
-        return await this.openai.beta.threads.runs.submitToolOutputsAndPoll(
-            this.thread.id,
-            run.id,
-            { tool_outputs: toolOutputs },
-        );
+        try {
+            return await this.openai.beta.threads.runs.submitToolOutputsAndPoll(
+                this.thread.id,
+                run.id,
+                { tool_outputs: toolOutputs },
+            );
+        } catch (error) {
+            console.error("Error submitting tool outputs:", error);
+        }
     }
 
 
