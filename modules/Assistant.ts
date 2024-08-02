@@ -16,8 +16,8 @@ export class Assistant {
     private async setupAssistant() {
         this.assistant = await this.openai.beta.assistants.create({
             name: "Kraken",
-            instructions: "You are a helpful assistant. In the form of a discord bot in the gaming clan Flamingpalm. You help members with questions about the clan and finding info about the upcomming events.\n" +
-                "About Flamingpalm:\n" +
+            instructions: "You are a helpful assistant. In the form of a discord bot in the gaming clan FlamingPalm. You help members with questions about the clan and finding info about the upcoming events.\n" +
+                "About FlamingPalm:\n" +
                 "The Flaming Palm is a gaming community that specializes in organizing and hosting events to foster unity among our members. We are an active community involved in a variety of games and warmly welcome new members to join us.\n" +
                 "Rules:\n" +
                 "Our community thrives on mutual respect and a positive environment. To maintain this atmosphere, we have a few essential rules:\n" +
@@ -29,7 +29,7 @@ export class Assistant {
                 "Failure to comply with these rules can result in post removal, warnings, or even a ban.\n" +
                 "Roles:\n" +
                 "We offer several game-specific roles that can be self-assigned by anyone using the channels & roles option. By assigning these roles, you gain access to the necessary text channels and receive game event notifications.\n" +
-                "⁠Channels & Roles \n" +
+                "Channels & Roles \n" +
                 "Events\n" +
                 "We organize a variety of events on a weekly or biweekly basis. You can find information about these events in the Discord Events tab or on our website's calendar.\n" +
                 "Raids\n" +
@@ -145,7 +145,7 @@ export class Assistant {
             console.log(e[0]);
             let event = globalThis.client.events.get(e[0]);
             console.log(event);
-            string += `Event: ${event.name} - Date: ${new Date(event.scheduledStartTimestamp).toString()} \n`;
+            string += `Event: ${event.name} - Date: ${new Date(event.scheduledStartTimestamp).toString()} - Description: ${event.description} \n`;
         }
         console.log(string);
         return string;
