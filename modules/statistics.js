@@ -170,6 +170,7 @@ module.exports = async function (client) {
 
   // cron schedule for every 5 minutes
 
+  /*
   cron.schedule("15 0,5,10,15,20,25,30,35,40,45,50,55 * * * *", async () => {
     console.log("running arma tracking cron job");
     let prop = "❌";
@@ -184,7 +185,7 @@ module.exports = async function (client) {
     } catch (e) {
       console.log(e);
     }
-    /*
+
     let mcPlayers = "❌";
     try {
       let state = await Gamedig.query({
@@ -195,10 +196,11 @@ module.exports = async function (client) {
     } catch (e) {
       console.log(e);
     }
-*/
+
     const channel = client.channels.cache.get("1172498969235030047");
     channel.setName("🛜︱ANTISTASI: " + prop + " online" );
   });
+  */
 };
 
 function cleanString(input) {
