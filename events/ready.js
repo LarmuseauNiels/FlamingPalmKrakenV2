@@ -6,6 +6,7 @@ module.exports = {
   execute(client) {
     client.logChannel = client.channels.cache.get("1126413976155205713");
     client.updateChannel = client.channels.cache.get("1194590523277725716");
+    client.lfg = client.channels.cache.get("1221531160568659968");
     client.log(
       `Ready! Logged in as ${
         client.user.tag

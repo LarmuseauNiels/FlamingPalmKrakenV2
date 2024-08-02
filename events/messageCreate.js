@@ -1,3 +1,6 @@
+const { OpenAIApi } = require("openai");
+
+
 module.exports = {
   name: "messageCreate",
   execute(message) {
@@ -5,5 +8,7 @@ module.exports = {
       message.react("👍").then(console.log).catch(console.error);
       message.react("👎").then(console.log).catch(console.error);
     }
+
+    //if (message.mentions.has(global.client.user)) {}
   },
 };

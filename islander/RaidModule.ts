@@ -252,7 +252,7 @@ export abstract class RaidModule {
                     "https://flamingpalm.com/assets/images/logo/FlamingPalmLogoSmall.png",
             })
             .setColor("#0099ff");
-        global.client.updateChannel.send({
+        global.client.lfg.send({
             embeds: [updateEmbed],
         });
     }
@@ -423,7 +423,7 @@ export abstract class RaidModule {
             Math.floor(key.Timestamp.getTime() / 1000) +
             ":F>"
         );
-        global.client.updateChannel.send({
+        global.client.lfg.send({
             embeds: [embed],
         });
     }
