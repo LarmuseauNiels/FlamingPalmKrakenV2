@@ -6,6 +6,8 @@ import { WebApi } from "./modules/WebApi";
 import Bugsnag from "@bugsnag/js";
 import BugsnagPluginExpress from "@bugsnag/plugin-express";
 import { RaidModule } from "./islander/RaidModule";
+import {Assistant} from "./modules/Assistant";
+import {GuildScheduledEvent, Snowflake} from "discord.js";
 
 const fs = require("fs");
 const {
@@ -19,6 +21,7 @@ class FpgClient extends Client {
   declare islander: Islander;
   declare achievementsModule: AchievementsModule;
   declare raidModule: RaidModule;
+  declare assistant: Assistant;
   declare prisma: PrismaClient;
   declare commands: typeof Collection;
   declare buttons: typeof Collection;
@@ -27,6 +30,7 @@ class FpgClient extends Client {
   declare contextMenus: typeof Collection;
   declare chats: Map<any, any>;
   declare webapi: WebApi;
+  declare events: typeof Collection;
 
   constructor() {
     super({
@@ -56,7 +60,7 @@ class FpgClient extends Client {
     this.logChannel;
     this.updateChannel;
     this.islander = new Islander();
-    this.events = null;
+    this.events = new Collection();
     this.cachUpdated;
     this.commands = new Collection();
     this.buttons = new Collection();
@@ -66,6 +70,8 @@ class FpgClient extends Client {
     this.achievementsModule = new AchievementsModule();
     this.chats = new Map();
     this.webapi = new WebApi();
+    this.assistant = new Assistant();
+
   }
 
   log(loggText) {
@@ -77,6 +83,7 @@ class FpgClient extends Client {
     return global.client.users.cache.get(id).username;
   }
 }
+
 
 Bugsnag.start({
   apiKey: process.env.BUGSNAG_API_KEY,

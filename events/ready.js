@@ -1,4 +1,4 @@
-const { Collection } = require("discord.js");
+const { Collection} = require("discord.js");
 
 module.exports = {
   name: "ready",
@@ -23,6 +23,14 @@ module.exports = {
         .then((invite) => client.invites.set(guild.id, invite))
         .catch((error) => console.log(error));
     }
+    client.guilds.fetch(process.env.GUILD_ID).then((guild) => {
+      guild.scheduledEvents.fetch().then((events) => {
+        client.events = events;
+        client.cachUpdated = Date.now();
+      });
+
+    });
+
     client.user.setActivity({
       name: "flamingpalm.com",
       type: "WATCHING",

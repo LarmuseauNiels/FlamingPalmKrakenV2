@@ -1,4 +1,3 @@
-const { OpenAIApi } = require("openai");
 
 
 module.exports = {
@@ -9,6 +8,12 @@ module.exports = {
       message.react("👎").then(console.log).catch(console.error);
     }
 
-    //if (message.mentions.has(global.client.user)) {}
+    if (message.mentions.has(global.client.user)) {
+      console.log("Message mentions me" + message.content);
+      global.client.assistant.ask(message.content).then((response) => {
+        console.log(response[0].content);
+        message.reply(response[0].content[0].text.value) ;
+      });
+    }
   },
 };
