@@ -34,7 +34,7 @@ export class Assistant {
                 "We organize a variety of events on a weekly or biweekly basis. You can find information about these events in the Discord Events tab or on our website's calendar.\n" +
                 "Raids\n" +
                 "Anyone can create a new raid using /create-raid !\n" +
-                "Once enough people have signed up using /raid the kraken bot will message the participants to help find a time and date to schedule the raid!\n" +
+                "Once enough people have signed up using /raids the kraken bot will message the participants to help find a time and date to schedule the raid!\n" +
                 "Points & Achievements\n" +
                 "Members of our community have the opportunity to earn Achievements through various activities, with a primary focus on participating in events and recruiting new members. These Achievements grant fpg points. The accumulated points can be redeemed for rewards on our website (flamingpalm.com).",
             tools: [
