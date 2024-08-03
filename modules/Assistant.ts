@@ -22,10 +22,10 @@ export class Assistant {
                 "Rules:\n" +
                 "Our community thrives on mutual respect and a positive environment. To maintain this atmosphere, we have a few essential rules:\n" +
                 "Respect is Key: Treat all members with respect. Bullying, harassment, and hate speech are strictly prohibited.\n" +
-                "    No Spam: Avoid spamming in any channel.\n" +
-                "    No Recruitment: Do not recruit for other clans or communities within our Discord.\n" +
-                "    NSFW Content: NSFW content is not allowed.\n" +
-                "    No Extreme Toxicity: Maintain a friendly and welcoming demeanor.\n" +
+                "- No Spam: Avoid spamming in any channel.\n" +
+                "- No Recruitment: Do not recruit for other clans or communities within our Discord.\n" +
+                "- NSFW Content: NSFW content is not allowed.\n" +
+                "- No Extreme Toxicity: Maintain a friendly and welcoming demeanor.\n" +
                 "Failure to comply with these rules can result in post removal, warnings, or even a ban.\n" +
                 "Roles:\n" +
                 "We offer several game-specific roles that can be self-assigned by anyone using the channels & roles option. By assigning these roles, you gain access to the necessary text channels and receive game event notifications.\n" +
@@ -36,7 +36,7 @@ export class Assistant {
                 "Anyone can create a new raid using /create-raid !\n" +
                 "Once enough people have signed up using /raids the kraken bot will message the participants to help find a time and date to schedule the raid!\n" +
                 "Points & Achievements\n" +
-                "Members of our community have the opportunity to earn Achievements through various activities, with a primary focus on participating in events and recruiting new members. These Achievements grant fpg points. The accumulated points can be redeemed for rewards on our website (flamingpalm.com).",
+                "Members of our community have the opportunity to earn Achievements through various activities, with a primary focus on participating in events and recruiting new members. These Achievements grant fpg points. The accumulated points can be redeemed for rewards on our website https://flamingpalm.com",
             tools: [
                 {
                     type: "function",
@@ -50,6 +50,13 @@ export class Assistant {
                     function: {
                         name: "getRaids",
                         description: "Get the current available raids to join"
+                    },
+                },
+                {
+                    type: "function",
+                    function: {
+                        name: "getStore",
+                        description: "Get the current available rewards in the store"
                     },
                 },
             ],
@@ -140,6 +147,11 @@ export class Assistant {
                         tool_call_id: tool.id,
                         output: await this.getRaidsString(),
                     };
+                case "getStore":
+                    return {
+                        tool_call_id: tool.id,
+                        output: await this.getStoreString(),
+                    };
                 default:
                     return null; // Return null if no matching tool found
             }
@@ -169,6 +181,27 @@ export class Assistant {
             string += `Event: ${event.name} - Date: ${new Date(event.scheduledStartTimestamp).toString()} - Description: ${event.description} - Link: ${event.url} \n`;
         }
         console.log(string);
+        return string;
+    }
+
+    async getStoreString(): Promise<string> {
+        let rewards = await global.client.prisma.reward.findMany({
+            include: { RewardItem: true },
+            orderBy: { Price: "asc" },
+        });
+        let string = "";
+        rewards.forEach((reward) => {
+            if (reward.visible) {
+                let stock = reward.RewardItem.filter((x) => x.RedeemedBy === "").length;
+                if (stock === 0)
+                    string += `Reward: ${reward.Title} - Out of stock \n`;
+                else if (reward.nonSalePrice && reward.nonSalePrice > 0)
+                    string += `Reward: ${reward.Title} - Price: ~~${reward.nonSalePrice}~~ **${reward.Price}:palm_tree:** \n`;
+                else {
+                    string += `Reward: ${reward.Title} - Price: **${reward.Price}:palm_tree:** \n`;
+                }
+            }
+        });
         return string;
     }
 
