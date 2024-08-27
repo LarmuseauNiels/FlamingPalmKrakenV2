@@ -199,7 +199,7 @@ module.exports = async function (client) {
       console.log(e);
     }
 
-    global.client.user.setActivity('AoF7 ' + mcPlayers + ' / 20', {type: ActivityType.Playing});
+    global.client.user.setActivity('AoF7 ' + mcPlayers + '/20', {type: ActivityType.Playing});
   });
 };
 
