@@ -3,6 +3,7 @@ const { Collection, EmbedBuilder } = require("discord.js");
 const http = require("http");
 const Gamedig = require("gamedig");
 const { RaidModule } = require("../islander/RaidModule");
+const { ActivityType } = require("discord.js");
 
 module.exports = async function (client) {
   var knownuserCache = [];
@@ -198,7 +199,7 @@ module.exports = async function (client) {
       console.log(e);
     }
 
-    global.client.user.setActivity('AoF7 ' + mcPlayers + ' / 20', {type: 'PLAYING'});
+    global.client.user.setActivity('AoF7 ' + mcPlayers + ' / 20', {type: ActivityType.Playing});
   });
 };
 
