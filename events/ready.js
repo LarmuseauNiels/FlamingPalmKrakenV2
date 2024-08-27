@@ -30,11 +30,5 @@ module.exports = {
       });
 
     });
-
-    client.user.setActivity({
-      name: "flamingpalm.com",
-      type: "WATCHING",
-      url: "https://flamingpalm.com",
-    });
   },
 };

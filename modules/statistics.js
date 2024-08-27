@@ -198,16 +198,8 @@ module.exports = async function (client) {
       console.log(e);
     }
 
-    global.client.user.setPresence({
-        activities: [
-            {
-            name: "minecraft with " + mcPlayers + " online",
-            type: "PLAYING",
-            },
-        ],
-        status: "online",
-        });
-    });
+    global.client.user.setActivity('AoF7 ' + mcPlayers + ' / 20', {type: 'PLAYING'});
+  });
 };
 
 function cleanString(input) {
