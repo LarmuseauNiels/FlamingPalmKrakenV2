@@ -170,8 +170,9 @@ module.exports = async function (client) {
 
   // cron schedule for every 5 minutes
 
-  /*
+
   cron.schedule("15 0,5,10,15,20,25,30,35,40,45,50,55 * * * *", async () => {
+    /*
     console.log("running arma tracking cron job");
     let prop = "❌";
     try {
@@ -184,7 +185,7 @@ module.exports = async function (client) {
       console.log("The value of propertyName is:", prop);
     } catch (e) {
       console.log(e);
-    }
+    }*/
 
     let mcPlayers = "❌";
     try {
@@ -197,10 +198,16 @@ module.exports = async function (client) {
       console.log(e);
     }
 
-    const channel = client.channels.cache.get("1172498969235030047");
-    channel.setName("🛜︱ANTISTASI: " + prop + " online" );
-  });
-  */
+    global.client.user.setPresence({
+        activities: [
+            {
+            name: "minecraft with " + mcPlayers + " online",
+            type: "PLAYING",
+            },
+        ],
+        status: "online",
+        });
+    });
 };
 
 function cleanString(input) {
