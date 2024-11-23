@@ -39,7 +39,7 @@ module.exports = {
           .addFields(
             {
               name: "Info",
-              value: `Welcome to Secret Santa 2022! 
+              value: `Welcome to Secret Santa 2024! 
 
 It's very important to keep your identity hidden until the reveal party,
 so we've made it possible to message your recipient and secret santa anonymously using the bot.
