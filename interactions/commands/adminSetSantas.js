@@ -19,6 +19,9 @@ module.exports = {
     const receiver = await client.prisma.sSReceiver.findMany({});
     const senders = await client.prisma.sSSender.findMany({});
 
+    await shuffle(receiver);
+    await shuffle(senders);
+
     let result = await attachUser(receiver, senders);
     if (result.count == receiver.length) {
       await interaction.editReply({ content: "Success", ephemeral: true });
