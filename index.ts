@@ -135,7 +135,7 @@ async function loadInteractionActions(folderName): Promise<typeof Collection> {
     .readdirSync("./interactions/" + folderName)
     .filter((file) => file.endsWith(".js"));
   for (const file of actionFiles) {
-    let action = await import(`./interactions/${folderName}/${file}`);
+    let action = await require(`./interactions/${folderName}/${file}`);
     tempList.set(action.name, action);
     console.log(`Loaded ${action.name} from ${folderName}`);
   }
