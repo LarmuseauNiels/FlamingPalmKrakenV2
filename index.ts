@@ -85,6 +85,9 @@ class FpgClient extends Client {
   }
 }
 
+if (process.env.DISABLE) {
+  process.exit(1);
+}
 
 Bugsnag.start({
   apiKey: process.env.BUGSNAG_API_KEY,

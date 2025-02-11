@@ -186,7 +186,7 @@ module.exports = async function (client) {
       console.log("The value of propertyName is:", prop);
     } catch (e) {
       console.log(e);
-    }*/
+    }
 
     let mcPlayers = "❌";
     try {
@@ -198,7 +198,7 @@ module.exports = async function (client) {
     } catch (e) {
       console.log(e);
     }
-
+*/
     global.client.user.setActivity('flamingpalm.com', {type: ActivityType.Watching});
     //global.client.user.setActivity('AoF7 ' + mcPlayers + '/20', {type: ActivityType.Playing});
   });
