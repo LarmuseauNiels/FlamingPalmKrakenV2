@@ -31,6 +31,7 @@ class FpgClient extends Client {
   declare chats: Map<any, any>;
   declare webapi: WebApi;
   declare events: typeof Collection;
+  
 
   constructor() {
     super({

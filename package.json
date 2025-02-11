@@ -15,6 +15,7 @@
     "@bugsnag/js": "^7.20.2",
     "@bugsnag/plugin-express": "^7.19.0",
     "@napi-rs/canvas": "^0.1.29",
+    "@napi-rs/canvas-linux-x64-gnu": "^0.1.67",
     "@prisma/client": "^4.12.0",
     "@types/passport": "^1.0.12",
     "axios": "^1.6.1",
