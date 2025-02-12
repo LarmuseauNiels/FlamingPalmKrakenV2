@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
 const moment = require('moment-timezone');
-const {RaidModule} = require("../../islander/RaidModule");
+const {RaidModule} = require("../../modules/RaidModule");
 
 module.exports = {
     name: "cr-add-attendee",

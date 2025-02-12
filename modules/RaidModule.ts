@@ -3,7 +3,9 @@ import {
   ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
+  MessageCreateOptions,
   StringSelectMenuBuilder,
+  User,
 } from "discord.js";
 import { RaidAttendees, Raids, RaidSchedulingOption } from "@prisma/client";
 import { ChannelUpdates } from "../islander/ChannelUpdates";
@@ -206,7 +208,7 @@ export abstract class RaidModule {
 
     //send message to all attendees
     raid.RaidAttendees.forEach((attendee) => {
-      global.client.users.fetch(attendee.MemberId).then((user: any) => {
+      global.client.users.fetch(attendee.MemberId).then((user) => {
         user
           .send({
             embeds: [embed],
@@ -219,7 +221,7 @@ export abstract class RaidModule {
                   .setStyle(ButtonStyle.Secondary)
               ),
             ],
-          })
+          } as MessageCreateOptions)
           .then((message) => {
             raid.RaidSchedulingOption.forEach((option) => {
               message.react(this.getUniCodeEmoji(option.Option));
@@ -585,7 +587,7 @@ export abstract class RaidModule {
     return { embeds: [embed], components: [row] };
   }
 
-  static async resendRaid(raidID: number, user) {
+  static async resendRaid(raidID: number, user: User) {
     let raid = await this.getRaid(raidID);
 
     let embed = await this.buildSchedulingMessage(raid);
@@ -602,7 +604,7 @@ export abstract class RaidModule {
         embeds: [embed],
         content: raid.ID.toString(),
         components: [row],
-      })
+      } as MessageCreateOptions)
       .then((message) => {
         raid.RaidSchedulingOption.forEach((option) => {
           message.react(this.getUniCodeEmoji(option.Option));

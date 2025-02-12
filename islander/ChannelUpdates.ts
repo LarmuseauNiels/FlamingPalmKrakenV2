@@ -1,4 +1,5 @@
-import { RaidModule } from "../islander/RaidModule";
+import { MessageCreateOptions } from "discord.js";
+import { RaidModule } from "../modules/RaidModule";
 
 export abstract class ChannelUpdates {
   static async MessageWithProfile(message: string, userId: string) {
@@ -15,6 +16,6 @@ export abstract class ChannelUpdates {
       content: message,
       embeds: embed.embeds,
       components: embed.components,
-    });
+    } as MessageCreateOptions);
   }
 }

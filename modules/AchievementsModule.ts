@@ -1,5 +1,5 @@
 import { AttachmentBuilder, Embed, EmbedBuilder, User } from "discord.js";
-import Rank from "../islander/profile";
+import Rank from "./profile";
 import { ChannelUpdates } from "../islander/ChannelUpdates";
 import type * as Prisma from "@prisma/client";
 

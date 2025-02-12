@@ -1,17 +1,13 @@
-import {
-  Client,
-  GatewayIntentBits,
-  Invite,
-  Partials,
-  TextChannel,
-} from "discord.js";
-import { RaidModule } from "../islander/RaidModule";
+import { Client, GatewayIntentBits, Partials, TextChannel } from "discord.js";
+import { RaidModule } from "../modules/RaidModule";
 import { Assistant } from "../modules/Assistant";
 import { PrismaClient } from "@prisma/client";
 import { Islander } from "../islander/islander";
-import { AchievementsModule } from "../islander/AchievementsModule";
+import { AchievementsModule } from "../modules/AchievementsModule";
 import { WebApi } from "../modules/WebApi";
 import { Collection } from "discord.js";
+import fs from "fs";
+import path from "path";
 
 export class FpgClient extends Client {
   declare islander: Islander;
@@ -56,12 +52,13 @@ export class FpgClient extends Client {
       partials: [Partials.Message, Partials.Channel, Partials.Reaction],
     });
 
+    this.assistant = new Assistant();
     this.prisma = new PrismaClient();
+    this.islander = new Islander();
+
     this.logChannel;
     this.updateChannel;
-    this.islander = new Islander();
     this.events = new Collection();
-    this.cachUpdated;
     this.commands = new Collection();
     this.buttons = new Collection();
     this.selects = new Collection();
@@ -70,7 +67,9 @@ export class FpgClient extends Client {
     this.achievementsModule = new AchievementsModule();
     this.chats = new Map();
     this.webapi = new WebApi();
-    this.assistant = new Assistant();
+
+    this.loadCommands();
+    this.loadEvents();
   }
 
   log(loggText) {
@@ -80,5 +79,52 @@ export class FpgClient extends Client {
 
   idToName(id) {
     return global.client.users.cache.get(id).username;
+  }
+
+  private async loadCommands(): Promise<void> {
+    const interactionTypes = [
+      "commands",
+      "buttons",
+      "modals",
+      "contextmenus",
+      "selects",
+    ];
+    for (const type of interactionTypes) {
+      global.client[type] = await this.loadInteractionActions(type);
+    }
+  }
+
+  private async loadInteractionActions(
+    type: string
+  ): Promise<Collection<string, any>> {
+    const actions = new Collection<string, any>();
+    const actionFiles = fs
+      .readdirSync(path.join(__dirname, `interactions/${type}`))
+      .filter((file) => file.endsWith(".js") || file.endsWith(".ts"));
+
+    for (const file of actionFiles) {
+      const action = require(path.join(
+        __dirname,
+        `interactions/${type}/${file}`
+      ));
+      actions.set(action.data.name, action);
+    }
+
+    return actions;
+  }
+
+  private loadEvents(): void {
+    const eventFiles = fs
+      .readdirSync(path.join(__dirname, "events"))
+      .filter((file) => file.endsWith(".js"));
+
+    for (const file of eventFiles) {
+      const event = require(path.join(__dirname, `events/${file}`));
+      if (event.once) {
+        global.client.once(event.name, (...args) => event.execute(...args));
+      } else {
+        global.client.on(event.name, (...args) => event.execute(...args));
+      }
+    }
   }
 }

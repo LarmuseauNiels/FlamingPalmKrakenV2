@@ -1,13 +1,36 @@
-const cron = require("node-cron");
-const { Collection, EmbedBuilder } = require("discord.js");
-const http = require("http");
-const Gamedig = require("gamedig");
-const { RaidModule } = require("../islander/RaidModule");
-const { ActivityType } = require("discord.js");
+import cron from "node-cron";
+import { EmbedBuilder, GuildMember, TextChannel } from "discord.js";
+import { RaidModule } from "./RaidModule";
+import { FpgClient } from "../domain/FpgClient";
 
-module.exports = async function (client) {
-  var knownuserCache = [];
-  //var trackedChannels = [];
+interface Member {
+  ID: string;
+  DisplayName?: string;
+  avatar?: string;
+}
+
+interface VoiceConnected {
+  ID: string;
+  ChannelID: string;
+  ChannelName: string;
+  deaf: boolean;
+  mute: boolean;
+  streaming: boolean;
+}
+
+interface PresenceData {
+  userID: string;
+  applicationID: string | null;
+  name: string;
+  details: string | null;
+  url: string | null;
+  state: string | null;
+  type: string;
+  status: string;
+}
+
+module.exports = async function (client: FpgClient) {
+  let knownuserCache: Member[] = [];
   console.log("loading statistics module");
   await client.prisma.members
     .findMany({
@@ -15,14 +38,14 @@ module.exports = async function (client) {
         ID: true,
       },
     })
-    .then((members) => (knownuserCache = members));
+    .then((members: Member[]) => (knownuserCache = members));
 
   cron.schedule("30 0,15,30,45 * * * *", () => {
     console.log("running statistics tracking cron job");
     try {
-      client.guilds.fetch(process.env.GUILD_ID).then((guild) => {
+      client.guilds.fetch(process.env.GUILD_ID!).then((guild) => {
         guild.members.fetch().then((members) => {
-          members.forEach((member) => {
+          members.forEach((member: GuildMember) => {
             let q = knownuserCache.find((ku) => ku.ID === member.user.id);
             if (q === undefined) {
               client.prisma.members
@@ -39,7 +62,7 @@ module.exports = async function (client) {
                     avatar: member.user.avatar,
                   },
                 })
-                .then((t) => {
+                .then((t: Member) => {
                   knownuserCache.push(t);
                 });
             }
@@ -49,19 +72,19 @@ module.exports = async function (client) {
             .createMany({
               data: members
                 .filter(
-                  (m) =>
+                  (m: GuildMember) =>
                     m.voice.channel != null &&
                     m.voice.channelId !== "1128264365854961766"
                 )
-                .map((z) => {
+                .map((z: GuildMember) => {
                   return {
                     ID: z.id,
-                    ChannelID: z.voice.channelId,
-                    ChannelName: cleanString(z.voice.channel.name),
+                    ChannelID: z.voice.channelId!,
+                    ChannelName: cleanString(z.voice.channel!.name),
                     deaf: z.voice.deaf,
                     mute: z.voice.mute,
                     streaming: z.voice.streaming,
-                  };
+                  } as VoiceConnected;
                 }),
             })
             .then((x) =>
@@ -72,14 +95,14 @@ module.exports = async function (client) {
             .createMany({
               data: members
                 .filter(
-                  (m) =>
+                  (m: GuildMember) =>
                     m.presence?.status !== "offline" &&
                     m.user?.bot === false &&
                     (m.presence?.activities?.length ?? 0) > 0
                 )
-                .map((z) =>
-                  z.presence.activities
-                    .filter((a) => a.type !== 4)
+                .map((z: GuildMember) =>
+                  z
+                    .presence!.activities.filter((a) => a.type !== 4)
                     .map((a) => {
                       return {
                         userID: z.id,
@@ -89,8 +112,8 @@ module.exports = async function (client) {
                         url: cleanString(a.url),
                         state: cleanString(a.state),
                         type: a.type.toString(),
-                        status: z.presence.status,
-                      };
+                        status: z.presence!.status,
+                      } as PresenceData;
                     })
                 )
                 .flat(),
@@ -101,7 +124,6 @@ module.exports = async function (client) {
 
           global.client.achievementsModule.checkAchievements(members);
         });
-        //console.log(members.filter(m => m.presence.status === "online").select(m => m.presence));
 
         guild.scheduledEvents.fetch().then((events) => {
           client.events = events;
@@ -131,7 +153,7 @@ module.exports = async function (client) {
               guild.roles.fetch().then((roles) => {
                 client.channels
                   .fetch("1128266086119374848")
-                  .then((announcements) => {
+                  .then((announcements: TextChannel) => {
                     let role = roles.find((role) =>
                       eventText.includes(role.name)
                     );
@@ -168,47 +190,13 @@ module.exports = async function (client) {
       console.log(e);
     }
   });
-
-  // cron schedule for every 5 minutes
-
-
-  cron.schedule("15 0,5,10,15,20,25,30,35,40,45,50,55 * * * *", async () => {
-    /*
-    console.log("running arma tracking cron job");
-    let prop = "❌";
-    try {
-      const apiUrl =
-        "https://api.steampowered.com/IGameServersService/GetServerList/v1/?key=315F486717B5586382BEEF04F5C84696&filter=addr\\109.236.142.163:2309";
-      let response = await fetch(apiUrl);
-      let jsonData = await response.json();
-      console.log(jsonData);
-      prop = jsonData.response.servers[0].players;
-      console.log("The value of propertyName is:", prop);
-    } catch (e) {
-      console.log(e);
-    }
-
-    let mcPlayers = "❌";
-    try {
-      let state = await Gamedig.query({
-        type: "minecraft",
-        host: "server.flamingpalm.com",
-      });
-      mcPlayers = state.players.length;
-    } catch (e) {
-      console.log(e);
-    }
-*/
-    global.client.user.setActivity('flamingpalm.com', {type: ActivityType.Watching});
-    //global.client.user.setActivity('AoF7 ' + mcPlayers + '/20', {type: ActivityType.Playing});
-  });
 };
 
-function cleanString(input) {
+function cleanString(input: string | null | undefined): string {
   if (input === null || input === undefined) return "";
-  var output = "";
+  let output = "";
   input = input.toString();
-  for (var i = 0; i < input.length; i++) {
+  for (let i = 0; i < input.length; i++) {
     if (input.charCodeAt(i) <= 127) {
       output += input.charAt(i);
     }

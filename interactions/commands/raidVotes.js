@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("discord.js");
-const { RaidModule } = require("../../islander/RaidModule");
+const { RaidModule } = require("../../modules/RaidModule");
 
 module.exports = {
   name: "raid-votes",

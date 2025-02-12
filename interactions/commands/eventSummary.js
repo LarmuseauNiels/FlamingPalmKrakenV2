@@ -3,7 +3,7 @@ const {
   SlashCommandBuilder,
   PermissionFlagsBits,
 } = require("discord.js");
-const { RaidModule } = require("../../islander/RaidModule");
+const { RaidModule } = require("../../modules/RaidModule");
 
 module.exports = {
   name: "event-summary",

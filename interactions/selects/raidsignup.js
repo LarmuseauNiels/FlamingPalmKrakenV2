@@ -1,4 +1,4 @@
-const { RaidModule } = require("../../islander/RaidModule");
+const { RaidModule } = require("../../modules/RaidModule");
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 module.exports = {
   name: "raidsignup",

@@ -1,4 +1,6 @@
 import {
+  ActivityOptions,
+  ActivityType,
   Collection,
   Guild,
   GuildScheduledEvent,
@@ -30,6 +32,11 @@ module.exports = {
     // Collection is an enhanced Map which we are going to save our invites to.
     const guildInvites: Collection<string, any> = new Collection();
     client.invites = guildInvites;
+
+    client.user.setActivity("flamingpalm.com", {
+      type: ActivityType.Watching,
+    } as ActivityOptions);
+
     // Next, we are going to fetch invites for every guild and add them to our map.
     for (const guild of client.guilds.cache.values()) {
       guild.invites

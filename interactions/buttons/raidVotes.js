@@ -1,4 +1,4 @@
-const { RaidModule } = require("../../islander/RaidModule");
+const { RaidModule } = require("../../modules/RaidModule");
 const {} = require("discord.js");
 
 module.exports = {

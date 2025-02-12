@@ -1,5 +1,5 @@
 import { authenticateToken, jsonify } from "./Helpers";
-import Rank from "../../islander/profile";
+import Rank from "../profile";
 import { DashBoardModel } from "./ViewModels/dash-board-model";
 import { PointHistoryItem } from "./ViewModels/point-history-item";
 import { PointHistory } from ".prisma/client";
