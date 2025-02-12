@@ -81,13 +81,6 @@ Members of our community have the opportunity to earn Achievements through vario
         });
       }
 
-      if (command === "set channel name") {
-        const channel = await global.client.channels.fetch(
-          "1145716962857603142"
-        );
-        await channel.setName("📥︱3d printing");
-      }
-
       if (command === "ButtonTimeTest") {
         let embed = new EmbedBuilder()
           .setColor("#FD8612")

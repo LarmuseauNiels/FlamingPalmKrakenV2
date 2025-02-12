@@ -157,7 +157,7 @@ FROM (
       throw new Error(`Member not found for ID ${memberID}`);
     }
     console.log(member);
-    let guildMember: User = await global.client.users.fetch(memberID, false);
+    let guildMember: User = await global.client.users.fetch(memberID);
     console.log(guildMember);
 
     const rank = new Rank()

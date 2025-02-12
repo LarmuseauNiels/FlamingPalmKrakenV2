@@ -3,6 +3,7 @@ import Rank from "../../islander/profile";
 import { DashBoardModel } from "./ViewModels/dash-board-model";
 import { PointHistoryItem } from "./ViewModels/point-history-item";
 import { PointHistory } from ".prisma/client";
+import { TextChannel } from "discord.js";
 
 export function memberEndPoints(app) {
   let apiPrefix = "/members/";
@@ -290,10 +291,9 @@ export function memberEndPoints(app) {
         },
       ],
     };
-
-    global.client.channels.cache
-      .get("1128264366182125664")
-      .send({ embeds: [embed] });
+    (
+      global.client.channels.cache.get("1128264366182125664") as TextChannel
+    ).send({ embeds: [embed] });
   }
 
   app.get(apiPrefix + "profileImage", authenticateToken, function (req, res) {
