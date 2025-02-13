@@ -74,11 +74,11 @@ export class FpgClient extends Client {
 
   log(loggText) {
     console.log(loggText);
-    global.client.logChannel.send("```" + loggText + "```");
+    this.logChannel.send("```" + loggText + "```");
   }
 
   idToName(id) {
-    return global.client.users.cache.get(id).username;
+    return this.users.cache.get(id).username;
   }
 
   private async loadCommands(): Promise<void> {
@@ -90,7 +90,7 @@ export class FpgClient extends Client {
       "selects",
     ];
     for (const type of interactionTypes) {
-      global.client[type] = await this.loadInteractionActions(type);
+      this[type] = await this.loadInteractionActions(type);
     }
   }
 
@@ -99,15 +99,16 @@ export class FpgClient extends Client {
   ): Promise<Collection<string, any>> {
     const actions = new Collection<string, any>();
     const actionFiles = fs
-      .readdirSync(path.join(__dirname, `interactions/${type}`))
+      .readdirSync(path.join(__dirname, `../interactionHandlers/${type}`))
       .filter((file) => file.endsWith(".js") || file.endsWith(".ts"));
 
     for (const file of actionFiles) {
       const action = require(path.join(
         __dirname,
-        `interactions/${type}/${file}`
-      ));
-      actions.set(action.data.name, action);
+        `../interactionHandlers/${type}/${file}`
+      )) as any;
+      let data: any = action.data as any;
+      actions.set(data.name, action);
     }
 
     return actions;
@@ -115,15 +116,15 @@ export class FpgClient extends Client {
 
   private loadEvents(): void {
     const eventFiles = fs
-      .readdirSync(path.join(__dirname, "events"))
+      .readdirSync(path.join(__dirname, "../events"))
       .filter((file) => file.endsWith(".js"));
 
     for (const file of eventFiles) {
-      const event = require(path.join(__dirname, `events/${file}`));
+      const event = require(path.join(__dirname, `../events/${file}`));
       if (event.once) {
-        global.client.once(event.name, (...args) => event.execute(...args));
+        this.once(event.name, (...args) => event.execute(...args));
       } else {
-        global.client.on(event.name, (...args) => event.execute(...args));
+        this.on(event.name, (...args) => event.execute(...args));
       }
     }
   }
