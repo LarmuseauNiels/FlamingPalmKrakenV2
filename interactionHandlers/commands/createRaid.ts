@@ -1,9 +1,11 @@
-const { SlashCommandBuilder } = require("discord.js");
-const { ChannelUpdates } = require("../../islander/ChannelUpdates");
+import { SlashCommandBuilder } from "discord.js";
+import { ChannelUpdates } from "../../islander/ChannelUpdates";
+import { IHandler } from "../../interfaces/IHandler";
 
-module.exports = {
-  name: "create-raid",
-  data: new SlashCommandBuilder()
+export default class CreateRaidCommand implements IHandler {
+  name = "create-raid";
+  isGuild = false;
+  data = new SlashCommandBuilder()
     .setName("create-raid")
     .setDescription("Initiate a new raid and add it to the list!")
     .addStringOption((option) =>
@@ -19,9 +21,8 @@ module.exports = {
           "The minimum players needed to start scheduling the raid"
         )
         .setRequired(true)
-    ),
-  isGuild: false,
-  async execute(interaction) {
+    ) as SlashCommandBuilder;
+  async execute(interaction: any) {
     const title = interaction.options.getString("title");
     const minPlayers = interaction.options.getInteger("minplayers");
 
@@ -38,5 +39,5 @@ module.exports = {
         "Successfully created a new raid! Check out the updated list by typing /raids.",
       ephemeral: true,
     });
-  },
-};
+  }
+}

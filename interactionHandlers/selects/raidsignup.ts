@@ -1,8 +1,18 @@
-const { RaidModule } = require("../../modules/RaidModule");
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
-module.exports = {
-  name: "raidsignup",
-  async execute(interaction) {
+import { RaidModule } from "../../modules/RaidModule";
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  SelectMenuInteraction,
+} from "discord.js";
+import { IHandler } from "../../interfaces/IHandler";
+
+export default class RaidSignupHandler implements IHandler {
+  name = "raidsignup";
+
+  async execute(interaction: SelectMenuInteraction) {
+    if (!interaction.isSelectMenu()) return;
+
     let raid = await global.client.prisma.raids.findUnique({
       where: {
         ID: parseInt(interaction.values[0]),
@@ -25,7 +35,7 @@ module.exports = {
     });
 
     if (attending > 0) {
-      let row = new ActionRowBuilder().addComponents(
+      let row = new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder()
           .setCustomId("raidunsub_" + interaction.values[0])
           .setLabel("Unsubscribe")
@@ -50,5 +60,5 @@ module.exports = {
         "You've successfully enlisted for the raid! Type /raids again to view any updates or changes.",
       ephemeral: true,
     });
-  },
-};
+  }
+}

@@ -1,7 +1,9 @@
-module.exports = {
-  name: "raidunsub",
+import { IHandler } from "../../interfaces/IHandler";
+
+export default class RaidUnsub implements IHandler {
+  name = "raidunsub";
   async execute(interaction) {
-    let raidId = interaction.customId.split("_")[1];
+    const raidId = interaction.customId.split("_")[1];
     await global.client.prisma.raidAttendees.delete({
       where: {
         RaidId_MemberId: {
@@ -14,5 +16,5 @@ module.exports = {
       content: "Successfully unsubscribed from the raid!",
       ephemeral: true,
     });
-  },
-};
+  }
+}

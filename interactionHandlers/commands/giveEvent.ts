@@ -1,9 +1,10 @@
-const {
+import {
   SlashCommandBuilder,
   PermissionFlagsBits,
   ActionRowBuilder,
   StringSelectMenuBuilder,
-} = require("discord.js");
+} from "discord.js";
+import { IHandler } from "../../interfaces/IHandler";
 
 const getOffset = (timeZone = "UTC", date = new Date()) => {
   const utcDate = new Date(date.toLocaleString("en-US", { timeZone: "UTC" }));
@@ -11,9 +12,10 @@ const getOffset = (timeZone = "UTC", date = new Date()) => {
   return (tzDate.getTime() - utcDate.getTime()) / 6e4;
 };
 
-module.exports = {
-  name: "give-event",
-  data: new SlashCommandBuilder()
+export default class GiveEventCommand implements IHandler {
+  name = "give-event";
+  isGuild: true;
+  data = new SlashCommandBuilder()
     .setName("give-event")
     .setDescription("give event to users")
     .addIntegerOption((option) =>
@@ -43,8 +45,7 @@ module.exports = {
         )
         .setRequired(false)
     )
-
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
   async execute(interaction) {
     const achievement = +interaction.options.getString("achievement");
     const description = interaction.options.getString("description");
@@ -84,7 +85,6 @@ module.exports = {
         components: [row],
       });
 
-      // create a collector for the select menu event
       const filter = (interaction) =>
         interaction.customId === `giveAchievement-${achievement}`;
       const collector = message.createMessageComponentCollector({
@@ -92,9 +92,7 @@ module.exports = {
         time: 300000,
       });
 
-      // listen for selected option
       collector.on("collect", async (interaction) => {
-        //check if same user
         if (interaction.user.id !== interaction.message.interaction.user.id) {
           await interaction.reply({
             ephemeral: true,
@@ -103,7 +101,7 @@ module.exports = {
           return;
         }
 
-        const selectedOption = interaction.values[0]; // get the first selected option
+        const selectedOption = interaction.values[0];
 
         await global.client.achievementsModule.GiveAchievement(
           selectedOption,
@@ -119,7 +117,7 @@ module.exports = {
         });
       });
     }
-  },
+  }
   async autocomplete(interaction) {
     global.client.achievementsModule
       .GetManualAchievements()
@@ -137,6 +135,5 @@ module.exports = {
           });
         await interaction.respond(options);
       });
-  },
-  isGuild: true,
-};
+  }
+}

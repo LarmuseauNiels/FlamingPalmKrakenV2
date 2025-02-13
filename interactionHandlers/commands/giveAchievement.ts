@@ -1,7 +1,9 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
-module.exports = {
-  name: "give-achievement",
-  data: new SlashCommandBuilder()
+import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
+import { IHandler } from "../../interfaces/IHandler";
+
+export default class GiveAchievementCommand implements IHandler {
+  name = "give-achievement";
+  data = new SlashCommandBuilder()
     .setName("give-achievement")
     .setDescription("give achievement to users")
     .addUserOption((option) =>
@@ -25,9 +27,8 @@ module.exports = {
         )
         .setRequired(false)
     )
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
   async execute(interaction) {
-    //give achievement
     const user = interaction.options.getUser("user");
     const achievement = +interaction.options.getString("achievement");
     const description = interaction.options.getString("description");
@@ -42,7 +43,7 @@ module.exports = {
       ephemeral: true,
       content: `gave ${achievement} to ${user.username}`,
     });
-  },
+  }
   async autocomplete(interaction) {
     global.client.achievementsModule
       .GetManualAchievements()
@@ -60,6 +61,6 @@ module.exports = {
           });
         await interaction.respond(options);
       });
-  },
-  isGuild: true,
-};
+  }
+  isGuild: true;
+}

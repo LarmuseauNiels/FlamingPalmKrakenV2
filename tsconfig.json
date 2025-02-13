@@ -38,7 +38,7 @@
     "typeRoots": [
       "./node_modules/@types",
       "./node_modules/@discordjs/typings",
-      "./domain"
+      "components"
     ] /* Specify multiple folders that act like './node_modules/@types'. */,
     "types": ["node"],
     /* Specify type package names to be included without being referenced in a source file. */

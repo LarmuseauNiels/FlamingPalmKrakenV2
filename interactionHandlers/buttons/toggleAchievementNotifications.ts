@@ -1,8 +1,10 @@
-module.exports = {
-  name: "toggleAchievementNotifications",
+import { IHandler } from "../../interfaces/IHandler";
+
+export default class ToggleAchievementNotifications implements IHandler {
+  name = "toggleAchievementNotifications";
+
   async execute(interaction) {
     let isEnabling = true;
-
     global.client.prisma.members
       .findFirst({
         where: {
@@ -32,5 +34,5 @@ module.exports = {
           ephemeral: true,
         });
       });
-  },
-};
+  }
+}

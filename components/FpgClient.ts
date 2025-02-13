@@ -8,6 +8,8 @@ import { WebApi } from "../modules/WebApi";
 import { Collection } from "discord.js";
 import fs from "fs";
 import path from "path";
+import { IHandler } from "../interfaces/IHandler";
+type interactionSet = Collection<string, IHandler>;
 
 export class FpgClient extends Client {
   declare islander: Islander;
@@ -15,11 +17,11 @@ export class FpgClient extends Client {
   declare raidModule: RaidModule;
   declare assistant: Assistant;
   declare prisma: PrismaClient;
-  declare commands: Collection<any, any>;
-  declare buttons: Collection<any, any>;
-  declare selects: Collection<any, any>;
-  declare modals: Collection<any, any>;
-  declare contextMenus: Collection<any, any>;
+  declare commands: interactionSet;
+  declare buttons: interactionSet;
+  declare selects: interactionSet;
+  declare modals: interactionSet;
+  declare contextMenus: interactionSet;
   declare chats: Map<any, any>;
   declare webapi: WebApi;
   declare events: Collection<any, any>;
@@ -58,11 +60,6 @@ export class FpgClient extends Client {
 
     this.logChannel;
     this.updateChannel;
-    this.events = new Collection();
-    this.commands = new Collection();
-    this.buttons = new Collection();
-    this.selects = new Collection();
-    this.modals = new Collection();
     this.contextMenus = new Collection();
     this.achievementsModule = new AchievementsModule();
     this.chats = new Map();
@@ -82,35 +79,31 @@ export class FpgClient extends Client {
   }
 
   private async loadCommands(): Promise<void> {
-    const interactionTypes = [
-      "commands",
-      "buttons",
-      "modals",
-      "contextmenus",
-      "selects",
-    ];
-    for (const type of interactionTypes) {
-      this[type] = await this.loadInteractionActions(type);
-    }
+    this.commands = await this.loadInteractionActions("commands");
+    this.buttons = await this.loadInteractionActions("buttons");
+    this.selects = await this.loadInteractionActions("selects");
+    this.contextMenus = await this.loadInteractionActions("contextmenus");
   }
 
-  private async loadInteractionActions(
-    type: string
-  ): Promise<Collection<string, any>> {
-    const actions = new Collection<string, any>();
-    const actionFiles = fs
+  private async loadInteractionActions(type: string): Promise<interactionSet> {
+    const actions = new Collection<string, IHandler>();
+    const actionFiles: Array<string> = fs
       .readdirSync(path.join(__dirname, `../interactionHandlers/${type}`))
-      .filter((file) => file.endsWith(".js") || file.endsWith(".ts"));
-
+      .filter((file) => file.endsWith(".js"));
     for (const file of actionFiles) {
-      const action = require(path.join(
-        __dirname,
-        `../interactionHandlers/${type}/${file}`
-      )) as any;
-      let data: any = action.data as any;
-      actions.set(data.name, action);
+      try {
+        const fileLocation = path.join(
+          __dirname,
+          `../interactionHandlers/${type}/${file}`
+        );
+        const handlerSource = require(fileLocation);
+        const handler: IHandler = new handlerSource.default();
+        actions.set(handler.name, handler);
+        console.log(`Loaded ${type} ${handler.name}`);
+      } catch (error) {
+        console.error(`Failed to load ${type} ${file}: ${error}`);
+      }
     }
-
     return actions;
   }
 

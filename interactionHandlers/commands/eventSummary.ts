@@ -1,13 +1,10 @@
-const {
-  EmbedBuilder,
-  SlashCommandBuilder,
-  PermissionFlagsBits,
-} = require("discord.js");
-const { RaidModule } = require("../../modules/RaidModule");
+import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
+import { IHandler } from "../../interfaces/IHandler";
+import { RaidModule } from "../../modules/RaidModule";
 
-module.exports = {
-  name: "event-summary",
-  data: new SlashCommandBuilder()
+export default class EventSummaryHandler implements IHandler {
+  name = "event-summary";
+  data = new SlashCommandBuilder()
     .setName("event-summary")
     .setDescription("Send summary of upcoming events.")
     .addChannelOption((option) =>
@@ -16,8 +13,8 @@ module.exports = {
         .setDescription("Channel to send summary message to.")
         .setRequired(true)
     )
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
-  isGuild: true,
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+  isGuild: true;
   async execute(interaction) {
     const channel = interaction.guild.channels.cache.get(
       interaction.options.get("channel")?.value || interaction.channel.id
@@ -54,5 +51,5 @@ module.exports = {
         ephemeral: true,
       });
     });
-  },
-};
+  }
+}

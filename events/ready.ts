@@ -6,7 +6,7 @@ import {
   GuildScheduledEvent,
   TextChannel,
 } from "discord.js";
-import { FpgClient } from "../domain/FpgClient";
+import { FpgClient } from "../components/FpgClient";
 
 module.exports = {
   name: "ready",

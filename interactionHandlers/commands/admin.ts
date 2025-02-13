@@ -10,9 +10,9 @@ import {
   GuildMember,
   TextChannel,
 } from "discord.js";
-import { IHandler } from "../../domain/interfaces/IHandler";
+import { IHandler } from "../../interfaces/IHandler";
 
-class AdminHandler implements IHandler {
+export default class AdminHandler implements IHandler {
   name = "admin";
   data = new SlashCommandBuilder()
     .setName("admin")
@@ -158,5 +158,3 @@ Members of our community have the opportunity to earn Achievements through vario
 
   isGuild = true;
 }
-
-export default new AdminHandler();

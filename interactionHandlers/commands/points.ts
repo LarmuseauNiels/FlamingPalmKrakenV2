@@ -1,13 +1,17 @@
-const { SlashCommandBuilder } = require("discord.js");
-const { EmbedBuilder } = require("discord.js");
-//const { EmbedBuilder,ActionRowBuilder, ButtonBuilder } = require('discord.js');
+import {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ChatInputCommandInteraction,
+} from "discord.js";
+import { IHandler } from "../../interfaces/IHandler";
 
-module.exports = {
-  name: "points",
-  data: new SlashCommandBuilder()
+export default class PointsCommand implements IHandler {
+  name = "points";
+  isGuild = true;
+  data = new SlashCommandBuilder()
     .setName("points")
-    .setDescription("shows your flamingpalm points"),
-  async execute(interaction) {
+    .setDescription("shows your flamingpalm points") as SlashCommandBuilder;
+  async execute(interaction: ChatInputCommandInteraction) {
     let member = await global.client.prisma.members.findUnique({
       where: { ID: interaction.user.id },
       include: {
@@ -32,8 +36,6 @@ module.exports = {
         url: "https://flamingpalm.com",
       })
       .setDescription("**last 5 transactions: **")
-      //.setThumbnail('https://i.imgur.com/AfFp7pu.png')
-
       .setTimestamp()
       .setFooter({
         text: "Niels2398 FPG kraken bot",
@@ -48,6 +50,5 @@ module.exports = {
     });
     console.log(member);
     interaction.reply({ embeds: [embed], ephemeral: true });
-  },
-  isGuild: true,
-};
+  }
+}

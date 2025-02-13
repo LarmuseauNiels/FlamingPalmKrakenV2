@@ -1,6 +1,6 @@
 import Bugsnag from "@bugsnag/js";
 import BugsnagPluginExpress from "@bugsnag/plugin-express";
-import { FpgClient } from "./domain/FpgClient";
+import { FpgClient } from "./components/FpgClient";
 
 if (process.env.DISABLE) {
   process.exit(1);

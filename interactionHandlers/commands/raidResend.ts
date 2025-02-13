@@ -1,9 +1,11 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
-const { RaidModule } = require("../../modules/RaidModule");
+import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
+import { RaidModule } from "../../modules/RaidModule";
+import { IHandler } from "../../interfaces/IHandler";
 
-module.exports = {
-  name: "raid-resend",
-  data: new SlashCommandBuilder()
+export default class RaidResendCommand implements IHandler {
+  name = "raid-resend";
+  isGuild = true;
+  data = new SlashCommandBuilder()
     .setName("raid-resend")
     .setDescription("resend raid scheduling message")
     .addIntegerOption((option) =>
@@ -15,16 +17,16 @@ module.exports = {
         .setDescription("The user to resend the raid message to")
         .setRequired(true)
     )
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
-  isGuild: true,
-  async execute(interaction) {
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+
+  async execute(interaction: any) {
     const raidID = interaction.options.getInteger("raid");
     const user = interaction.options.getUser("user");
-    interaction.deferReply({ ephemeral: true });
-    let result = await RaidModule.resendRaid(raidID, user);
+    await interaction.deferReply({ ephemeral: true });
+    const result = await RaidModule.resendRaid(raidID, user);
     await interaction.editReply({
       content: result,
       ephemeral: true,
     });
-  },
-};
+  }
+}

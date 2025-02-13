@@ -1,7 +1,7 @@
 import cron from "node-cron";
 import { EmbedBuilder, GuildMember, TextChannel } from "discord.js";
 import { RaidModule } from "./RaidModule";
-import { FpgClient } from "../domain/FpgClient";
+import { FpgClient } from "../components/FpgClient";
 
 interface Member {
   ID: string;

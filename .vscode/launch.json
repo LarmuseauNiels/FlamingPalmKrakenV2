@@ -5,19 +5,6 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "command": "npm run build && npm start",
-      "name": "Run npm start",
-      "request": "launch",
-      "type": "node-terminal"
-    },
-
-    {
-      "command": "npm run deploy",
-      "name": "Deploy commands",
-      "request": "launch",
-      "type": "node-terminal"
-    },
-    {
       "type": "node",
       "request": "launch",
       "name": "Debug TypeScript",
@@ -25,6 +12,12 @@
       "program": "${workspaceFolder}/index.ts",
       "preLaunchTask": "tsc: build - tsconfig.json",
       "outFiles": ["${workspaceFolder}/bin/**/*.js"]
+    },
+    {
+      "command": "npm run deploy",
+      "name": "Deploy commands",
+      "request": "launch",
+      "type": "node-terminal"
     }
   ]
 }
