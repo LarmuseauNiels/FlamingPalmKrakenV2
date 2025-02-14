@@ -1,8 +1,9 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder } = require("discord.js");
+import { EmbedBuilder, GuildMember, Client } from "discord.js";
+import { FpgClient } from "../components/FpgClient";
 
 module.exports = {
   name: "guildMemberRemove",
-  execute(GuildMember) {
+  execute(GuildMember: GuildMember) {
     let embed = new EmbedBuilder()
       .setColor("#FD8612")
       .setTitle(`${GuildMember.user.username} left`)
@@ -28,6 +29,6 @@ module.exports = {
         }
       )
       .setTimestamp();
-    global.client.logChannel.send({ embeds: [embed] });
+    (global.client as FpgClient).logChannel.send({ embeds: [embed] });
   },
 };

@@ -1,27 +1,27 @@
-const { EmbedBuilder } = require("discord.js");
+import { EmbedBuilder, GuildMember, Role } from "discord.js";
 
 module.exports = {
   name: "guildMemberUpdate",
-  async execute(oldMember, newMember) {
+  async execute(oldMember: GuildMember, newMember: GuildMember) {
     // If the role(s) are present on the new member object but are not on the old one (i.e role(s) were added)
     const addedRoles = newMember.roles.cache.filter(
-      (role) => !oldMember.roles.cache.has(role.id)
+      (role: Role) => !oldMember.roles.cache.has(role.id)
     );
     if (addedRoles.size > 0) {
       console.log(
-        `roles changed! added roles: ${addedRoles.map((r) => r.name)}}`
+        `roles changed! added roles: ${addedRoles.map((r: Role) => r.name)}}`
       );
-      if (addedRoles.find((r) => r.name === "Community Regular")) {
+      if (addedRoles.find((r: Role) => r.name === "Community Regular")) {
         await sendReferralMessage(newMember, false);
       }
-      if (addedRoles.find((r) => r.name === "Community Member")) {
+      if (addedRoles.find((r: Role) => r.name === "Community Member")) {
         await sendReferralMessage(newMember, true);
       }
     }
   },
 };
 
-async function sendReferralMessage(member, isMember) {
+async function sendReferralMessage(member: GuildMember, isMember: boolean) {
   let referrer = await global.client.prisma.refferals.findFirst({
     where: {
       userid: member.id,
@@ -39,7 +39,7 @@ async function sendReferralMessage(member, isMember) {
   const embed = new EmbedBuilder()
     .setColor("#FD8612")
     .setTitle(
-      `${member.username} has become a ${isMember ? "Member" : "Regular"}!`
+      `${member.user.username} has become a ${isMember ? "Member" : "Regular"}!`
     )
     .addFields(
       {

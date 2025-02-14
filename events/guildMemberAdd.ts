@@ -1,51 +1,47 @@
-const {
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  Collection,
-  Invite,
-} = require("discord.js");
+import { EmbedBuilder, Invite, GuildMember, Role } from "discord.js";
 
 module.exports = {
   name: "guildMemberAdd",
-  async execute(GuildMember) {
+  async execute(GuildMember: GuildMember) {
     //give member role
     try {
-      let memberRole = GuildMember.guild.roles.cache.find(
+      const memberRole: Role | undefined = GuildMember.guild.roles.cache.find(
         (role) => role.name === "Guest"
       );
-      GuildMember.roles.add(memberRole);
+      if (memberRole) {
+        GuildMember.roles.add(memberRole);
+      }
     } catch (error) {
       global.bugsnag.notify(error);
     }
 
     const cachedInvites = global.client.invites.get(GuildMember.guild.id);
-    const oldinvites = cachedInvites.map((i) => {
+    const oldinvites = cachedInvites.map((i: Invite) => {
       return { code: i.code, uses: i.uses };
     });
     console.log(oldinvites);
     GuildMember.guild.invites.fetch().then(async (newInvites) => {
-      let invitemap = newInvites.map((i) => {
+      const invitemap = newInvites.map((i: Invite) => {
         return { code: i.code, uses: i.uses };
       });
       console.log(invitemap);
-      let moreUses = invitemap.filter(
-        (a) => oldinvites.find((b) => b.code === a.code).uses < a.uses
+      const moreUses = invitemap.filter(
+        (a) => oldinvites.find((b) => b.code === a.code)?.uses! < a.uses
       );
       console.log("used");
       console.log(moreUses);
-      let removed = oldinvites.filter(
+      const removed = oldinvites.filter(
         (a) => newInvites.find((b) => b.code === a.code) === undefined
       );
       console.log("removed");
       console.log(removed);
-      let usedInvite;
+      let usedInvite: Invite | undefined;
       if (moreUses.length === 1) usedInvite = newInvites.get(moreUses[0].code);
       else if (removed.length === 1)
         usedInvite = cachedInvites.get(removed[0].code);
       global.client.invites.set(GuildMember.guild.id, newInvites);
 
-      let embed = new EmbedBuilder()
+      const embed = new EmbedBuilder()
         .setColor("#FD8612")
         .setTitle(`${GuildMember.user.username} joined`)
         .setAuthor({
@@ -77,35 +73,35 @@ module.exports = {
         )
         .setTimestamp();
       try {
-        let user = await global.client.prisma.members.create({
+        const user = await global.client.prisma.members.create({
           data: {
             ID: GuildMember.id,
             DisplayName: GuildMember.user.username,
             avatar: GuildMember.user.avatar,
           },
         });
-        let referrer = await global.client.prisma.members.upsert({
-          where: { ID: usedInvite.inviter.id },
+        const referrer = await global.client.prisma.members.upsert({
+          where: { ID: usedInvite!.inviter!.id },
           update: {
-            DisplayName: usedInvite.inviter.username,
-            avatar: usedInvite.inviter.avatar,
+            DisplayName: usedInvite!.inviter!.username,
+            avatar: usedInvite!.inviter!.avatar,
           },
           create: {
-            ID: usedInvite.inviter.id,
-            DisplayName: usedInvite.inviter.username,
-            avatar: usedInvite.inviter.avatar,
+            ID: usedInvite!.inviter!.id,
+            DisplayName: usedInvite!.inviter!.username,
+            avatar: usedInvite!.inviter!.avatar,
           },
         });
 
         await global.client.prisma.refferals.create({
           data: {
             userid: GuildMember.id,
-            refferer: usedInvite.inviter.id,
+            refferer: usedInvite!.inviter!.id,
           },
         });
 
         await global.client.achievementsModule.GiveAchievement(
-          usedInvite.inviter.id,
+          usedInvite!.inviter!.id,
           14,
           "178435947816419328",
           GuildMember.user.username
