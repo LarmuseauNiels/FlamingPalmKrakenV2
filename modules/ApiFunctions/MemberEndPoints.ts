@@ -132,27 +132,27 @@ export function memberEndPoints(app) {
     var achievements = [];
     if (req.query.achievement1) {
       achievements.push({
-        icon: `achievementIcons/badges/${req.query.achievement1}.png`,
+        icon: `assets/badges/${req.query.achievement1}.png`,
       });
     }
     if (req.query.achievement2) {
       achievements.push({
-        icon: `achievementIcons/badges/${req.query.achievement2}.png`,
+        icon: `assets/badges/${req.query.achievement2}.png`,
       });
     }
     if (req.query.achievement3) {
       achievements.push({
-        icon: `achievementIcons/badges/${req.query.achievement3}.png`,
+        icon: `assets/badges/${req.query.achievement3}.png`,
       });
     }
     if (req.query.achievement4) {
       achievements.push({
-        icon: `achievementIcons/badges/${req.query.achievement4}.png`,
+        icon: `assets/badges/${req.query.achievement4}.png`,
       });
     }
     if (req.query.achievement5) {
       achievements.push({
-        icon: `achievementIcons/badges/${req.query.achievement5}.png`,
+        icon: `assets/badges/${req.query.achievement5}.png`,
       });
     }
 
@@ -172,10 +172,7 @@ export function memberEndPoints(app) {
     if (req.query.backgroundImage) {
       rank
         .setOverlay("#2b2f35", 0.4)
-        .setBackground(
-          "IMAGE",
-          `achievementIcons/${req.query.backgroundImage}.png`
-        );
+        .setBackground("IMAGE", `assets/${req.query.backgroundImage}.png`);
     }
 
     let data = await rank.build();

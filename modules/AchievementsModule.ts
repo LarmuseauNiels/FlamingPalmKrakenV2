@@ -174,38 +174,33 @@ FROM (
     if (member?.Profile?.BackgroundImage != null) {
       rank.setBackground(
         "IMAGE",
-        "achievementIcons/" + member.Profile.BackgroundImage + ".png"
+        "assets/" + member.Profile.BackgroundImage + ".png"
       );
     }
     let achievements = [];
     if (member?.Profile?.Achievement1 != null) {
       achievements.push({
-        imagePath:
-          "achievementIcons/badges/" + member.Profile.Achievement1 + ".png",
+        imagePath: "assets/badges/" + member.Profile.Achievement1 + ".png",
       });
     }
     if (member?.Profile?.Achievement2 != null) {
       achievements.push({
-        imagePath:
-          "achievementIcons/badges/" + member.Profile.Achievement2 + ".png",
+        imagePath: "assets/badges/" + member.Profile.Achievement2 + ".png",
       });
     }
     if (member?.Profile?.Achievement3 != null) {
       achievements.push({
-        imagePath:
-          "achievementIcons/badges/" + member.Profile.Achievement3 + ".png",
+        imagePath: "assets/badges/" + member.Profile.Achievement3 + ".png",
       });
     }
     if (member?.Profile?.Achievement4 != null) {
       achievements.push({
-        imagePath:
-          "achievementIcons/badges/" + member.Profile.Achievement4 + ".png",
+        imagePath: "assets/badges/" + member.Profile.Achievement4 + ".png",
       });
     }
     if (member?.Profile?.Achievement5 != null) {
       achievements.push({
-        imagePath:
-          "achievementIcons/badges/" + member.Profile.Achievement5 + ".png",
+        imagePath: "assets/badges/" + member.Profile.Achievement5 + ".png",
       });
     }
     rank.setOverlay("#2b2f35", 0.4).setAchievements(achievements);

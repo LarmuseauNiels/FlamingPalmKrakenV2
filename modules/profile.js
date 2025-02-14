@@ -359,7 +359,7 @@ export default class Rank {
       },
       achievementToRender: [
         {
-          imagePath: "achievementIcons/achievement.png",
+          imagePath: "assets/achievement.png",
         },
       ],
     };
