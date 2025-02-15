@@ -6,8 +6,8 @@ import { WebApi } from "./modules/WebApi";
 import Bugsnag from "@bugsnag/js";
 import BugsnagPluginExpress from "@bugsnag/plugin-express";
 import { RaidModule } from "./islander/RaidModule";
-import {Assistant} from "./modules/Assistant";
-import {GuildScheduledEvent, Snowflake} from "discord.js";
+import { Assistant } from "./modules/Assistant";
+import { GuildScheduledEvent, Snowflake } from "discord.js";
 
 const fs = require("fs");
 const {
@@ -31,7 +31,6 @@ class FpgClient extends Client {
   declare chats: Map<any, any>;
   declare webapi: WebApi;
   declare events: typeof Collection;
-  
 
   constructor() {
     super({
@@ -72,7 +71,6 @@ class FpgClient extends Client {
     this.chats = new Map();
     this.webapi = new WebApi();
     this.assistant = new Assistant();
-
   }
 
   log(loggText) {
@@ -141,3 +139,4 @@ async function loadInteractionActions(folderName): Promise<typeof Collection> {
   }
   return tempList;
 }
+// working temp
