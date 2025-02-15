@@ -14,7 +14,9 @@ export default class RemoveHandler implements IHandler {
   data = new ContextMenuCommandBuilder()
     .setName("remove")
     .setType(ApplicationCommandType.Message)
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+    .setDefaultMemberPermissions(
+      PermissionFlagsBits.Administrator
+    ) as ContextMenuCommandBuilder;
 
   async execute(interaction: Interaction) {
     if (!interaction.isMessageContextMenuCommand()) return;

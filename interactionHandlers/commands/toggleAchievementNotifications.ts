@@ -5,7 +5,9 @@ export default class ToggleAchievementNotificationsHandler implements IHandler {
   name = "toggle-achievement-notifications";
   data = new SlashCommandBuilder()
     .setName("toggle-achievement-notifications")
-    .setDescription("toggle if you receive notifications for achievements");
+    .setDescription(
+      "toggle if you receive notifications for achievements"
+    ) as SlashCommandBuilder;
 
   async execute(interaction: CommandInteraction) {
     let isEnabling = true;

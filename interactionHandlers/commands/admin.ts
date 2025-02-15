@@ -23,7 +23,9 @@ export default class AdminHandler implements IHandler {
         .setDescription("admin command")
         .setRequired(true)
     )
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+    .setDefaultMemberPermissions(
+      PermissionFlagsBits.Administrator
+    ) as SlashCommandBuilder;
 
   async execute(interaction: ChatInputCommandInteraction) {
     const command = interaction.options.getString("command");

@@ -6,7 +6,7 @@ export default class ProfileCommand implements IHandler {
   name = "profile";
   data = new SlashCommandBuilder()
     .setName("profile")
-    .setDescription("show your profile");
+    .setDescription("show your profile") as SlashCommandBuilder;
 
   async execute(interaction: any): Promise<void> {
     await interaction.deferReply({ ephemeral: false });

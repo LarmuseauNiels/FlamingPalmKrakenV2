@@ -12,7 +12,9 @@ export default class StoreHandler implements IHandler {
   name = "store";
   data = new SlashCommandBuilder()
     .setName("store")
-    .setDescription("shows the flamingpalm points store");
+    .setDescription(
+      "shows the flamingpalm points store"
+    ) as SlashCommandBuilder;
 
   async execute(interaction: CommandInteraction) {
     const embed = new EmbedBuilder()

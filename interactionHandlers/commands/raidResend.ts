@@ -17,7 +17,9 @@ export default class RaidResendCommand implements IHandler {
         .setDescription("The user to resend the raid message to")
         .setRequired(true)
     )
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+    .setDefaultMemberPermissions(
+      PermissionFlagsBits.Administrator
+    ) as SlashCommandBuilder;
 
   async execute(interaction: any) {
     const raidID = interaction.options.getInteger("raid");

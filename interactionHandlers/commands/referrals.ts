@@ -10,7 +10,7 @@ export default class ReferralsHandler implements IHandler {
   name = "referrals";
   data = new SlashCommandBuilder()
     .setName("referrals")
-    .setDescription("shows your referrals");
+    .setDescription("shows your referrals") as SlashCommandBuilder;
 
   async execute(interaction: CommandInteraction) {
     await interaction.deferReply({ ephemeral: true });

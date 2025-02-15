@@ -14,7 +14,9 @@ export default class InfoHandler implements IHandler {
   data = new ContextMenuCommandBuilder()
     .setName("info")
     .setType(ApplicationCommandType.User)
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+    .setDefaultMemberPermissions(
+      PermissionFlagsBits.Administrator
+    ) as ContextMenuCommandBuilder;
 
   async execute(interaction: Interaction) {
     if (!interaction.isUserContextMenuCommand()) return;

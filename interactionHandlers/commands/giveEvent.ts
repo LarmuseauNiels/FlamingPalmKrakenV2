@@ -45,7 +45,9 @@ export default class GiveEventCommand implements IHandler {
         )
         .setRequired(false)
     )
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+    .setDefaultMemberPermissions(
+      PermissionFlagsBits.Administrator
+    ) as SlashCommandBuilder;
   async execute(interaction) {
     const achievement = +interaction.options.getString("achievement");
     const description = interaction.options.getString("description");

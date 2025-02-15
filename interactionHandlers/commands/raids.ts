@@ -6,7 +6,7 @@ export default class RaidsCommand implements IHandler {
   name = "raids";
   data = new SlashCommandBuilder()
     .setName("raids")
-    .setDescription("See all the available raids!");
+    .setDescription("See all the available raids!") as SlashCommandBuilder;
   isGuild = false;
 
   async execute(interaction: any) {

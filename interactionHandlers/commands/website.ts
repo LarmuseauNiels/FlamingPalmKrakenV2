@@ -12,7 +12,9 @@ export default class WebsiteHandler implements IHandler {
   name = "website";
   data = new SlashCommandBuilder()
     .setName("website")
-    .setDescription("get a direct link to log into the website?");
+    .setDescription(
+      "get a direct link to log into the website?"
+    ) as SlashCommandBuilder;
 
   async execute(interaction: CommandInteraction) {
     const embed = new EmbedBuilder()

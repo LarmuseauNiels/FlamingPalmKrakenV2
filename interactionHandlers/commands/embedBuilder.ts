@@ -30,7 +30,9 @@ export default class EmbedBuilderCommand implements IHandler {
         .setDescription("Channel to send the embed message to.")
         .setRequired(true)
     )
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+    .setDefaultMemberPermissions(
+      PermissionFlagsBits.Administrator
+    ) as SlashCommandBuilder;
   isGuild = true;
 
   async execute(interaction: CommandInteraction) {

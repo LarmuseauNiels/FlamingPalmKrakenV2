@@ -13,7 +13,9 @@ export default class EventSummaryHandler implements IHandler {
         .setDescription("Channel to send summary message to.")
         .setRequired(true)
     )
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+    .setDefaultMemberPermissions(
+      PermissionFlagsBits.Administrator
+    ) as SlashCommandBuilder;
   isGuild: true;
   async execute(interaction) {
     const channel = interaction.guild.channels.cache.get(
