@@ -1,7 +1,8 @@
 import { EmbedBuilder, Invite, GuildMember, Role } from "discord.js";
+import { IEvent } from "../interfaces/IEvent";
 
-module.exports = {
-  name: "guildMemberAdd",
+export default class guildMemberAdd implements IEvent {
+  name = "guildMemberAdd";
   async execute(GuildMember: GuildMember) {
     //give member role
     try {
@@ -112,5 +113,5 @@ module.exports = {
       }
       global.client.logChannel.send({ embeds: [embed] });
     });
-  },
-};
+  }
+}

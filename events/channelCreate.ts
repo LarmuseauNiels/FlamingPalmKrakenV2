@@ -1,7 +1,7 @@
-import { Channel } from 'discord.js';
+import { Channel } from "discord.js";
+import { IEvent } from "../interfaces/IEvent";
 
-export default {
-  name: "channelCreate",
-  execute(channel: Channel) {
-  },
-};
+export default class ChannelCreateEvent implements IEvent {
+  name = "channelCreate";
+  execute(channel: Channel) {}
+}

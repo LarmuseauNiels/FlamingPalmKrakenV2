@@ -1,8 +1,9 @@
 import { EmbedBuilder, GuildMember, Client } from "discord.js";
 import { FpgClient } from "../components/FpgClient";
+import { IEvent } from "../interfaces/IEvent";
 
-module.exports = {
-  name: "guildMemberRemove",
+export default class guildMemberRemove implements IEvent {
+  name = "guildMemberRemove";
   execute(GuildMember: GuildMember) {
     let embed = new EmbedBuilder()
       .setColor("#FD8612")
@@ -30,5 +31,5 @@ module.exports = {
       )
       .setTimestamp();
     (global.client as FpgClient).logChannel.send({ embeds: [embed] });
-  },
-};
+  }
+}

@@ -1,7 +1,8 @@
-import { Message } from 'discord.js';
+import { Message } from "discord.js";
+import { IEvent } from "../interfaces/IEvent";
 
-module.exports = {
-  name: "messageCreate",
+export default class messageCreate implements IEvent {
+  name = "messageCreate";
   execute(message: Message) {
     // ...existing code...
     if (message.channelId === process.env.MEMES_CHANNEL) {
@@ -16,5 +17,5 @@ module.exports = {
         message.reply(response[0].content[0].text.value);
       });
     }
-  },
-};
+  }
+}

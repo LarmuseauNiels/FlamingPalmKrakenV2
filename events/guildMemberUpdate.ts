@@ -1,7 +1,8 @@
 import { EmbedBuilder, GuildMember, Role } from "discord.js";
+import { IEvent } from "../interfaces/IEvent";
 
-module.exports = {
-  name: "guildMemberUpdate",
+export default class guildMemberUpdate implements IEvent {
+  name = "guildMemberUpdate";
   async execute(oldMember: GuildMember, newMember: GuildMember) {
     // If the role(s) are present on the new member object but are not on the old one (i.e role(s) were added)
     const addedRoles = newMember.roles.cache.filter(
@@ -18,8 +19,8 @@ module.exports = {
         await sendReferralMessage(newMember, true);
       }
     }
-  },
-};
+  }
+}
 
 async function sendReferralMessage(member: GuildMember, isMember: boolean) {
   let referrer = await global.client.prisma.refferals.findFirst({

@@ -9,6 +9,7 @@ import { Collection } from "discord.js";
 import fs from "fs";
 import path from "path";
 import { IHandler } from "../interfaces/IHandler";
+import { IEvent } from "../interfaces/IEvent";
 type interactionSet = Collection<string, IHandler>;
 
 export class FpgClient extends Client {
@@ -64,9 +65,8 @@ export class FpgClient extends Client {
     this.achievementsModule = new AchievementsModule();
     this.chats = new Map();
     this.webapi = new WebApi();
-
-    this.loadCommands();
     this.loadEvents();
+    this.loadCommands();
   }
 
   log(loggText) {
@@ -113,7 +113,10 @@ export class FpgClient extends Client {
       .filter((file) => file.endsWith(".js"));
 
     for (const file of eventFiles) {
-      const event = require(path.join(__dirname, `../events/${file}`));
+      console.log(`Loading event ${file}`);
+      const eventSource = require(path.join(__dirname, `../events/${file}`));
+      const event: IEvent = new eventSource.default();
+
       if (event.once) {
         this.once(event.name, (...args) => event.execute(...args));
       } else {

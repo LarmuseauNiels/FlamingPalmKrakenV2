@@ -7,10 +7,11 @@ import {
   TextChannel,
 } from "discord.js";
 import { FpgClient } from "../components/FpgClient";
+import { IEvent } from "../interfaces/IEvent";
 
-module.exports = {
-  name: "ready",
-  once: true,
+export default class ready implements IEvent {
+  name = "ready";
+  once = true;
   execute(client: FpgClient) {
     // Set up the client's log channel and update channel
     client.logChannel = client.channels.cache.get(
@@ -52,5 +53,5 @@ module.exports = {
           client.cachUpdated = Date.now();
         });
     });
-  },
-};
+  }
+}

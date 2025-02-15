@@ -1,12 +1,14 @@
 import { Interaction } from "discord.js";
+import { IHandler } from "../interfaces/IHandler";
+import { IEvent } from "../interfaces/IEvent";
 
-module.exports = {
-  name: "interactionCreate",
-  async execute(interaction: Interaction) {
+export default class interactionCreate implements IEvent {
+  name = "interactionCreate";
+  async execute(interaction: any) {
     console.log("executing interaction");
     global.bugsnag.startSession();
     global.bugsnag.leaveBreadcrumb(
-      (interaction as any).commandName ?? "No command name"
+      interaction.commandName ?? "No command name"
     );
     try {
       if (interaction.isButton()) {
@@ -20,23 +22,17 @@ module.exports = {
         let select = global.client.selects.get(selectID);
         if (select) await select.execute(interaction);
       } else if (interaction.isMessageContextMenuCommand()) {
-        console.log((interaction as any).commandName);
-        let menu = global.client.contextMenus.get(
-          (interaction as any).commandName
-        );
+        console.log(interaction.commandName);
+        let menu = global.client.contextMenus.get(interaction.commandName);
         if (menu) await menu.execute(interaction);
       } else if (interaction.isUserContextMenuCommand()) {
         console.log((interaction as any).commandName);
-        let menu = global.client.contextMenus.get(
-          (interaction as any).commandName
-        );
+        let menu = global.client.contextMenus.get(interaction.commandName);
         if (menu) await menu.execute(interaction);
       } else {
         if (interaction.isCommand()) {
-          console.log((interaction as any).commandName);
-          let command = global.client.commands.get(
-            (interaction as any).commandName
-          );
+          console.log(interaction.commandName);
+          let command = global.client.commands.get(interaction.commandName);
           if (command) await command.execute(interaction);
         }
       }
@@ -46,9 +42,7 @@ module.exports = {
         if (modal) await modal.execute(interaction);
       }
       if (interaction.isAutocomplete()) {
-        let command = global.client.commands.get(
-          (interaction as any).commandName
-        );
+        let command = global.client.commands.get(interaction.commandName);
         if (command) await command.autocomplete(interaction);
       }
     } catch (error) {
@@ -72,5 +66,5 @@ module.exports = {
       }
     }
     global.bugsnag.pauseSession();
-  },
-};
+  }
+}

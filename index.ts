@@ -14,6 +14,7 @@ Bugsnag.start({
 
 global.bugsnag = Bugsnag;
 global.client = new FpgClient();
+global.client.login(process.env.TOKEN);
 
 declare global {
   var client: FpgClient;
