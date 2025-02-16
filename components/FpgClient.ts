@@ -1,8 +1,6 @@
 import { Client, GatewayIntentBits, Partials, TextChannel } from "discord.js";
-import { RaidModule } from "../modules/RaidModule";
-import { Assistant } from "../modules/Assistant";
+import { Assistant } from "./Assistant";
 import { PrismaClient } from "@prisma/client";
-import { Islander } from "../islander/islander";
 import { AchievementsModule } from "../modules/AchievementsModule";
 import { WebApi } from "../modules/WebApi";
 import { Collection } from "discord.js";
@@ -13,24 +11,25 @@ import { IEvent } from "../interfaces/IEvent";
 type interactionSet = Collection<string, IHandler>;
 
 export class FpgClient extends Client {
-  declare islander: Islander;
-  declare achievementsModule: AchievementsModule;
-  declare raidModule: RaidModule;
-  declare assistant: Assistant;
   declare prisma: PrismaClient;
+
+  declare achievementsModule: AchievementsModule;
+  declare assistant: Assistant;
+  declare webapi: WebApi;
+  // cache of guild events for quick access for website (periodically updated in statistics loop)
+  declare events: Collection<any, any>;
+  // set of last guild invites for change tracking when new user joins
+  declare invites: Collection<string, any>;
+  // channels for logging and updates
+  declare logChannel: TextChannel;
+  declare updateChannel: TextChannel;
+  declare lfg: TextChannel;
+  // collections of interaction handlers
   declare commands: interactionSet;
   declare buttons: interactionSet;
   declare selects: interactionSet;
   declare modals: interactionSet;
   declare contextMenus: interactionSet;
-  declare chats: Map<any, any>;
-  declare webapi: WebApi;
-  declare events: Collection<any, any>;
-  declare logChannel: TextChannel;
-  declare updateChannel: TextChannel;
-  declare cachUpdated: any;
-  declare invites: Collection<string, any>;
-  declare lfg: TextChannel;
 
   constructor() {
     super({
@@ -55,15 +54,14 @@ export class FpgClient extends Client {
       partials: [Partials.Message, Partials.Channel, Partials.Reaction],
     });
 
-    this.assistant = new Assistant();
     this.prisma = new PrismaClient();
-    this.islander = new Islander();
-
+    // AI assistant from OpenAI
+    this.assistant = new Assistant();
+    
     this.logChannel;
     this.updateChannel;
     this.contextMenus = new Collection();
     this.achievementsModule = new AchievementsModule();
-    this.chats = new Map();
     this.webapi = new WebApi();
     this.loadEvents();
     this.loadCommands();

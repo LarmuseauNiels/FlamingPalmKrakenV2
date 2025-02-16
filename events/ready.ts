@@ -50,7 +50,6 @@ export default class ready implements IEvent {
         .fetch()
         .then((events: Collection<string, GuildScheduledEvent>) => {
           client.events = events;
-          client.cachUpdated = Date.now();
         });
     });
   }

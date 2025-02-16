@@ -32,7 +32,6 @@ export default class EventSummaryHandler implements IHandler {
     interaction.guild.scheduledEvents.fetch().then(async (events) => {
       events = events.sort((e) => e.scheduledStartTimestamp).reverse();
       client.events = events;
-      client.cachUpdated = Date.now();
       var contentText = "Upcoming events!\n";
 
       let sortedEvents = client.events.sort((a, b) => {
