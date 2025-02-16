@@ -127,7 +127,6 @@ module.exports = async function (client: FpgClient) {
 
         guild.scheduledEvents.fetch().then((events) => {
           client.events = events;
-          client.cachUpdated = Date.now();
           client.events.forEach((event) => {
             let timespanToGo =
               new Date(event.scheduledStartTimestamp).getTime() - Date.now();
