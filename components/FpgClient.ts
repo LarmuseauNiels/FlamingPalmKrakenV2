@@ -36,7 +36,6 @@ export class FpgClient extends Client {
       intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildEmojisAndStickers,
         GatewayIntentBits.GuildIntegrations,
         GatewayIntentBits.GuildWebhooks,
         GatewayIntentBits.GuildInvites,
