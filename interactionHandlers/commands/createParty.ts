@@ -21,24 +21,21 @@ export default class CreatePartyCommand implements IHandler {
         .setName("steamurl")
         .setDescription("Steam URL to extract the banner image")
         .setRequired(true)
-    )
-    .setDefaultMemberPermissions(
-      PermissionFlagsBits.Administrator
     ) as SlashCommandBuilder;
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
-    // Ensure the command is run in a guild
-    if (!interaction.guild) {
-      await interaction.reply({
-        content: "This command can only be used in a guild.",
-        ephemeral: true,
-      });
-      return;
-    }
-
-    // Retrieve the Steam URL from command options
-    const steamUrl = interaction.options.getString("steamurl", true);
-
     try {
+      // Ensure the command is run in a guild
+      if (!interaction.guild) {
+        await interaction.reply({
+          content: "This command can only be used in a guild.",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      // Retrieve the Steam URL from command options
+      const steamUrl = interaction.options.getString("steamurl", true);
+
       // Fetch the HTML content from the provided Steam URL
       const response = await fetch(steamUrl);
       const html = await response.text();
@@ -82,7 +79,7 @@ export default class CreatePartyCommand implements IHandler {
       const now = new Date();
       let daysUntilSaturday = (6 - now.getDay() + 7) % 7;
       // If today is Saturday and it's already past 8 PM, schedule for next Saturday
-      if (daysUntilSaturday === 0 && now.getHours() >= 20) {
+      if (daysUntilSaturday === 0 && now.getHours() >= 19) {
         daysUntilSaturday = 7;
       }
       const eventDate = new Date(now);
@@ -92,14 +89,12 @@ export default class CreatePartyCommand implements IHandler {
       // Optionally, set an end time (here, 2 hours after the start)
       const eventEndDate = new Date(eventDate.getTime() + 2 * 60 * 60 * 1000);
 
-      //party channel ID = 1128667504428994641
-
       // Create a post in the forum channel
-      const forumChannelId = "1063016731263643678";
+      const forumChannelId = "1128667504428994641"; //party channel ID
       const forumChannel = await interaction.guild.channels.fetch(
         forumChannelId
       );
-      if (!forumChannel || !(forumChannel instanceof TextChannel)) {
+      if (!forumChannel || !(forumChannel instanceof ForumChannel)) {
         await interaction.reply({
           content: "The specified channel is not a forum channel.",
           ephemeral: true,
@@ -107,12 +102,12 @@ export default class CreatePartyCommand implements IHandler {
         return;
       }
 
-      const post = await (forumChannel as TextChannel).threads.create({
+      const post = await(forumChannel as ForumChannel).threads.create({
         name: `W${this.getWeekNumber()} ${gameName}`,
         autoArchiveDuration: 10080, // 1 week
-        //message: {
-        //  content: steamUrl,
-        //},
+        message: {
+          content: steamUrl,
+        },
       });
 
       const postLink = `https://discord.com/channels/${interaction.guild.id}/${forumChannelId}/${post.id}`;
@@ -126,7 +121,7 @@ export default class CreatePartyCommand implements IHandler {
         entityType: GuildScheduledEventEntityType.External,
         // For external events, entityMetadata is required (set location as desired)
         entityMetadata: { location: "Online" },
-        description: `Party night for ${gameName}. \r\n Join the discussion here: \r\n ${postLink}`,
+        description: `Party night for ${gameName}. \r\n ${steamUrl} \r\nJoin the discussion here: \r\n ${postLink}`,
         image: base64Image,
       });
 
@@ -138,8 +133,7 @@ export default class CreatePartyCommand implements IHandler {
     } catch (error) {
       console.error("Error creating scheduled event: ", error);
       await interaction.reply({
-        content:
-          "An error occurred while creating the scheduled event. Please try again later.",
+        content: "An error occurred while creating the scheduled event.",
         ephemeral: true,
       });
     }
