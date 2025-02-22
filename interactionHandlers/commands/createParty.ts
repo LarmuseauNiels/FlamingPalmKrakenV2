@@ -4,6 +4,10 @@ import {
   GuildScheduledEventPrivacyLevel,
   GuildScheduledEventEntityType,
   PermissionFlagsBits,
+  StageChannel,
+  TextChannel,
+  GuildTextThreadCreateOptions,
+  ForumChannel,
 } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
 
@@ -12,13 +16,6 @@ export default class CreatePartyCommand implements IHandler {
   data = new SlashCommandBuilder()
     .setName("create-party")
     .setDescription("Create a party night event")
-    // Although we take in a name option, per requirements the event name is fixed as "party"
-    .addStringOption((option) =>
-      option
-        .setName("name")
-        .setDescription("Event name (ignored - event will be named 'party')")
-        .setRequired(true)
-    )
     .addStringOption((option) =>
       option
         .setName("steamurl")
@@ -59,6 +56,19 @@ export default class CreatePartyCommand implements IHandler {
       }
       const bannerUrl = match[1];
 
+      // Extract game name from Steam page
+      const titleRegex = /<meta property="og:title" content="(.*?)"/;
+      const titleMatch = html.match(titleRegex);
+      if (!titleMatch) {
+        await interaction.reply({
+          content:
+            "Could not extract the game name from the provided Steam URL.",
+          ephemeral: true,
+        });
+        return;
+      }
+      const gameName = titleMatch[1];
+
       // Fetch the banner image and convert it to a base64 string
       const imageResponse = await fetch(bannerUrl);
       const buffer = Buffer.from(await imageResponse.arrayBuffer());
@@ -77,10 +87,35 @@ export default class CreatePartyCommand implements IHandler {
       }
       const eventDate = new Date(now);
       eventDate.setDate(now.getDate() + daysUntilSaturday);
-      eventDate.setHours(20, 0, 0, 0);
+      eventDate.setHours(19, 0, 0, 0);
 
       // Optionally, set an end time (here, 2 hours after the start)
       const eventEndDate = new Date(eventDate.getTime() + 2 * 60 * 60 * 1000);
+
+      //party channel ID = 1128667504428994641
+
+      // Create a post in the forum channel
+      const forumChannelId = "1063016731263643678";
+      const forumChannel = await interaction.guild.channels.fetch(
+        forumChannelId
+      );
+      if (!forumChannel || !(forumChannel instanceof TextChannel)) {
+        await interaction.reply({
+          content: "The specified channel is not a forum channel.",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const post = await (forumChannel as TextChannel).threads.create({
+        name: `W${this.getWeekNumber()} ${gameName}`,
+        autoArchiveDuration: 10080, // 1 week
+        //message: {
+        //  content: steamUrl,
+        //},
+      });
+
+      const postLink = `https://discord.com/channels/${interaction.guild.id}/${forumChannelId}/${post.id}`;
 
       // Create the scheduled event on the guild
       const scheduledEvent = await interaction.guild.scheduledEvents.create({
@@ -91,7 +126,7 @@ export default class CreatePartyCommand implements IHandler {
         entityType: GuildScheduledEventEntityType.External,
         // For external events, entityMetadata is required (set location as desired)
         entityMetadata: { location: "Online" },
-        description: "Party night event created by the bot",
+        description: `Party night for ${gameName}. \r\n Join the discussion here: \r\n ${postLink}`,
         image: base64Image,
       });
 
@@ -110,4 +145,28 @@ export default class CreatePartyCommand implements IHandler {
     }
   }
   isGuild?: boolean = true;
+
+  private getWeekNumber(date: Date = new Date()): number {
+    // Copy date to prevent modification
+    const target = new Date(date.valueOf());
+
+    // ISO week date weeks start on Monday, so correct the day number
+    const dayNr = (date.getDay() + 6) % 7;
+
+    // Set the target to the Thursday of the current week
+    target.setDate(target.getDate() - dayNr + 3);
+
+    // Get first Thursday of the year
+    const firstThursday = new Date(target.getFullYear(), 0, 1);
+    if (firstThursday.getDay() !== 4) {
+      firstThursday.setMonth(0, 1 + ((4 - firstThursday.getDay() + 7) % 7));
+    }
+
+    // Get week number: Calculate full weeks to Thursday
+    const weekNumber =
+      1 +
+      Math.ceil((target.getTime() - firstThursday.getTime()) / 86400000 / 7);
+
+    return weekNumber;
+  }
 }
