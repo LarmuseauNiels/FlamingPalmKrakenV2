@@ -102,7 +102,7 @@ export default class CreatePartyCommand implements IHandler {
         return;
       }
 
-      const post = await(forumChannel as ForumChannel).threads.create({
+      const post = await (forumChannel as ForumChannel).threads.create({
         name: `W${this.getWeekNumber()} ${gameName}`,
         autoArchiveDuration: 10080, // 1 week
         message: {
@@ -121,7 +121,7 @@ export default class CreatePartyCommand implements IHandler {
         entityType: GuildScheduledEventEntityType.External,
         // For external events, entityMetadata is required (set location as desired)
         entityMetadata: { location: "Online" },
-        description: `Party night for ${gameName}. \r\n ${steamUrl} \r\nJoin the discussion here: \r\n ${postLink}`,
+        description: `Party ${gameName}\nJoin the discussion here:\n ${postLink}`,
         image: base64Image,
       });
 
