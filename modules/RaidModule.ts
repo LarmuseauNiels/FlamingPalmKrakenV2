@@ -562,29 +562,36 @@ export abstract class RaidModule {
           "https://flamingpalm.com/assets/images/logo/FlamingPalmLogoSmall.png",
       });
 
-    const select = new StringSelectMenuBuilder()
-      .setCustomId("raidsignup")
-      .setPlaceholder("Select a raid to enlist");
+    if (raids.length > 0) {
+      const select = new StringSelectMenuBuilder()
+        .setCustomId("raidsignup")
+        .setPlaceholder("Select a raid to enlist");
 
-    raids.forEach((raid) => {
-      let participants = "";
-      if (raid.RaidAttendees.length > 4) participants = "Too many to list!";
-      raid.RaidAttendees.forEach((attendee) => {
-        participants += "<@" + attendee.MemberId + "> ";
+      raids.slice(0, 25).forEach((raid) => {
+        let participants = "";
+        if (raid.RaidAttendees.length > 4) participants = "Too many to list!";
+        raid.RaidAttendees.forEach((attendee) => {
+          participants += "<@" + attendee.MemberId + "> ";
+        });
+        embed.addFields({
+          name: raid.Title,
+          value: `Attendees: ${raid.RaidAttendees.length}/${raid.MinPlayers} \n ${participants} \n`,
+          inline: false,
+        });
+        select.addOptions({
+          label: raid.Title,
+          value: raid.ID.toString(),
+        });
       });
-      embed.addFields({
-        name: raid.Title,
-        value: `Attendees: ${raid.RaidAttendees.length}/${raid.MinPlayers} \n ${participants} \n`,
-        inline: false,
-      });
-      select.addOptions({
-        label: raid.Title,
-        value: raid.ID.toString(),
-      });
-    });
 
-    const row = new ActionRowBuilder().addComponents(select);
-    return { embeds: [embed], components: [row] };
+      const row = new ActionRowBuilder().addComponents(select);
+      return { embeds: [embed], components: [row] };
+    } else {
+      embed.setDescription(
+        "No available raids at the moment. Please check back later or create a new raid using /create-raid."
+      );
+      return { embeds: [embed] };
+    }
   }
 
   static async resendRaid(raidID: number, user: User) {
