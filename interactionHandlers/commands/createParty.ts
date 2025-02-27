@@ -103,7 +103,7 @@ export default class CreatePartyCommand implements IHandler {
       }
 
       const post = await (forumChannel as ForumChannel).threads.create({
-        name: `W${this.getWeekNumber()} ${gameName}`,
+        name: `W${this.getWeekNumber(eventDate)} ${gameName}`,
         autoArchiveDuration: 10080, // 1 week
         message: {
           content: steamUrl,
@@ -161,6 +161,6 @@ export default class CreatePartyCommand implements IHandler {
       1 +
       Math.ceil((target.getTime() - firstThursday.getTime()) / 86400000 / 7);
 
-    return weekNumber;
+    return weekNumber - 1;
   }
 }
