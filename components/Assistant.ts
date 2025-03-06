@@ -65,12 +65,18 @@ export class Assistant {
   }
 
   public async ask(question: string) {
-    this.thread = await this.openai.beta.threads.create();
-    let message = this.openai.beta.threads.messages.create(this.thread.id, {
-      role: "user",
-      content: question,
-    });
-    return await this.createAndPollRun();
+    try {
+      this.thread = await this.openai.beta.threads.create();
+      // Add await here - this was likely causing the issue
+      await this.openai.beta.threads.messages.create(this.thread.id, {
+        role: "user",
+        content: question,
+      });
+      return await this.createAndPollRun();
+    } catch (error) {
+      console.error("Error in ask method:", error);
+      return [{ content: [{ text: { value: "Sorry, I encountered an error processing your request." } }] }];
+    }
   }
 
   async createAndPollRun() {
@@ -81,9 +87,10 @@ export class Assistant {
           assistant_id: this.assistant.id,
         }
       );
-      return this.handleRunStatus(run);
+      return await this.handleRunStatus(run);
     } catch (error) {
       console.error("Error creating and polling run:", error);
+      return [{ content: [{ text: { value: "Sorry, I encountered an error while processing your request." } }] }];
     }
   }
 
@@ -95,6 +102,7 @@ export class Assistant {
         return await this.handleRequiresAction(run);
       default:
         console.error("Run did not complete successfully:", run);
+        return [{ content: [{ text: { value: "Sorry, the request did not complete successfully." } }] }];
     }
   }
 
@@ -103,9 +111,32 @@ export class Assistant {
       let messages = await this.openai.beta.threads.messages.list(
         this.thread.id
       );
-      return messages.data;
+      
+      // Debug the actual structure of the returned messages
+      console.log("Messages structure:", JSON.stringify(messages, null, 2));
+      
+      // Format the response to match the expected structure in messageCreate.ts
+      if (messages && messages.data && messages.data.length > 0) {
+        const formattedResponse = messages.data.map(message => {
+          return {
+            content: message.content.map(content => {
+              if (content.type === 'text') {
+                return { text: { value: content.text.value } };
+              }
+              return content;
+            })
+          };
+        });
+        
+        console.log("Formatted response:", JSON.stringify(formattedResponse, null, 2));
+        return formattedResponse;
+      }
+      
+      console.warn("No messages found in response");
+      return [{ content: [{ text: { value: "No response was generated." } }] }];
     } catch (error) {
       console.error("Error fetching messages:", error);
+      return [{ content: [{ text: { value: "Sorry, I encountered an error retrieving the response." } }] }];
     }
   }
 
@@ -128,11 +159,15 @@ export class Assistant {
           console.log("No tool outputs to submit.");
         }
 
-        return this.handleRunStatus(run);
+        return await this.handleRunStatus(run);
       } catch (error) {
         console.error("Error handling requires action:", error);
+        return [{ content: [{ text: { value: "Sorry, I encountered an error while processing tools." } }] }];
       }
     }
+    
+    // Added a default return to prevent undefined
+    return [{ content: [{ text: { value: "I couldn't complete the requested action." } }] }];
   }
 
   // Helper method to collect tool outputs asynchronously

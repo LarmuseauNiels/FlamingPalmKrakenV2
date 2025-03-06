@@ -594,6 +594,8 @@ export abstract class RaidModule {
     }
   }
 
+  static async newRaidAdvertisement() {}
+
   static async resendRaid(raidID: number, user: User) {
     let raid = await this.getRaid(raidID);
 
