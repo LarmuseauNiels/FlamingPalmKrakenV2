@@ -84,7 +84,7 @@ export default class CreatePartyCommand implements IHandler {
       }
       const eventDate = new Date(now);
       eventDate.setDate(now.getDate() + daysUntilSaturday);
-      eventDate.setHours(19, 0, 0, 0);
+      eventDate.setHours(18, 0, 0, 0);
 
       // Optionally, set an end time (here, 2 hours after the start)
       const eventEndDate = new Date(eventDate.getTime() + 2 * 60 * 60 * 1000);
