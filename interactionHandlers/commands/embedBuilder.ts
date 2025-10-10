@@ -1,21 +1,7 @@
 import {
-  EmbedBuilder,
-  ActionRowBuilder,
-  StringSelectMenuBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  ComponentType,
   SlashCommandBuilder,
   PermissionFlagsBits,
-  CommandInteraction,
-  TextChannel,
-  MessageComponentInteraction,
-  Message,
-  InteractionEditReplyOptions,
-  StringSelectMenuInteraction,
-  ColorResolvable,
-  ButtonInteraction,
-  InteractionCollector,
+  CommandInteraction
 } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
 
@@ -36,6 +22,7 @@ export default class EmbedBuilderCommand implements IHandler {
   isGuild = true;
 
   async execute(interaction: CommandInteraction) {
+      /*
     const channel = interaction.guild?.channels.cache.get(
       (interaction.options.get("channel")?.value as string) ||
         interaction.channelId
@@ -309,6 +296,6 @@ export default class EmbedBuilderCommand implements IHandler {
           }).catch(() => {});
         }
       }
-    );
+    );*/
   }
 }
