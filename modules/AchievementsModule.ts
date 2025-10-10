@@ -133,7 +133,6 @@ FROM (
   CROSS JOIN (SELECT @streak := 0, @days_diff := -1) AS vars
   WHERE UserId = ${memberID} AND Timestamp <= NOW() And AchievementID = 13
   ORDER BY Timestamp DESC) AS t`;
-    console.log(a);
     return a[0].streak;
   }
 
@@ -156,9 +155,7 @@ FROM (
     if (!member) {
       throw new Error(`Member not found for ID ${memberID}`);
     }
-    console.log(member);
     let guildMember: User = await global.client.users.fetch(memberID);
-    console.log(guildMember);
 
     const rank = new Rank()
       .setUsername(guildMember.username)
@@ -235,8 +232,6 @@ FROM (
                 },
               })
               .then((achievement) => {
-                console.log(JSON.stringify(achievement));
-                console.log(startOfToday);
                 if (achievement == null) {
                   this.GiveAchievement(
                     member.id,
