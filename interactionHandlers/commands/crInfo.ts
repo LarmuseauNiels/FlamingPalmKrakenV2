@@ -4,7 +4,6 @@ import {
   ChatInputCommandInteraction,
 } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
-import { RaidModule } from "../../modules/RaidModule";
 
 export default class CrInfoCommand implements IHandler {
   name = "cr-info";

@@ -1,21 +1,19 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 
-module.exports = {
-  name: "confirmSanta",
-  async execute(interaction) {
-    await client.prisma.sSLink.update({
-      where: { SenderID: interaction.user.id },
-      data: { confirmed: true },
-    });
+export const name = "confirmSanta";
+export async function execute(interaction) {
+  await client.prisma.sSLink.update({
+    where: { SenderID: interaction.user.id },
+    data: { confirmed: true },
+  });
 
-    let row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId("confirmSanta")
-        .setLabel("Confirmed")
-        .setStyle(ButtonStyle.Success)
-        .setDisabled(true)
-    );
+  let row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId("confirmSanta")
+      .setLabel("Confirmed")
+      .setStyle(ButtonStyle.Success)
+      .setDisabled(true)
+  );
 
-    interaction.update({ components: [row] });
-  },
-};
+  interaction.update({ components: [row] });
+}

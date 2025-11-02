@@ -1,5 +1,4 @@
-const { EmbedBuilder, SlashCommandBuilder } = require("discord.js");
-
+import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
 module.exports = {
   name: "send-to-receiver",
   data: new SlashCommandBuilder()

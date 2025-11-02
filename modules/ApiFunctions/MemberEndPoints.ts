@@ -1,8 +1,6 @@
 import { authenticateToken, jsonify } from "./Helpers";
 import Rank from "../profile";
 import { DashBoardModel } from "./ViewModels/dash-board-model";
-import { PointHistoryItem } from "./ViewModels/point-history-item";
-import { PointHistory } from ".prisma/client";
 import { TextChannel } from "discord.js";
 
 export function memberEndPoints(app) {

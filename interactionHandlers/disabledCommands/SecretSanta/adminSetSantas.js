@@ -1,4 +1,4 @@
-const { PermissionFlagsBits, SlashCommandBuilder } = require("discord.js");
+import { PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 
 module.exports = {
   name: "admin-set-santas",

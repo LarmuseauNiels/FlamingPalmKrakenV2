@@ -1,3 +1,4 @@
+import "dotenv/config";
 import Bugsnag from "@bugsnag/js";
 import BugsnagPluginExpress from "@bugsnag/plugin-express";
 import { FpgClient } from "./components/FpgClient";

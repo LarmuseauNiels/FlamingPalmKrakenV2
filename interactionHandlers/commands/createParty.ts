@@ -3,10 +3,6 @@ import {
   ChatInputCommandInteraction,
   GuildScheduledEventPrivacyLevel,
   GuildScheduledEventEntityType,
-  PermissionFlagsBits,
-  StageChannel,
-  TextChannel,
-  GuildTextThreadCreateOptions,
   ForumChannel,
 } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
@@ -79,12 +75,12 @@ export default class CreatePartyCommand implements IHandler {
       const now = new Date();
       let daysUntilSaturday = (6 - now.getDay() + 7) % 7;
       // If today is Saturday and it's already past 8 PM, schedule for next Saturday
-      if (daysUntilSaturday === 0 && now.getHours() >= 19) {
+      if (daysUntilSaturday === 0 && now.getHours() >= 20) {
         daysUntilSaturday = 7;
       }
       const eventDate = new Date(now);
       eventDate.setDate(now.getDate() + daysUntilSaturday);
-      eventDate.setHours(18, 0, 0, 0);
+      eventDate.setHours(19, 0, 0, 0);
 
       // Optionally, set an end time (here, 2 hours after the start)
       const eventEndDate = new Date(eventDate.getTime() + 2 * 60 * 60 * 1000);

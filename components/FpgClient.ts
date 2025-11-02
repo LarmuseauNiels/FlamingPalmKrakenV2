@@ -56,7 +56,7 @@ export class FpgClient extends Client {
     this.prisma = new PrismaClient();
     // AI assistant from OpenAI
     this.assistant = new Assistant();
-    
+
     this.logChannel;
     this.updateChannel;
     this.contextMenus = new Collection();
@@ -111,13 +111,26 @@ export class FpgClient extends Client {
 
     for (const file of eventFiles) {
       console.log(`Loading event ${file}`);
-      const eventSource = require(path.join(__dirname, `../events/${file}`));
-      const event: IEvent = new eventSource.default();
+      try {
+        const eventSource = require(path.join(__dirname, `../events/${file}`));
 
-      if (event.once) {
-        this.once(event.name, (...args) => event.execute(...args));
-      } else {
-        this.on(event.name, (...args) => event.execute(...args));
+        // Check if the default export exists and is a class/function
+        if (eventSource.default && typeof eventSource.default === "function") {
+          const event: IEvent = new eventSource.default();
+
+          if (event.once) {
+            this.once(event.name, (...args) => event.execute(...args));
+          } else {
+            this.on(event.name, (...args) => event.execute(...args));
+          }
+        } else {
+          console.error(
+            `[Module Error] Event file '${file}' does not have a valid default export. Skipping.`
+          );
+          console.log(`[Module Error] Received:`, eventSource);
+        }
+      } catch (e) {
+        console.error(`[Load Error] Failed to load event ${file}:`, e);
       }
     }
   }
