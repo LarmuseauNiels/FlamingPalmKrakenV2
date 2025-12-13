@@ -7,3 +7,4 @@ env.ps1
 .idea
 environment.cmd
 environment.ps1
+.zed/debug.json

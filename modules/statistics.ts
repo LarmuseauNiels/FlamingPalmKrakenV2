@@ -77,7 +77,7 @@ module.exports = async function (client: FpgClient) {
                   }
               })
               .catch((err) => {
-                  throw new Error("Failed to fetch Vintage Story servers list");
+                  //throw new Error("Failed to fetch Vintage Story servers list");
               })
       }
       catch (e) {
