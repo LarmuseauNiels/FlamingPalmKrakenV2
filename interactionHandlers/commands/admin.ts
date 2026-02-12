@@ -153,7 +153,7 @@ Members of our community have the opportunity to earn Achievements through vario
       }
       interaction.reply({ content: "done", ephemeral: true });
     } catch (e) {
-      global.bugsnag.notify(e);
+      global.bugsnag.notify(e as any);
       console.log(e);
     }
   }

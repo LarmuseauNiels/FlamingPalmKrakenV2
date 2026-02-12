@@ -74,7 +74,7 @@ export default class CrScheduleCommand implements IHandler {
     });
   }
 
-  async autocomplete(interaction) {
+  async autocomplete(interaction: any) {
     global.client.prisma.raids
       .findMany({
         where: {
@@ -86,13 +86,13 @@ export default class CrScheduleCommand implements IHandler {
           Title: true,
         },
       })
-      .then(async (raids) => {
+      .then(async (raids: any) => {
         const focusedValue = interaction.options.getFocused();
         const options = raids
-          .filter((raid) =>
+          .filter((raid: any) =>
             raid.Title.toLowerCase().includes(focusedValue.toLowerCase())
           )
-          .map((raid) => {
+          .map((raid: any) => {
             return {
               name: raid.Title,
               value: raid.ID.toString(),

@@ -42,8 +42,8 @@ export default class InfoHandler implements IHandler {
       limit 10`;
 
     lastOnline.reverse();
-    const labels = lastOnline.map((x) => x.date).join(",");
-    const data = lastOnline.map((x) => x.hours).join(",");
+    const labels = lastOnline.map((x: any) => x.date).join(",");
+    const data = lastOnline.map((x: any) => x.hours).join(",");
     const chart = `https://quickchart.io/chart/render/zm-45881e0a-49bc-4498-8b62-d64ff3adb44a?labels=${labels}&data1=${data}`;
     console.log(chart);
 

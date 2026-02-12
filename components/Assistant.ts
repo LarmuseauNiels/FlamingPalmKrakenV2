@@ -1,7 +1,7 @@
 import { OpenAI } from "openai";
 
 export class Assistant {
-  private openai: any;
+  private openai: OpenAI;
   private assistant: any;
   private thread: any;
 
@@ -94,7 +94,7 @@ export class Assistant {
     }
   }
 
-  async handleRunStatus(run) {
+  async handleRunStatus(run: any): Promise<any> {
     switch (run.status) {
       case "completed":
         return await this.handleCompletedRun();
@@ -117,9 +117,9 @@ export class Assistant {
       
       // Format the response to match the expected structure in messageCreate.ts
       if (messages && messages.data && messages.data.length > 0) {
-        const formattedResponse = messages.data.map(message => {
+        const formattedResponse = messages.data.map((message: any) => {
           return {
-            content: message.content.map(content => {
+            content: message.content.map((content: any) => {
               if (content.type === 'text') {
                 return { text: { value: content.text.value } };
               }
@@ -140,7 +140,7 @@ export class Assistant {
     }
   }
 
-  async handleRequiresAction(run) {
+  async handleRequiresAction(run: any): Promise<any> {
     if (
       run.required_action &&
       run.required_action.submit_tool_outputs &&
@@ -171,11 +171,11 @@ export class Assistant {
   }
 
   // Helper method to collect tool outputs asynchronously
-  async collectToolOutputs(toolCalls) {
+  async collectToolOutputs(toolCalls: any[]) {
     console.log(toolCalls);
     // Wait for all asynchronous tool calls to complete
     const toolOutputs = await Promise.all(
-      toolCalls.map(async (tool) => {
+      toolCalls.map(async (tool: any) => {
         switch (tool.function.name) {
           case "getEvents":
             return {
@@ -207,7 +207,7 @@ export class Assistant {
       where: { Status: 1 },
     });
     let string = "";
-    raids.forEach((raid) => {
+    raids.forEach((raid: any) => {
       string += `Raid: ${raid.Title} - Attendees: ${raid.RaidAttendees.length}/${raid.MinPlayers} \n`;
     });
     return string;
@@ -235,9 +235,9 @@ export class Assistant {
       orderBy: { Price: "asc" },
     });
     let string = "";
-    rewards.forEach((reward) => {
+    rewards.forEach((reward: any) => {
       if (reward.visible) {
-        let stock = reward.RewardItem.filter((x) => x.RedeemedBy === "").length;
+        let stock = reward.RewardItem.filter((x: any) => x.RedeemedBy === "").length;
         if (stock === 0) string += `Reward: ${reward.Title} - Out of stock \n`;
         else if (reward.nonSalePrice && reward.nonSalePrice > 0)
           string += `Reward: ${reward.Title} - Price: ~~${reward.nonSalePrice}~~ **${reward.Price}:palm_tree:** \n`;
@@ -249,7 +249,7 @@ export class Assistant {
     return string;
   }
 
-  async submitToolOutputs(run, toolOutputs) {
+  async submitToolOutputs(run: any, toolOutputs: any[]) {
     try {
       return await this.openai.beta.threads.runs.submitToolOutputsAndPoll(
         this.thread.id,

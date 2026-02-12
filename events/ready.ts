@@ -8,20 +8,22 @@ import {
 } from "discord.js";
 import { FpgClient } from "../components/FpgClient";
 import { IEvent } from "../interfaces/IEvent";
+import { config } from "../config";
+import initStatistics from "../modules/statistics";
 
 export default class ready implements IEvent {
   name = "ready";
   once = true;
-  execute(client: FpgClient) {
+  async execute(client: FpgClient) {
     // Set up the client's log channel and update channel
     client.logChannel = client.channels.cache.get(
-      "1126413976155205713"
+      config.channels.log
     ) as TextChannel;
     client.updateChannel = client.channels.cache.get(
-      "1194590523277725716"
+      config.channels.updates
     ) as TextChannel;
     client.lfg = client.channels.cache.get(
-      "1221531160568659968"
+      config.channels.lfg
     ) as TextChannel;
 
     client.log(
@@ -29,8 +31,8 @@ export default class ready implements IEvent {
         client.user!.tag
       }, version ${process.env.CAPROVER_GIT_COMMIT_SHA!.slice(0, 7)}`
     );
-    require("../modules/statistics.js")(client);
-    // Collection is an enhanced Map which we are going to save our invites to.
+    initStatistics(client);
+
     const guildInvites: Collection<string, any> = new Collection();
     client.invites = guildInvites;
 
@@ -38,19 +40,23 @@ export default class ready implements IEvent {
       type: ActivityType.Watching,
     } as ActivityOptions);
 
-    // Next, we are going to fetch invites for every guild and add them to our map.
+    // Fetch invites for every guild
     for (const guild of client.guilds.cache.values()) {
-      guild.invites
-        .fetch()
-        .then((invites) => client.invites.set(guild.id, invites))
-        .catch((error) => console.log(error));
+      try {
+        const invites = await guild.invites.fetch();
+        client.invites.set(guild.id, invites);
+      } catch (error) {
+        console.log(error);
+      }
     }
-    client.guilds.fetch(process.env.GUILD_ID!).then((guild: Guild) => {
-      guild.scheduledEvents
-        .fetch()
-        .then((events: Collection<string, GuildScheduledEvent>) => {
-          client.events = events;
-        });
-    });
+
+    // Fetch scheduled events
+    try {
+      const guild = await client.guilds.fetch(config.guildId);
+      const events = await guild.scheduledEvents.fetch();
+      client.events = events;
+    } catch (error) {
+      console.log(error);
+    }
   }
 }
