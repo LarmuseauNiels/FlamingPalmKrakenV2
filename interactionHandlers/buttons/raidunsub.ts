@@ -2,7 +2,7 @@ import { IHandler } from "../../interfaces/IHandler";
 
 export default class RaidUnsub implements IHandler {
   name = "raidunsub";
-  async execute(interaction) {
+  async execute(interaction: any) {
     const raidId = interaction.customId.split("_")[1];
     await global.client.prisma.raidAttendees.delete({
       where: {

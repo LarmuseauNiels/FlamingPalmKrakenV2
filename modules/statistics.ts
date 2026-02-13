@@ -4,6 +4,8 @@ import { RaidModule } from "./RaidModule";
 import { FpgClient } from "../components/FpgClient";
 import { GameDig } from 'gamedig';
 import axios from "axios";
+import { config } from "../config";
+import { logger } from "./Logger";
 
 
 interface Member {
@@ -45,214 +47,181 @@ async function fetchVintageStoryServers(): Promise<any> {
   throw new Error(`VintageStory master server request failed: ${res.status} ${res.statusText}`);
 }
 
-module.exports = async function (client: FpgClient) {
+export default async function initStatistics(client: FpgClient) {
   let knownuserCache: Member[] = [];
-  console.log("loading statistics module");
-  await client.prisma.members
-    .findMany({
-      select: {
-        ID: true,
-      },
-    })
-    .then((members: Member[]) => (knownuserCache = members));
+  logger.info("Loading statistics module");
 
+  knownuserCache = await client.prisma.members.findMany({
+    select: { ID: true },
+  });
 
-  cron.schedule("10 * * * * *", () => {
-      // Fetch Vintage Story servers list asynchronously and log set status
+  // Vintage Story server status — every minute
+  cron.schedule("10 * * * * *", async () => {
+    try {
+      const data = await fetchVintageStoryServers();
+      const server = data.data.find((s: any) => s.serverName === "Vintage Flaming Story");
+      if (!server) {
+        throw new Error("No server found for Vintage Flaming Story");
+      }
+      global.client.user.setActivity('VintageStory ' + server.players + '/8', { type: ActivityType.Playing });
+      const channel = await client.channels.fetch(config.channels.vintageStory);
+      if (channel) {
+        (channel as BaseGuildTextChannel).setName("🏕️┃vintage-story-" + server.players);
+      }
+    } catch (e) {
+      logger.debug("Vintage Story fetch failed: " + (e instanceof Error ? e.message : e));
+      global.client.user.setActivity('flamingpalm.com', { type: ActivityType.Watching });
       try {
-          fetchVintageStoryServers()
-              .then((data) => {
-                  console.log(`Fetched Vintage Story servers`);
-                  let server = data.data.find(server => server.serverName === "Vintage Flaming Story");
-                  if (!server) {
-                      throw new Error("No server found for Vintage Flaming Story");
-                  }
-                  else {
-                      global.client.user.setActivity('VintageStory ' + server.players + '/8', {type: ActivityType.Playing});
-                      client.channels
-                          .fetch("1423193044567462009").then((channel) => {
-                              let textChannel = channel as BaseGuildTextChannel;
-                          textChannel.setName("🏕️┃vintage-story-"+ server.players);
-                      })
-                  }
-              })
-              .catch((err) => {
-                  //throw new Error("Failed to fetch Vintage Story servers list");
-              })
+        const channel = await client.channels.fetch(config.channels.vintageStory);
+        if (channel) {
+          (channel as BaseGuildTextChannel).setName("🏕️┃vintage-story");
+        }
+      } catch {
+        // Channel fetch failed — not critical
       }
-      catch (e) {
-          console.error(e);
-          global.client.user.setActivity('flamingpalm.com', {type: ActivityType.Watching});
-          client.channels
-              .fetch("1423193044567462009").then((channel) => {
-              let textChannel = channel as BaseGuildTextChannel;
-              textChannel.setName("🏕️┃vintage-story");
-          })
-      }
+    }
   });
-  
 
-  cron.schedule("30 0,15,30,45 * * * *", () => {
-    console.log("running statistics tracking cron job");
+  // Main statistics tracking — every 15 minutes
+  cron.schedule("30 0,15,30,45 * * * *", async () => {
+    logger.info("Running statistics tracking cron job");
 
     try {
-      client.guilds.fetch(process.env.GUILD_ID!).then((guild) => {
-        guild.members.fetch().then((members) => {
-          members.forEach((member: GuildMember) => {
-            let q = knownuserCache.find((ku) => ku.ID === member.user.id);
-            if (q === undefined) {
-              client.prisma.members
-                .upsert({
-                  where: { ID: member.user.id },
-                  select: { ID: true },
-                  update: {
-                    DisplayName: member.user.username,
-                    avatar: member.user.avatar,
-                  },
-                  create: {
-                    ID: member.user.id,
-                    DisplayName: member.user.username,
-                    avatar: member.user.avatar,
-                  },
-                })
-                .then((t: Member) => {
-                  knownuserCache.push(t);
-                });
-            }
+      const guild = await client.guilds.fetch(config.guildId);
+      const members = await guild.members.fetch();
+
+      // Sync new members to database
+      for (const member of members.values()) {
+        const known = knownuserCache.find((ku) => ku.ID === member.user.id);
+        if (!known) {
+          const created = await client.prisma.members.upsert({
+            where: { ID: member.user.id },
+            select: { ID: true },
+            update: {
+              DisplayName: member.user.username,
+              avatar: member.user.avatar,
+            },
+            create: {
+              ID: member.user.id,
+              DisplayName: member.user.username,
+              avatar: member.user.avatar,
+            },
           });
+          knownuserCache.push(created);
+        }
+      }
 
-          client.prisma.voiceConnected
-            .createMany({
-              data: members
-                .filter(
-                  (m: GuildMember) =>
-                    m.voice.channel != null &&
-                    m.voice.channelId !== "1128264365854961766"
-                )
-                .map((z: GuildMember) => {
-                  return {
-                    ID: z.id,
-                    ChannelID: z.voice.channelId!,
-                    ChannelName: cleanString(z.voice.channel!.name),
-                    deaf: z.voice.deaf,
-                    mute: z.voice.mute,
-                    streaming: z.voice.streaming,
-                  } as VoiceConnected;
-                }),
-            })
-            .then((x) =>
-              console.log("tracked " + x.count + " members in voice channels")
-            );
+      // Track voice connected members
+      const voiceData = members
+        .filter(
+          (m: GuildMember) =>
+            m.voice.channel != null &&
+            m.voice.channelId !== config.channels.afk
+        )
+        .map((z: GuildMember) => ({
+          ID: z.id,
+          ChannelID: z.voice.channelId!,
+          ChannelName: cleanString(z.voice.channel!.name),
+          deaf: z.voice.deaf,
+          mute: z.voice.mute,
+          streaming: z.voice.streaming,
+        } as VoiceConnected));
 
-          client.prisma.presence
-            .createMany({
-              data: members
-                .filter(
-                  (m: GuildMember) =>
-                    m.presence?.status !== "offline" &&
-                    m.user?.bot === false &&
-                    (m.presence?.activities?.length ?? 0) > 0
-                )
-                .map((z: GuildMember) =>
-                  z
-                    .presence!.activities.filter((a) => a.type !== 4)
-                    .map((a) => {
-                      return {
-                        userID: z.id,
-                        applicationID: a.applicationId,
-                        name: cleanString(a.name),
-                        details: cleanString(a.details),
-                        url: cleanString(a.url),
-                        state: cleanString(a.state),
-                        type: a.type.toString(),
-                        status: z.presence!.status,
-                      } as PresenceData;
-                    })
-                )
-                .flat(),
+      const voiceResult = await client.prisma.voiceConnected.createMany({ data: voiceData });
+      logger.info("Tracked " + voiceResult.count + " members in voice channels");
+
+      // Track presence data
+      const presenceData = members
+        .filter(
+          (m: GuildMember) =>
+            m.presence?.status !== "offline" &&
+            m.user?.bot === false &&
+            (m.presence?.activities?.length ?? 0) > 0
+        )
+        .map((z: GuildMember) =>
+          z.presence!.activities
+            .filter((a) => a.type !== 4)
+            .map((a) => ({
+              userID: z.id,
+              applicationID: a.applicationId,
+              name: cleanString(a.name),
+              details: cleanString(a.details),
+              url: cleanString(a.url),
+              state: cleanString(a.state),
+              type: a.type.toString(),
+              status: z.presence!.status,
+            } as PresenceData))
+        )
+        .flat();
+
+      const presenceResult = await client.prisma.presence.createMany({ data: presenceData });
+      logger.debug("Tracked " + presenceResult.count + " presence entries");
+
+      // Check achievements
+      await global.client.achievementsModule.checkAchievements(members);
+
+      // Update cached events
+      const events = await guild.scheduledEvents.fetch();
+      client.events = events;
+
+      // Send 30-minute event reminders
+      for (const event of events.values()) {
+        const timespanToGo = new Date(event.scheduledStartTimestamp).getTime() - Date.now();
+        const minutesToGo = timespanToGo / 60000;
+        if (minutesToGo < 35 && minutesToGo > 25) {
+          const description = event?.description ?? "";
+          const eventEmbed = new EmbedBuilder()
+            .setColor(0x0099ff)
+            .setTitle("Starting in 30 min: " + event.name)
+            .setURL(event.url)
+            .setAuthor({
+              name: event.creator.username,
+              iconURL: event.creator.avatarURL(),
             })
-            .then((x) => {
-              console.log(x);
+            .setDescription(description)
+            .setImage(event.coverImageURL({ size: 512 }))
+            .setTimestamp(event.scheduledStartTimestamp)
+            .setFooter({ text: "Event at " });
+
+          const eventText = event.name + (event.description ?? "");
+          const roles = await guild.roles.fetch();
+          const announcements = await client.channels.fetch(config.channels.announcements) as TextChannel;
+          const role = roles.find((r) => eventText.includes(r.name));
+
+          if (role) {
+            await announcements.send({
+              content: "<@&" + role.id + ">",
+              embeds: [eventEmbed],
             });
+          } else {
+            await announcements.send({ embeds: [eventEmbed] });
+          }
+        }
+      }
 
-          global.client.achievementsModule.checkAchievements(members);
-        });
-
-        guild.scheduledEvents.fetch().then((events) => {
-          client.events = events;
-          client.events.forEach((event) => {
-            let timespanToGo =
-              new Date(event.scheduledStartTimestamp).getTime() - Date.now();
-            let description =
-              event?.description !== null ? event.description : "";
-            if (timespanToGo / 60000 < 35 && timespanToGo / 60000 > 25) {
-              const eventEmbed = new EmbedBuilder()
-                .setColor(0x0099ff)
-                .setTitle("Starting in 30 min: " + event.name)
-                .setURL(event.url)
-                .setAuthor({
-                  name: event.creator.username,
-                  iconURL: event.creator.avatarURL(),
-                })
-                .setDescription(description)
-                .setImage(event.coverImageURL({ size: 512 }))
-                .setTimestamp(event.scheduledStartTimestamp)
-                .setFooter({
-                  text: "Event at ",
-                });
-              let eventText =
-                event.name + event.description ? event.description : "";
-              guild.roles.fetch().then((roles) => {
-                client.channels
-                  .fetch("1128266086119374848")
-                  .then((announcements: TextChannel) => {
-                    let role = roles.find((role) =>
-                      eventText.includes(role.name)
-                    );
-                    if (role) {
-                      announcements.send({
-                        content: "<@&" + role.id + ">",
-                        embeds: [eventEmbed],
-                      });
-                    } else {
-                      announcements.send({
-                        embeds: [eventEmbed],
-                      });
-                    }
-                  });
-              });
-            }
-          });
-        });
-
-        guild.invites.fetch().then((invites) => {
-          global.client.invites.set(guild.id, invites);
-        });
-      });
+      // Refresh invites cache
+      const invites = await guild.invites.fetch();
+      global.client.invites.set(guild.id, invites);
     } catch (e) {
-      global.bugsnag.notify(e);
-      console.log(e);
+      logger.error("Statistics cron error", e);
     }
 
-    console.log("running scheduling checker");
+    // Check raid schedules
     try {
-      RaidModule.checkSchedules();
+      await RaidModule.checkSchedules();
     } catch (e) {
-      global.bugsnag.notify(e);
-      console.log(e);
+      logger.error("Raid scheduling error", e);
     }
-
-
   });
-};
+}
 
-function cleanString(input: string | null | undefined): string {
+export function cleanString(input: string | null | undefined): string {
   if (input === null || input === undefined) return "";
   let output = "";
-  input = input.toString();
-  for (let i = 0; i < input.length; i++) {
-    if (input.charCodeAt(i) <= 127) {
-      output += input.charAt(i);
+  const str = input.toString();
+  for (let i = 0; i < str.length; i++) {
+    if (str.charCodeAt(i) <= 127) {
+      output += str.charAt(i);
     }
   }
   return output;

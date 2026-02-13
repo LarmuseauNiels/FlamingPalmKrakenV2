@@ -66,13 +66,13 @@ export class FpgClient extends Client {
     this.loadCommands();
   }
 
-  log(loggText) {
+  log(loggText: string) {
     console.log(loggText);
     this.logChannel.send("```" + loggText + "```");
   }
 
-  idToName(id) {
-    return this.users.cache.get(id).username;
+  idToName(id: string) {
+    return this.users.cache.get(id)?.username;
   }
 
   private async loadCommands(): Promise<void> {

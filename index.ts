@@ -19,4 +19,5 @@ global.client.login(process.env.TOKEN);
 
 declare global {
   var client: FpgClient;
+  var bugsnag: typeof Bugsnag;
 }

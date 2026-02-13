@@ -30,7 +30,7 @@ export default class GiveAchievementCommand implements IHandler {
     .setDefaultMemberPermissions(
       PermissionFlagsBits.Administrator
     ) as SlashCommandBuilder;
-  async execute(interaction) {
+  async execute(interaction: any) {
     const user = interaction.options.getUser("user");
     const achievement = +interaction.options.getString("achievement");
     const description = interaction.options.getString("description");
@@ -46,16 +46,16 @@ export default class GiveAchievementCommand implements IHandler {
       content: `gave ${achievement} to ${user.username}`,
     });
   }
-  async autocomplete(interaction) {
+  async autocomplete(interaction: any) {
     global.client.achievementsModule
       .GetManualAchievements()
-      .then(async (achievements) => {
+      .then(async (achievements: any) => {
         const focusedValue = interaction.options.getFocused();
         const options = achievements
-          .filter((achievement) =>
+          .filter((achievement: any) =>
             achievement.Name.toLowerCase().includes(focusedValue.toLowerCase())
           )
-          .map((achievement) => {
+          .map((achievement: any) => {
             return {
               name: achievement.Name,
               value: achievement.ID.toString(),

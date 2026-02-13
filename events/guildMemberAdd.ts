@@ -1,5 +1,6 @@
 import { EmbedBuilder, Invite, GuildMember, Role } from "discord.js";
 import { IEvent } from "../interfaces/IEvent";
+import { config } from "../config";
 
 export default class guildMemberAdd implements IEvent {
   name = "guildMemberAdd";
@@ -13,7 +14,7 @@ export default class guildMemberAdd implements IEvent {
         GuildMember.roles.add(memberRole);
       }
     } catch (error) {
-      global.bugsnag.notify(error);
+      global.bugsnag.notify(error as any);
     }
 
     const cachedInvites = global.client.invites.get(GuildMember.guild.id);
@@ -27,12 +28,12 @@ export default class guildMemberAdd implements IEvent {
       });
       console.log(invitemap);
       const moreUses = invitemap.filter(
-        (a) => oldinvites.find((b) => b.code === a.code)?.uses! < a.uses
+        (a: any) => oldinvites.find((b: any) => b.code === a.code)?.uses! < a.uses
       );
       console.log("used");
       console.log(moreUses);
       const removed = oldinvites.filter(
-        (a) => newInvites.find((b) => b.code === a.code) === undefined
+        (a: any) => newInvites.find((b: any) => b.code === a.code) === undefined
       );
       console.log("removed");
       console.log(removed);
@@ -104,11 +105,11 @@ export default class guildMemberAdd implements IEvent {
         await global.client.achievementsModule.GiveAchievement(
           usedInvite!.inviter!.id,
           14,
-          "178435947816419328",
+          config.botOwnerId,
           GuildMember.user.username
         );
       } catch (error) {
-        global.bugsnag.notify(error);
+        global.bugsnag.notify(error as any);
         console.log(error);
       }
       global.client.logChannel.send({ embeds: [embed] });

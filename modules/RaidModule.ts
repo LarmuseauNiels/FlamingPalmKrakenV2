@@ -228,7 +228,7 @@ export abstract class RaidModule {
             });
           })
           .catch((err) => {
-            global.log(
+            global.client.log(
               "Error sending scheduling message for raid " +
                 raid.ID +
                 "  to <@" +
@@ -652,7 +652,7 @@ export abstract class RaidModule {
     });
   }
 
-  static async AddAttendeeToRaid(raidId: number, id) {
+  static async AddAttendeeToRaid(raidId: number, id: string) {
     return global.client.prisma.raidAttendees.create({
       data: {
         RaidId: raidId,

@@ -2,6 +2,7 @@ import { AttachmentBuilder, Embed, EmbedBuilder, User } from "discord.js";
 import Rank from "./profile";
 import { ChannelUpdates } from "../islander/ChannelUpdates";
 import type * as Prisma from "@prisma/client";
+import { config } from "../config";
 
 export class AchievementsModule {
   async GiveAchievement(
@@ -97,7 +98,7 @@ export class AchievementsModule {
           }
         });
     } catch (err) {
-      global.client.log(err);
+      global.client.log((err as Error).message ?? String(err));
     }
   }
 
@@ -133,7 +134,7 @@ FROM (
   CROSS JOIN (SELECT @streak := 0, @days_diff := -1) AS vars
   WHERE UserId = ${memberID} AND Timestamp <= NOW() And AchievementID = 13
   ORDER BY Timestamp DESC) AS t`;
-    return a[0].streak;
+    return (a as any[])[0].streak;
   }
 
   async GetProfile(memberID: string): Promise<AttachmentBuilder> {
@@ -205,72 +206,41 @@ FROM (
     return await rank.build();
   }
 
-  async checkAchievements(members) {
-    global.client.prisma.achievements.findMany().then((achievements) => {
-      let DailyLoginAchievement = achievements.find(
-        (achievement) =>
-          achievement.Type == "VoiceLogin" && achievement.Minimum == 1
-      );
-      let startOfToday = new Date();
-      startOfToday.setHours(0, 0, 0, 0);
-      if (DailyLoginAchievement !== null) {
-        members
-          .filter(
-            (m) =>
-              m.voice.channel != null &&
-              m.voice.channelId === "530537522921734178"
-          )
-          .forEach((member) => {
-            global.client.prisma.achievement_History
-              .findFirst({
-                where: {
-                  UserID: member.id,
-                  AchievementID: DailyLoginAchievement.ID,
-                  TimeStamp: {
-                    gte: startOfToday,
-                  },
-                },
-              })
-              .then((achievement) => {
-                if (achievement == null) {
-                  this.GiveAchievement(
-                    member.id,
-                    DailyLoginAchievement.ID,
-                    "178435947816419328",
-                    new Date().toDateString()
-                  );
-                }
-              });
-          });
-      }
-      /*
-      let BattleBitSquadSize = achievements.find(
-        (achievement) => achievement.Type == "BattleBitSquadSize"
-      );
-      if (BattleBitSquadSize !== null) {
-        members.filter(
-          (m) =>
-            m.presence?.status !== "offline" &&
-            m.user?.bot === false &&
-            (m.presence?.activities?.filter(
-              (a) => a.applicationId == 437355994125959168
-            ).length ?? 0) > 0
+  async checkAchievements(members: any) {
+    const achievements = await global.client.prisma.achievements.findMany();
+    const DailyLoginAchievement = achievements.find(
+      (achievement) =>
+        achievement.Type == "VoiceLogin" && achievement.Minimum == 1
+    );
+
+    if (!DailyLoginAchievement) return;
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const eligibleMembers = members.filter(
+      (m: any) =>
+        m.voice.channel != null &&
+        m.voice.channelId === config.channels.dailyLogin
+    );
+
+    for (const member of eligibleMembers.values()) {
+      const existing = await global.client.prisma.achievement_History.findFirst({
+        where: {
+          UserID: member.id,
+          AchievementID: DailyLoginAchievement.ID,
+          TimeStamp: { gte: startOfToday },
+        },
+      });
+      if (!existing) {
+        await this.GiveAchievement(
+          member.id,
+          DailyLoginAchievement.ID,
+          config.botOwnerId,
+          new Date().toDateString()
         );
-
-        const groupedMembers = members.reduce((groups, member) => {
-          const key = member.propertyToGroupBy; // Replace 'propertyToGroupBy' with the actual property name you want to group by
-
-          if (!groups[key]) {
-            groups[key] = [];
-          }
-
-          groups[key].push(member);
-
-          return groups;
-        }, {});
       }
-      */
-    });
+    }
   }
 
   getBadgeUnlocks(achievements: any[]) {

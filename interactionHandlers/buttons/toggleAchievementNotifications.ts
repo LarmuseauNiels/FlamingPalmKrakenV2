@@ -3,7 +3,7 @@ import { IHandler } from "../../interfaces/IHandler";
 export default class ToggleAchievementNotifications implements IHandler {
   name = "toggleAchievementNotifications";
 
-  async execute(interaction) {
+  async execute(interaction: any) {
     let isEnabling = true;
     global.client.prisma.members
       .findFirst({
@@ -14,7 +14,7 @@ export default class ToggleAchievementNotifications implements IHandler {
           AchievementNotifications: true,
         },
       })
-      .then((result) => {
+      .then((result: any) => {
         if (result) {
           isEnabling = false;
         }
