@@ -7,7 +7,6 @@ import { jsonify } from "./ApiFunctions/Helpers";
 import { memberEndPoints } from "./ApiFunctions/MemberEndPoints";
 import bodyParser from "body-parser";
 import { adminEndPoints } from "./ApiFunctions/AdminEndPoints";
-import { config } from "../config";
 const DiscordStrategy = require("passport-discord").Strategy;
 const app = express();
 const prompt = "consent";
@@ -24,9 +23,9 @@ export class WebApi {
           scope: ["identify", "guilds"],
           prompt: prompt,
         },
-        function (accessToken: any, refreshToken: any, profile: any, done: any) {
+        function (accessToken, refreshToken, profile, done) {
           logDiscordLogin(profile);
-          if (profile.guilds.map((g: any) => g.id).includes(process.env.GUILD_ID)) {
+          if (profile.guilds.map((g) => g.id).includes(process.env.GUILD_ID)) {
             process.nextTick(function () {
               return done(null, profile);
             });
@@ -53,12 +52,12 @@ export class WebApi {
         scope: ["identify", "guilds"],
         prompt: prompt,
       }),
-      function (_req: any, _res: any) {}
+      function (req, res) {}
     );
     app.get(
       "/login",
       passport.authenticate("discord", { session: false }),
-      async function (req: any, res: any) {
+      async function (req, res) {
         let profile: any = req.user;
         let token = jwt.sign(
           {
@@ -66,7 +65,7 @@ export class WebApi {
             username: profile.username,
             avatar: profile.avatar,
           },
-          config.jwtSecret
+          process.env.TOKEN
         );
         res.send(jsonify(token));
       } // auth success
@@ -76,7 +75,7 @@ export class WebApi {
     memberEndPoints(app);
     adminEndPoints(app);
 
-    app.use(function (err: any, req: any, res: any, next: any) {
+    app.use(function (err, req, res, next) {
       console.error(err.stack);
       res.status(500).send("Something broke!");
     });
@@ -87,7 +86,7 @@ export class WebApi {
   }
 }
 
-async function logDiscordLogin(profile: any) {
+async function logDiscordLogin(profile) {
   let result = await global.client.prisma.login_History.create({
     data: {
       UserID: profile.id,

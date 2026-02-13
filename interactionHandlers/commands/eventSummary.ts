@@ -17,7 +17,7 @@ export default class EventSummaryHandler implements IHandler {
       PermissionFlagsBits.Administrator
     ) as SlashCommandBuilder;
   isGuild: true;
-  async execute(interaction: any) {
+  async execute(interaction) {
     const channel = interaction.guild.channels.cache.get(
       interaction.options.get("channel")?.value || interaction.channel.id
     );
@@ -29,15 +29,15 @@ export default class EventSummaryHandler implements IHandler {
       });
     }
 
-    interaction.guild.scheduledEvents.fetch().then(async (events: any) => {
-      events = events.sort((e: any) => e.scheduledStartTimestamp).reverse();
+    interaction.guild.scheduledEvents.fetch().then(async (events) => {
+      events = events.sort((e) => e.scheduledStartTimestamp).reverse();
       client.events = events;
       var contentText = "Upcoming events!\n";
 
-      let sortedEvents = client.events.sort((a: any, b: any) => {
+      let sortedEvents = client.events.sort((a, b) => {
         return a.scheduledStartTimestamp - b.scheduledStartTimestamp;
       });
-      sortedEvents.forEach((event: any) => {
+      sortedEvents.forEach((event) => {
         contentText += `${event.url}\n`;
       });
 
