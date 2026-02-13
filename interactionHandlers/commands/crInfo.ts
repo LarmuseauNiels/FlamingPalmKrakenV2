@@ -49,10 +49,10 @@ export default class CrInfoCommand implements IHandler {
       },
     });
     let attendees = raid.RaidAttendees.map(
-      (attendee: any) => attendee.Members.DisplayName
+      (attendee) => attendee.Members.DisplayName
     ).join(",");
     let scheduleOptions = raid.RaidSchedulingOption.map(
-      (option: any) => `${option.Option}:${option.Timestamp}`
+      (option) => `${option.Option}:${option.Timestamp}`
     ).join(",");
 
     const embed = new EmbedBuilder()
@@ -83,7 +83,7 @@ export default class CrInfoCommand implements IHandler {
     interaction.reply({ embeds: [embed], ephemeral: true });
   }
 
-  async autocomplete(interaction: any) {
+  async autocomplete(interaction) {
     global.client.prisma.raids
       .findMany({
         where: {
@@ -95,13 +95,13 @@ export default class CrInfoCommand implements IHandler {
           Title: true,
         },
       })
-      .then(async (raids: any) => {
+      .then(async (raids) => {
         const focusedValue = interaction.options.getFocused();
         const options = raids
-          .filter((raid: any) =>
+          .filter((raid) =>
             raid.Title.toLowerCase().includes(focusedValue.toLowerCase())
           )
-          .map((raid: any) => {
+          .map((raid) => {
             return {
               name: raid.Title,
               value: raid.ID.toString(),

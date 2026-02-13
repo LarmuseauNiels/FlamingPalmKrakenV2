@@ -34,7 +34,7 @@ export default class CreateRaidCommand implements IHandler {
       },
     });
     ChannelUpdates.MessageWithRaid("New raid created: " + title);
-    await interaction.reply({
+    interaction.reply({
       content:
         "Successfully created a new raid! Check out the updated list by typing /raids.",
       ephemeral: true,

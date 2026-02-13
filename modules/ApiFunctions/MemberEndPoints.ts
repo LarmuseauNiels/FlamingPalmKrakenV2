@@ -2,16 +2,15 @@ import { authenticateToken, jsonify } from "./Helpers";
 import Rank from "../profile";
 import { DashBoardModel } from "./ViewModels/dash-board-model";
 import { TextChannel } from "discord.js";
-import { config } from "../../config";
 
-export function memberEndPoints(app: any) {
+export function memberEndPoints(app) {
   let apiPrefix = "/members/";
 
-  app.post(apiPrefix + "profile", authenticateToken, function (req: any, res: any) {
+  app.post(apiPrefix + "profile", authenticateToken, function (req, res) {
     res.send(jsonify(req.user));
   });
 
-  app.get(apiPrefix + "points", authenticateToken, async function (req: any, res: any) {
+  app.get(apiPrefix + "points", authenticateToken, async function (req, res) {
     let points = await global.client.prisma.points.findFirst({
       where: {
         userid: req.user.id,
@@ -21,13 +20,13 @@ export function memberEndPoints(app: any) {
     else res.send(jsonify(points.TotalPoints));
   });
 
-  app.get("/", (req: any, res: any) => {
+  app.get("/", (req, res) => {
     //return current uptime
     res.send(jsonify({ uptime: process.uptime() }));
   });
 
   //getLibrary for user
-  app.get(apiPrefix + "library", authenticateToken, function (req: any, res: any) {
+  app.get(apiPrefix + "library", authenticateToken, function (req, res) {
     let user = req.user;
     global.client.prisma.rewardItem
       .findMany({
@@ -58,7 +57,7 @@ export function memberEndPoints(app: any) {
       });
   });
 
-  app.get(apiPrefix + "pointHistory", authenticateToken, function (req: any, res: any) {
+  app.get(apiPrefix + "pointHistory", authenticateToken, function (req, res) {
     let user = req.user;
     global.client.prisma.pointHistory
       .findMany({
@@ -88,7 +87,7 @@ export function memberEndPoints(app: any) {
   app.get(
     apiPrefix + "shopItems",
     authenticateToken,
-    async function (req: any, res: any) {
+    async function (req, res) {
       const shopItems = await global.client.prisma.reward.findMany({
         where: {
           visible: true,
@@ -127,7 +126,7 @@ export function memberEndPoints(app: any) {
     }
   );
 
-  app.get("/profileTester", async function (req: any, res: any) {
+  app.get("/profileTester", async function (req, res) {
     var achievements = [];
     if (req.query.achievement1) {
       achievements.push({
@@ -180,51 +179,84 @@ export function memberEndPoints(app: any) {
     res.send(data);
   });
 
-  app.post(apiPrefix + "redeemItem", authenticateToken, async function (req: any, res: any) {
+  app.post(apiPrefix + "redeemItem", authenticateToken, function (req, res) {
     const { rewardId } = req.body;
-    const user = req.user;
+    let user = req.user;
     if (!rewardId) return res.status(400).send("No rewardId");
     if (!user) return res.status(400).send("No user");
+    global.client.prisma.rewardItem
+      .findFirst({
+        where: {
+          RewardID: rewardId,
+          RedeemedBy: {
+            equals: "",
+          },
+        },
+        orderBy: {
+          RewardItemID: "asc",
+        } as any,
+        include: {
+          Reward: true,
+        },
+      })
+      .then(async (rewardItem) => {
+        console.log(rewardItem);
+        if (!rewardItem) {
+          return res.status(400).send("No items left");
+        }
 
-    const rewardItem = await global.client.prisma.rewardItem.findFirst({
-      where: {
-        RewardID: rewardId,
-        RedeemedBy: { equals: "" },
-      },
-      orderBy: { RewardItemID: "asc" } as any,
-      include: { Reward: true },
-    });
+        let points = await global.client.prisma.points.findUnique({
+          where: {
+            userid: user.id,
+          },
+        });
 
-    if (!rewardItem) return res.status(400).send("No items left");
+        if (points.Blocked) {
+          return res.status(400).send("You are blocked from redeeming items");
+        }
+        let userPoints = points.TotalPoints;
 
-    const points = await global.client.prisma.points.findUnique({
-      where: { userid: user.id },
-    });
-
-    if (points.Blocked) return res.status(400).send("You are blocked from redeeming items");
-    if (rewardItem.Reward.Price > points.TotalPoints) return res.status(400).send("Not enough points");
-
-    const updatedRewardItem = await global.client.prisma.rewardItem.update({
-      where: { RewardItemID: rewardItem.RewardItemID },
-      data: {
-        RedeemedBy: user.id,
-        RedemptionTimeStamp: new Date(),
-      },
-    });
-
-    await global.client.prisma.points.update({
-      where: { userid: user.id },
-      data: {
-        TotalPoints: { decrement: rewardItem.Reward.Price },
-        lastComment: "Redeemed " + rewardItem.Reward.Title,
-      },
-    });
-
-    sendPurchaseToDiscord(updatedRewardItem, user, rewardItem.Reward.Title, rewardItem.Reward.Price);
-    return res.send(jsonify(updatedRewardItem));
+        if (rewardItem.Reward.Price > userPoints) {
+          return res.status(400).send("Not enough points");
+        }
+        global.client.prisma.rewardItem
+          .update({
+            where: {
+              RewardItemID: rewardItem.RewardItemID,
+            },
+            data: {
+              RedeemedBy: user.id,
+              RedemptionTimeStamp: new Date(),
+            },
+          })
+          .then((updatedRewardItem) => {
+            console.log(updatedRewardItem);
+            global.client.prisma.points
+              .update({
+                where: {
+                  userid: user.id,
+                },
+                data: {
+                  TotalPoints: {
+                    decrement: rewardItem.Reward.Price,
+                  },
+                  lastComment: "Redeemed " + rewardItem.Reward.Title,
+                },
+              })
+              .then((updatedPoints) => {
+                sendPurchaseToDiscord(
+                  updatedRewardItem,
+                  user,
+                  rewardItem.Reward.Title,
+                  rewardItem.Reward.Price
+                );
+                return res.send(jsonify(updatedRewardItem));
+              });
+          });
+      });
   });
 
-  function sendPurchaseToDiscord(updatedRewardItem: any, user: any, rewardTitle: string, price: number) {
+  function sendPurchaseToDiscord(updatedRewardItem, user, rewardTitle, price) {
     const embed = {
       color: 0x0099ff,
       title: "New Purchase",
@@ -255,11 +287,11 @@ export function memberEndPoints(app: any) {
       ],
     };
     (
-      global.client.channels.cache.get(config.channels.purchases) as TextChannel
+      global.client.channels.cache.get("1128264366182125664") as TextChannel
     ).send({ embeds: [embed] });
   }
 
-  app.get(apiPrefix + "profileImage", authenticateToken, function (req: any, res: any) {
+  app.get(apiPrefix + "profileImage", authenticateToken, function (req, res) {
     let user = req.user;
     global.client.achievementsModule.GetProfileBlob(user.id).then((blob) => {
       res.set("Content-Type", "image/png");
@@ -270,7 +302,7 @@ export function memberEndPoints(app: any) {
   app.post(
     apiPrefix + "setProfileImage",
     authenticateToken,
-    function (req: any, res: any) {
+    function (req, res) {
       let user = req.user;
       const { profile } = req.body;
       if (!profile) return res.status(400).send("No profile data");
@@ -297,7 +329,7 @@ export function memberEndPoints(app: any) {
     }
   );
 
-  app.post(apiPrefix + "setBackground", authenticateToken, function (req: any, res: any) {
+  app.post(apiPrefix + "setBackground", authenticateToken, function (req, res) {
     let user = req.user;
     const body = req.body;
     if (!body) return res.status(400).send("No profile data");
@@ -320,24 +352,110 @@ export function memberEndPoints(app: any) {
       });
   });
 
-  app.post(apiPrefix + "setBadge", authenticateToken, async function (req: any, res: any) {
-    const user = req.user;
+  app.post(apiPrefix + "setBadge", authenticateToken, function (req, res) {
+    let user = req.user;
     const body = req.body;
     if (!body) return res.status(400).send("No profile data");
 
-    const slot = body.slot ?? 1;
-    const badge = body.fileName === "" ? null : body.fileName;
-    const fieldName = `Achievement${Math.min(Math.max(slot, 1), 5)}`;
-
-    await global.client.prisma.profile.upsert({
-      where: { userid: user.id },
-      update: { [fieldName]: badge },
-      create: { userid: user.id, [fieldName]: badge },
-    });
-    res.send(true);
+    let slot = body.slot;
+    let badge = body.fileName == "" ? null : body.fileName;
+    // @ts-ignore
+    switch (slot) {
+      case 2:
+        global.client.prisma.profile
+          .upsert({
+            where: {
+              userid: user.id,
+            },
+            update: {
+              Achievement2: badge,
+            },
+            create: {
+              userid: user.id,
+              Achievement2: badge,
+            },
+          })
+          .then(() => {
+            res.send(true);
+          });
+        break;
+      case 3:
+        global.client.prisma.profile
+          .upsert({
+            where: {
+              userid: user.id,
+            },
+            update: {
+              Achievement3: badge,
+            },
+            create: {
+              userid: user.id,
+              Achievement3: badge,
+            },
+          })
+          .then(() => {
+            res.send(true);
+          });
+        break;
+      case 4:
+        global.client.prisma.profile
+          .upsert({
+            where: {
+              userid: user.id,
+            },
+            update: {
+              Achievement4: badge,
+            },
+            create: {
+              userid: user.id,
+              Achievement4: badge,
+            },
+          })
+          .then(() => {
+            res.send(true);
+          });
+        break;
+      case 5:
+        global.client.prisma.profile
+          .upsert({
+            where: {
+              userid: user.id,
+            },
+            update: {
+              Achievement5: badge,
+            },
+            create: {
+              userid: user.id,
+              Achievement5: badge,
+            },
+          })
+          .then(() => {
+            res.send(true);
+          });
+        break;
+      default:
+      case 1:
+        global.client.prisma.profile
+          .upsert({
+            where: {
+              userid: user.id,
+            },
+            update: {
+              Achievement1: badge,
+            },
+            create: {
+              userid: user.id,
+              Achievement1: badge,
+            },
+          })
+          .then(() => {
+            res.send(true);
+          });
+        break;
+    }
   });
 
-  app.get(apiPrefix + "getLevel", authenticateToken, async function (req: any, res: any) {
+  app.get(apiPrefix + "getLevel", authenticateToken, async function (req, res) {
     let member = await global.client.prisma.members.findFirst({
       where: {
         ID: req.user.id,
@@ -350,7 +468,7 @@ export function memberEndPoints(app: any) {
   app.get(
     apiPrefix + "getBadgeUnlocks",
     authenticateToken,
-    async function (req: any, res: any) {
+    async function (req, res) {
       let member = await global.client.prisma.members.findFirst({
         where: {
           ID: req.user.id,
@@ -370,7 +488,7 @@ export function memberEndPoints(app: any) {
   app.get(
     apiPrefix + "dashboard",
     authenticateToken,
-    async function (req: any, res: any) {
+    async function (req, res) {
       let dashboard = new DashBoardModel();
       let points = await global.client.prisma.points.findFirst({
         where: {

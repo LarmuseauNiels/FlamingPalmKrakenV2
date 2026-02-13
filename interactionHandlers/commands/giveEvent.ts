@@ -48,7 +48,7 @@ export default class GiveEventCommand implements IHandler {
     .setDefaultMemberPermissions(
       PermissionFlagsBits.Administrator
     ) as SlashCommandBuilder;
-  async execute(interaction: any) {
+  async execute(interaction) {
     const achievement = +interaction.options.getString("achievement");
     const description = interaction.options.getString("description");
     let hour = interaction.options.getInteger("time");
@@ -71,7 +71,7 @@ export default class GiveEventCommand implements IHandler {
           .setCustomId(`giveAchievement-${achievement}`)
           .setPlaceholder("Select users")
           .addOptions(
-            results.map((u: any) => {
+            results.map((u) => {
               return {
                 label: u.DisplayName,
                 description: `Give ${u.DisplayName} the achievement`,
@@ -87,14 +87,14 @@ export default class GiveEventCommand implements IHandler {
         components: [row],
       });
 
-      const filter = (interaction: any) =>
+      const filter = (interaction) =>
         interaction.customId === `giveAchievement-${achievement}`;
       const collector = message.createMessageComponentCollector({
         filter,
         time: 300000,
       });
 
-      collector.on("collect", async (interaction: any) => {
+      collector.on("collect", async (interaction) => {
         if (interaction.user.id !== interaction.message.interaction.user.id) {
           await interaction.reply({
             ephemeral: true,
@@ -114,22 +114,22 @@ export default class GiveEventCommand implements IHandler {
         await interaction.reply({
           ephemeral: false,
           content: `gave achievement to ${
-            results.find((u: any) => u.ID === selectedOption).DisplayName
+            results.find((u) => u.ID === selectedOption).DisplayName
           }`,
         });
       });
     }
   }
-  async autocomplete(interaction: any) {
+  async autocomplete(interaction) {
     global.client.achievementsModule
       .GetManualAchievements()
-      .then(async (achievements: any) => {
+      .then(async (achievements) => {
         const focusedValue = interaction.options.getFocused();
         const options = achievements
-          .filter((achievement: any) =>
+          .filter((achievement) =>
             achievement.Name.toLowerCase().includes(focusedValue.toLowerCase())
           )
-          .map((achievement: any) => {
+          .map((achievement) => {
             return {
               name: achievement.Name,
               value: achievement.ID.toString(),

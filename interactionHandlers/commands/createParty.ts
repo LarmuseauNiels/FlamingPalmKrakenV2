@@ -6,7 +6,6 @@ import {
   ForumChannel,
 } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
-import { config } from "../../config";
 
 export default class CreatePartyCommand implements IHandler {
   name: string = "create-party";
@@ -87,7 +86,7 @@ export default class CreatePartyCommand implements IHandler {
       const eventEndDate = new Date(eventDate.getTime() + 2 * 60 * 60 * 1000);
 
       // Create a post in the forum channel
-      const forumChannelId = config.channels.partyForum;
+      const forumChannelId = "1128667504428994641"; //party channel ID
       const forumChannel = await interaction.guild.channels.fetch(
         forumChannelId
       );
