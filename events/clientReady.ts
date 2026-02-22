@@ -10,7 +10,7 @@ import { FpgClient } from "../components/FpgClient";
 import { IEvent } from "../interfaces/IEvent";
 
 export default class ready implements IEvent {
-  name = "ready";
+  name = "clientReady";
   once = true;
   execute(client: FpgClient) {
     // Set up the client's log channel and update channel
