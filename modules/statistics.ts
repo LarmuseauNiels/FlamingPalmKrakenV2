@@ -63,9 +63,9 @@ module.exports = async function (client: FpgClient) {
           fetchVintageStoryServers()
               .then((data) => {
                   console.log(`Fetched Vintage Story servers`);
-                  let server = data.data.find(server => server.serverName === "Vintage Flaming Story");
+                  let server = data.data.find(server => server.serverName === process.env.VS_SERVER_NAME);
                   if (!server) {
-                      throw new Error("No server found for Vintage Flaming Story");
+                      throw new Error(`No server found for ${process.env.VS_SERVER_NAME}`);
                   }
                   else {
                       global.client.user.setActivity('VintageStory ' + server.players + '/8', {type: ActivityType.Playing});

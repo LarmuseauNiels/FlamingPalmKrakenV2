@@ -74,8 +74,13 @@ export default class guildMemberAdd implements IEvent {
         )
         .setTimestamp();
       try {
-        const user = await global.client.prisma.members.create({
-          data: {
+        const user = await global.client.prisma.members.upsert({
+          where: { ID: GuildMember.id },
+          update: {
+            DisplayName: GuildMember.user.username,
+            avatar: GuildMember.user.avatar,
+          },
+          create: {
             ID: GuildMember.id,
             DisplayName: GuildMember.user.username,
             avatar: GuildMember.user.avatar,
