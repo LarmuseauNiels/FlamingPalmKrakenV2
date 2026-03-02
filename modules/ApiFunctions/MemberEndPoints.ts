@@ -61,7 +61,6 @@ export function memberEndPoints(app) {
     let user = req.user;
     global.client.prisma.pointHistory
       .findMany({
-        take: 25,
         where: {
           userid: user.id,
         },
