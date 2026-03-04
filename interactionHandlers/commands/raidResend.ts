@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
-import { RaidModule } from "../../modules/RaidModule";
+import { RaidScheduler } from "../../modules/RaidScheduler";
 import { IHandler } from "../../interfaces/IHandler";
 
 export default class RaidResendCommand implements IHandler {
@@ -25,7 +25,7 @@ export default class RaidResendCommand implements IHandler {
     const raidID = interaction.options.getInteger("raid");
     const user = interaction.options.getUser("user");
     await interaction.deferReply({ ephemeral: true });
-    const result = await RaidModule.resendRaid(raidID, user);
+    const result = await RaidScheduler.resendRaid(raidID, user);
     await interaction.editReply({
       content: result,
       ephemeral: true,

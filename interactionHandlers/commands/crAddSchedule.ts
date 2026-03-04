@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "discord.js";
 import moment from 'moment-timezone';
-import { RaidModule } from "../../modules/RaidModule";
+import { RaidScheduler } from "../../modules/RaidScheduler";
 import { IHandler } from "../../interfaces/IHandler";
 
 export default class CrAddScheduleCommand implements IHandler {
@@ -126,7 +126,7 @@ export default class CrAddScheduleCommand implements IHandler {
     const schedule = `${year}-${month}-${day} ${hour}:${minute}`;
     const date = moment.tz(schedule, "YYYY-M-D h:m", timezone);
     date.utc();
-    await RaidModule.AddSingleSchedulingOptionToRaid(raidId, date.toDate());
+    await RaidScheduler.AddSingleSchedulingOptionToRaid(raidId, date.toDate());
 
     interaction.reply({
       content: `Successfully added a scheduling option <t:${date.unix()}:f> to raid ${raidId}!`,

@@ -4,7 +4,7 @@ import {
   ChatInputCommandInteraction,
 } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
-import { RaidModule } from "../../modules/RaidModule";
+import { RaidScheduler } from "../../modules/RaidScheduler";
 
 export default class CrScheduleCommand implements IHandler {
   name = "cr-schedule";
@@ -66,7 +66,7 @@ export default class CrScheduleCommand implements IHandler {
       },
     });
 
-    await RaidModule.SendSchedulingMessage(raidId);
+    await RaidScheduler.SendSchedulingMessage(raidId);
 
     interaction.reply({
       content: `Successfully started scheduling for raid ${raidId}!`,
