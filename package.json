@@ -17,7 +17,7 @@
     "@napi-rs/canvas": "^0.1.29",
     "@prisma/client": "^4.12.0",
     "@types/passport": "^1.0.12",
-    "axios": "^1.6.1",
+    "axios": "1.13.5",
     "cors": "^2.8.5",
     "discord.js": "^14.18.0",
     "dotenv": "^17.2.3",
