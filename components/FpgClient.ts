@@ -72,7 +72,7 @@ export class FpgClient extends Client {
   }
 
   idToName(id) {
-    return this.users.cache.get(id).username;
+    return this.users.cache.get(id)?.username ?? null;
   }
 
   private async loadCommands(): Promise<void> {
