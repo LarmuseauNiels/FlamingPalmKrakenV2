@@ -65,7 +65,7 @@ export class WebApi {
             username: profile.username,
             avatar: profile.avatar,
           },
-          process.env.TOKEN
+          process.env.JWT_SECRET
         );
         res.send(jsonify(token));
       } // auth success
