@@ -41,7 +41,8 @@ module.exports = function (client: FpgClient) {
           );
         });
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("Failed to fetch Vintage Story servers:", err);
         global.client.user.setActivity("flamingpalm.com", {
           type: ActivityType.Watching,
         });
