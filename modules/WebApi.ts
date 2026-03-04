@@ -5,6 +5,8 @@ import jwt from "jsonwebtoken";
 import { legacyEndPoints } from "./ApiFunctions/LegacyEndPoints";
 import { jsonify } from "./ApiFunctions/Helpers";
 import { memberEndPoints } from "./ApiFunctions/MemberEndPoints";
+import { profileEndPoints } from "./ApiFunctions/ProfileEndPoints";
+import { shopEndPoints } from "./ApiFunctions/ShopEndPoints";
 import bodyParser from "body-parser";
 import { adminEndPoints } from "./ApiFunctions/AdminEndPoints";
 const DiscordStrategy = require("passport-discord").Strategy;
@@ -71,8 +73,15 @@ export class WebApi {
       } // auth success
     );
 
+    // Health check
+    app.get("/", (req, res) => {
+      res.send(jsonify({ uptime: process.uptime() }));
+    });
+
     legacyEndPoints(app);
     memberEndPoints(app);
+    profileEndPoints(app);
+    shopEndPoints(app);
     adminEndPoints(app);
 
     app.use(function (err, req, res, next) {

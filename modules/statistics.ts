@@ -1,10 +1,7 @@
 import cron from "node-cron";
-import {ActivityType, BaseGuildTextChannel, EmbedBuilder, GuildMember, TextChannel} from "discord.js";
-import { RaidModule } from "./RaidModule";
+import { EmbedBuilder, GuildMember, TextChannel } from "discord.js";
+import { RaidScheduler } from "./RaidScheduler";
 import { FpgClient } from "../components/FpgClient";
-import { GameDig } from 'gamedig';
-import axios from "axios";
-
 
 interface Member {
   ID: string;
@@ -32,65 +29,12 @@ interface PresenceData {
   status: string;
 }
 
-async function fetchVintageStoryServers(): Promise<any> {
-  const url = "https://masterserver.vintagestory.at/api/v1/servers/list";
-  const res = await axios.get(url, {
-    headers: { Accept: "application/json" },
-    timeout: 15000,
-    validateStatus: () => true,
-  });
-  if (res.status >= 200 && res.status < 300) {
-    return res.data;
-  }
-  throw new Error(`VintageStory master server request failed: ${res.status} ${res.statusText}`);
-}
-
 module.exports = async function (client: FpgClient) {
   let knownuserCache: Member[] = [];
   console.log("loading statistics module");
   await client.prisma.members
-    .findMany({
-      select: {
-        ID: true,
-      },
-    })
+    .findMany({ select: { ID: true } })
     .then((members: Member[]) => (knownuserCache = members));
-
-
-  cron.schedule("10 * * * * *", () => {
-      // Fetch Vintage Story servers list asynchronously and log set status
-      try {
-          fetchVintageStoryServers()
-              .then((data) => {
-                  console.log(`Fetched Vintage Story servers`);
-                  let server = data.data.find(server => server.serverName === process.env.VS_SERVER_NAME);
-                  if (!server) {
-                      throw new Error(`No server found for ${process.env.VS_SERVER_NAME}`);
-                  }
-                  else {
-                      global.client.user.setActivity('VintageStory ' + server.players + '/8', {type: ActivityType.Playing});
-                      client.channels
-                          .fetch("1423193044567462009").then((channel) => {
-                              let textChannel = channel as BaseGuildTextChannel;
-                          textChannel.setName("🏕️┃vintage-story-"+ server.players);
-                      })
-                  }
-              })
-              .catch((err) => {
-                  //throw new Error("Failed to fetch Vintage Story servers list");
-              })
-      }
-      catch (e) {
-          console.error(e);
-          global.client.user.setActivity('flamingpalm.com', {type: ActivityType.Watching});
-          client.channels
-              .fetch("1423193044567462009").then((channel) => {
-              let textChannel = channel as BaseGuildTextChannel;
-              textChannel.setName("🏕️┃vintage-story");
-          })
-      }
-  });
-  
 
   cron.schedule("30 0,15,30,45 * * * *", () => {
     console.log("running statistics tracking cron job");
@@ -129,16 +73,14 @@ module.exports = async function (client: FpgClient) {
                     m.voice.channel != null &&
                     m.voice.channelId !== "1128264365854961766"
                 )
-                .map((z: GuildMember) => {
-                  return {
-                    ID: z.id,
-                    ChannelID: z.voice.channelId!,
-                    ChannelName: cleanString(z.voice.channel!.name),
-                    deaf: z.voice.deaf,
-                    mute: z.voice.mute,
-                    streaming: z.voice.streaming,
-                  } as VoiceConnected;
-                }),
+                .map((z: GuildMember) => ({
+                  ID: z.id,
+                  ChannelID: z.voice.channelId!,
+                  ChannelName: cleanString(z.voice.channel!.name),
+                  deaf: z.voice.deaf,
+                  mute: z.voice.mute,
+                  streaming: z.voice.streaming,
+                } as VoiceConnected)),
             })
             .then((x) =>
               console.log("tracked " + x.count + " members in voice channels")
@@ -156,18 +98,16 @@ module.exports = async function (client: FpgClient) {
                 .map((z: GuildMember) =>
                   z
                     .presence!.activities.filter((a) => a.type !== 4)
-                    .map((a) => {
-                      return {
-                        userID: z.id,
-                        applicationID: a.applicationId,
-                        name: cleanString(a.name),
-                        details: cleanString(a.details),
-                        url: cleanString(a.url),
-                        state: cleanString(a.state),
-                        type: a.type.toString(),
-                        status: z.presence!.status,
-                      } as PresenceData;
-                    })
+                    .map((a) => ({
+                      userID: z.id,
+                      applicationID: a.applicationId,
+                      name: cleanString(a.name),
+                      details: cleanString(a.details),
+                      url: cleanString(a.url),
+                      state: cleanString(a.state),
+                      type: a.type.toString(),
+                      status: z.presence!.status,
+                    } as PresenceData))
                 )
                 .flat(),
             })
@@ -197,9 +137,7 @@ module.exports = async function (client: FpgClient) {
                 .setDescription(description)
                 .setImage(event.coverImageURL({ size: 512 }))
                 .setTimestamp(event.scheduledStartTimestamp)
-                .setFooter({
-                  text: "Event at ",
-                });
+                .setFooter({ text: "Event at " });
               let eventText =
                 event.name + event.description ? event.description : "";
               guild.roles.fetch().then((roles) => {
@@ -215,9 +153,7 @@ module.exports = async function (client: FpgClient) {
                         embeds: [eventEmbed],
                       });
                     } else {
-                      announcements.send({
-                        embeds: [eventEmbed],
-                      });
+                      announcements.send({ embeds: [eventEmbed] });
                     }
                   });
               });
@@ -236,13 +172,11 @@ module.exports = async function (client: FpgClient) {
 
     console.log("running scheduling checker");
     try {
-      RaidModule.checkSchedules();
+      RaidScheduler.checkSchedules();
     } catch (e) {
       global.bugsnag.notify(e);
       console.log(e);
     }
-
-
   });
 };
 
