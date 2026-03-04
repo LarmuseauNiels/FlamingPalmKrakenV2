@@ -2,7 +2,7 @@ import { jsonify } from "./Helpers";
 export function legacyEndPoints(app) {
   app.get("/events", function (req, res) {
     if (globalThis.client.events == null) {
-      client.guilds.fetch(process.env.GUILD_ID).then((guild) => {
+      globalThis.client.guilds.fetch(process.env.GUILD_ID).then((guild) => {
         guild.scheduledEvents.fetch().then((events) => {
           res.send(jsonify(events));
         });
