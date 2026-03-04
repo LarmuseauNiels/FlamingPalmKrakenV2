@@ -86,32 +86,34 @@ export default class guildMemberAdd implements IEvent {
             avatar: GuildMember.user.avatar,
           },
         });
-        const referrer = await global.client.prisma.members.upsert({
-          where: { ID: usedInvite!.inviter!.id },
-          update: {
-            DisplayName: usedInvite!.inviter!.username,
-            avatar: usedInvite!.inviter!.avatar,
-          },
-          create: {
-            ID: usedInvite!.inviter!.id,
-            DisplayName: usedInvite!.inviter!.username,
-            avatar: usedInvite!.inviter!.avatar,
-          },
-        });
+        if (usedInvite?.inviter) {
+          await global.client.prisma.members.upsert({
+            where: { ID: usedInvite.inviter.id },
+            update: {
+              DisplayName: usedInvite.inviter.username,
+              avatar: usedInvite.inviter.avatar,
+            },
+            create: {
+              ID: usedInvite.inviter.id,
+              DisplayName: usedInvite.inviter.username,
+              avatar: usedInvite.inviter.avatar,
+            },
+          });
 
-        await global.client.prisma.refferals.create({
-          data: {
-            userid: GuildMember.id,
-            refferer: usedInvite!.inviter!.id,
-          },
-        });
+          await global.client.prisma.refferals.create({
+            data: {
+              userid: GuildMember.id,
+              refferer: usedInvite.inviter.id,
+            },
+          });
 
-        await global.client.achievementsModule.GiveAchievement(
-          usedInvite!.inviter!.id,
-          14,
-          "178435947816419328",
-          GuildMember.user.username
-        );
+          await global.client.achievementsModule.GiveAchievement(
+            usedInvite.inviter.id,
+            14,
+            "178435947816419328",
+            GuildMember.user.username
+          );
+        }
       } catch (error) {
         global.bugsnag.notify(error);
         console.log(error);
