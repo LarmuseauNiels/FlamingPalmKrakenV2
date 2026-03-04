@@ -1,8 +1,7 @@
 import { authenticateToken, jsonify } from "./Helpers";
-import Rank from "../../islander/profile";
+import Rank from "../profile";
 import { DashBoardModel } from "./ViewModels/dash-board-model";
-import { PointHistoryItem } from "./ViewModels/point-history-item";
-import { PointHistory } from ".prisma/client";
+import { TextChannel } from "discord.js";
 
 export function memberEndPoints(app) {
   let apiPrefix = "/members/";
@@ -62,7 +61,6 @@ export function memberEndPoints(app) {
     let user = req.user;
     global.client.prisma.pointHistory
       .findMany({
-        take: 25,
         where: {
           userid: user.id,
         },
@@ -131,27 +129,27 @@ export function memberEndPoints(app) {
     var achievements = [];
     if (req.query.achievement1) {
       achievements.push({
-        icon: `achievementIcons/badges/${req.query.achievement1}.png`,
+        icon: `assets/badges/${req.query.achievement1}.png`,
       });
     }
     if (req.query.achievement2) {
       achievements.push({
-        icon: `achievementIcons/badges/${req.query.achievement2}.png`,
+        icon: `assets/badges/${req.query.achievement2}.png`,
       });
     }
     if (req.query.achievement3) {
       achievements.push({
-        icon: `achievementIcons/badges/${req.query.achievement3}.png`,
+        icon: `assets/badges/${req.query.achievement3}.png`,
       });
     }
     if (req.query.achievement4) {
       achievements.push({
-        icon: `achievementIcons/badges/${req.query.achievement4}.png`,
+        icon: `assets/badges/${req.query.achievement4}.png`,
       });
     }
     if (req.query.achievement5) {
       achievements.push({
-        icon: `achievementIcons/badges/${req.query.achievement5}.png`,
+        icon: `assets/badges/${req.query.achievement5}.png`,
       });
     }
 
@@ -171,10 +169,7 @@ export function memberEndPoints(app) {
     if (req.query.backgroundImage) {
       rank
         .setOverlay("#2b2f35", 0.4)
-        .setBackground(
-          "IMAGE",
-          `achievementIcons/${req.query.backgroundImage}.png`
-        );
+        .setBackground("IMAGE", `assets/${req.query.backgroundImage}.png`);
     }
 
     let data = await rank.build();
@@ -290,10 +285,9 @@ export function memberEndPoints(app) {
         },
       ],
     };
-
-    global.client.channels.cache
-      .get("1128264366182125664")
-      .send({ embeds: [embed] });
+    (
+      global.client.channels.cache.get("1128264366182125664") as TextChannel
+    ).send({ embeds: [embed] });
   }
 
   app.get(apiPrefix + "profileImage", authenticateToken, function (req, res) {

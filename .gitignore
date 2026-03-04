@@ -1,6 +1,4 @@
 node_modules/*
-
-config.js
 config.js
 .env
 env.ps1
@@ -9,3 +7,4 @@ env.ps1
 .idea
 environment.cmd
 environment.ps1
+.zed/debug.json
