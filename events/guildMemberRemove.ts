@@ -1,6 +1,9 @@
 import { EmbedBuilder, GuildMember, Client } from "discord.js";
 import { FpgClient } from "../components/FpgClient";
 import { IEvent } from "../interfaces/IEvent";
+import { createLogger } from "../utils/logger";
+
+const log = createLogger("GuildMemberRemove");
 
 export default class guildMemberRemove implements IEvent {
   name = "guildMemberRemove";
@@ -30,6 +33,8 @@ export default class guildMemberRemove implements IEvent {
         }
       )
       .setTimestamp();
-    (global.client as FpgClient).logChannel.send({ embeds: [embed] });
+    (global.client as FpgClient).logChannel
+      .send({ embeds: [embed] })
+      .catch((error) => log.error("Failed to send log message:", error));
   }
 }

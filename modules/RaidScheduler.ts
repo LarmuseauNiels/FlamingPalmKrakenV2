@@ -183,10 +183,15 @@ export abstract class RaidScheduler {
       } as MessageCreateOptions)
       .then((message) => {
         raid.RaidSchedulingOption.forEach((option) => {
-          message.react(RaidEmbeds.getUniCodeEmoji(option.Option));
+          message
+            .react(RaidEmbeds.getUniCodeEmoji(option.Option))
+            .catch((err) =>
+              log.error("Failed to react to resent scheduling message:", err)
+            );
         });
       })
       .catch((err: any) => {
+        log.error("Failed to resend scheduling message:", err);
         return err.toString();
       });
     return "success";

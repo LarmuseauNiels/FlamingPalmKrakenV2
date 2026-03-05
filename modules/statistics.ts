@@ -228,12 +228,10 @@ module.exports = async function (client: FpgClient) {
     }
 
     log.info("Running scheduling checker");
-    try {
-      RaidScheduler.checkSchedules();
-    } catch (e) {
+    RaidScheduler.checkSchedules().catch((e) => {
       global.bugsnag.notify(e);
       log.error("Scheduling checker error:", e);
-    }
+    });
   });
 };
 

@@ -48,6 +48,8 @@ export class AchievementsModule {
       ChannelUpdates.MessageWithProfile(
         `<@${memberID}>recieved an achievement!: ${achievement.Name} \n${description}`,
         memberID
+      ).catch((err) =>
+        global.client.log("Failed to send achievement profile message for " + memberID + ": " + err)
       );
 
       await global.client.prisma.points.update({
@@ -252,6 +254,10 @@ FROM (
                       DailyLoginAchievement.ID,
                       "178435947816419328",
                       new Date().toDateString()
+                    ).catch((err) =>
+                      global.client.log(
+                        "Failed to give daily login achievement to " + member.id + ": " + err
+                      )
                     );
                   }
                 })

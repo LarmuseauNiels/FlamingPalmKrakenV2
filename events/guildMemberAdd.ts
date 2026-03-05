@@ -13,7 +13,7 @@ export default class guildMemberAdd implements IEvent {
         (role) => role.name === "Guest"
       );
       if (memberRole) {
-        GuildMember.roles.add(memberRole);
+        await GuildMember.roles.add(memberRole);
       }
     } catch (error) {
       global.bugsnag.notify(error);

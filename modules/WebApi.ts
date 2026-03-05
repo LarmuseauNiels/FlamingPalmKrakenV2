@@ -29,7 +29,9 @@ export class WebApi {
           prompt: prompt,
         },
         function (accessToken, refreshToken, profile, done) {
-          logDiscordLogin(profile);
+          logDiscordLogin(profile).catch((err) =>
+            log.error("Failed to log discord login for " + profile.username + ":", err)
+          );
           if (profile.guilds.map((g) => g.id).includes(process.env.GUILD_ID)) {
             process.nextTick(function () {
               return done(null, profile);

@@ -25,22 +25,22 @@ export default class messageCreate implements IEvent {
           if (responseContent && responseContent.length > 0) {
             const textValue = responseContent[0]?.text?.value;
             if (textValue) {
-              message.reply(textValue);
+              message.reply(textValue).catch((e) => log.error("Failed to reply with response:", e));
             } else {
               log.error("No text.value property in response");
-              message.reply("I'm sorry, I couldn't process your request properly.");
+              message.reply("I'm sorry, I couldn't process your request properly.").catch((e) => log.error("Failed to reply with error message:", e));
             }
           } else {
             log.error("Empty or invalid content array in response");
-            message.reply("I'm sorry, I couldn't process your request properly.");
+            message.reply("I'm sorry, I couldn't process your request properly.").catch((e) => log.error("Failed to reply with error message:", e));
           }
         } else {
           log.error("Empty or invalid response from assistant");
-          message.reply("I'm sorry, I couldn't process your request properly.");
+          message.reply("I'm sorry, I couldn't process your request properly.").catch((e) => log.error("Failed to reply with error message:", e));
         }
       }).catch(error => {
         log.error("Error with assistant.ask:", error);
-        message.reply("Sorry, I encountered an error processing your request.");
+        message.reply("Sorry, I encountered an error processing your request.").catch((e) => log.error("Failed to reply with error message:", e));
       });
     }
   }
