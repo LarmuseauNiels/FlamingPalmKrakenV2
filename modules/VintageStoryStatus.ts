@@ -38,20 +38,30 @@ module.exports = function (client: FpgClient) {
           "VintageStory " + server.players + "/8",
           { type: ActivityType.Playing }
         );
-        client.channels.fetch(VS_CHANNEL_ID).then((channel) => {
-          (channel as BaseGuildTextChannel).setName(
-            "🏕️┃vintage-story-" + server.players
+        client.channels
+          .fetch(VS_CHANNEL_ID)
+          .then((channel) => {
+            (channel as BaseGuildTextChannel).setName(
+              "🏕️┃vintage-story-" + server.players
+            );
+          })
+          .catch((error) =>
+            log.error("Failed to update VS channel name:", error)
           );
-        });
       })
       .catch((err) => {
         log.error("Failed to fetch Vintage Story servers:", err);
         global.client.user.setActivity("flamingpalm.com", {
           type: ActivityType.Watching,
         });
-        client.channels.fetch(VS_CHANNEL_ID).then((channel) => {
-          (channel as BaseGuildTextChannel).setName("🏕️┃vintage-story");
-        });
+        client.channels
+          .fetch(VS_CHANNEL_ID)
+          .then((channel) => {
+            (channel as BaseGuildTextChannel).setName("🏕️┃vintage-story");
+          })
+          .catch((error) =>
+            log.error("Failed to reset VS channel name:", error)
+          );
       });
   });
 };

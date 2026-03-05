@@ -13,7 +13,7 @@ export default class guildMemberAdd implements IEvent {
         (role) => role.name === "Guest"
       );
       if (memberRole) {
-        GuildMember.roles.add(memberRole);
+        await GuildMember.roles.add(memberRole);
       }
     } catch (error) {
       global.bugsnag.notify(error);
@@ -119,7 +119,9 @@ export default class guildMemberAdd implements IEvent {
         global.bugsnag.notify(error);
         log.error("Error in guildMemberAdd:", error);
       }
-      global.client.logChannel.send({ embeds: [embed] });
-    });
+      global.client.logChannel
+        .send({ embeds: [embed] })
+        .catch((error) => log.error("Failed to send log message:", error));
+    }).catch((error) => log.error("Failed to fetch guild invites:", error));
   }
 }

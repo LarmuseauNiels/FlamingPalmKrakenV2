@@ -1,6 +1,9 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
 import { RaidModule } from "../../modules/RaidModule";
+import { createLogger } from "../../utils/logger";
+
+const log = createLogger("EventSummary");
 
 export default class EventSummaryHandler implements IHandler {
   name = "event-summary";
@@ -29,28 +32,37 @@ export default class EventSummaryHandler implements IHandler {
       });
     }
 
-    interaction.guild.scheduledEvents.fetch().then(async (events) => {
-      events = events.sort((e) => e.scheduledStartTimestamp).reverse();
-      client.events = events;
-      var contentText = "Upcoming events!\n";
+    interaction.guild.scheduledEvents
+      .fetch()
+      .then(async (events) => {
+        events = events.sort((e) => e.scheduledStartTimestamp).reverse();
+        client.events = events;
+        var contentText = "Upcoming events!\n";
 
-      let sortedEvents = client.events.sort((a, b) => {
-        return a.scheduledStartTimestamp - b.scheduledStartTimestamp;
-      });
-      sortedEvents.forEach((event) => {
-        contentText += `${event.url}\n`;
-      });
+        let sortedEvents = client.events.sort((a, b) => {
+          return a.scheduledStartTimestamp - b.scheduledStartTimestamp;
+        });
+        sortedEvents.forEach((event) => {
+          contentText += `${event.url}\n`;
+        });
 
-      let raids = await RaidModule.getRaidMessage();
-      channel.send({
-        content: contentText,
-        embeds: raids.embeds,
-        components: raids.components,
+        let raids = await RaidModule.getRaidMessage();
+        channel
+          .send({
+            content: contentText,
+            embeds: raids.embeds,
+            components: raids.components,
+          })
+          .catch((err) => log.error("Failed to send event summary:", err));
+        interaction
+          .reply({ content: `\`✅\` Event summary sent.`, ephemeral: true })
+          .catch((err) => log.error("Failed to reply:", err));
+      })
+      .catch((err) => {
+        log.error("Failed to fetch scheduled events:", err);
+        interaction
+          .reply({ content: `\`❌\` Failed to fetch events.`, ephemeral: true })
+          .catch((e) => log.error("Failed to reply with error:", e));
       });
-      interaction.reply({
-        content: `\`✅\` Event summary sent.`,
-        ephemeral: true,
-      });
-    });
   }
 }

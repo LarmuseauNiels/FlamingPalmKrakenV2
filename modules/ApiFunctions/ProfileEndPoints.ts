@@ -1,5 +1,8 @@
 import { authenticateToken, jsonify } from "./Helpers";
 import Rank from "../profile";
+import { createLogger } from "../../utils/logger";
+
+const log = createLogger("ProfileEndPoints");
 
 export function profileEndPoints(app) {
   let apiPrefix = "/members/";
@@ -39,10 +42,16 @@ export function profileEndPoints(app) {
 
   app.get(apiPrefix + "profileImage", authenticateToken, function (req, res) {
     let user = req.user;
-    global.client.achievementsModule.GetProfileBlob(user.id).then((blob) => {
-      res.set("Content-Type", "image/png");
-      res.send(blob);
-    });
+    global.client.achievementsModule
+      .GetProfileBlob(user.id)
+      .then((blob) => {
+        res.set("Content-Type", "image/png");
+        res.send(blob);
+      })
+      .catch((err) => {
+        log.error("Failed to get profile blob:", err);
+        res.status(500).send("Failed to load profile image");
+      });
   });
 
   app.post(
@@ -69,6 +78,10 @@ export function profileEndPoints(app) {
         })
         .then(() => {
           res.send("ok");
+        })
+        .catch((err) => {
+          log.error("Failed to update profile image:", err);
+          res.status(500).send("Failed to update profile image");
         });
     }
   );
@@ -86,6 +99,10 @@ export function profileEndPoints(app) {
       })
       .then(() => {
         res.send(true);
+      })
+      .catch((err) => {
+        log.error("Failed to set background:", err);
+        res.status(500).send("Failed to update background");
       });
   });
 
@@ -106,6 +123,10 @@ export function profileEndPoints(app) {
       })
       .then(() => {
         res.send(true);
+      })
+      .catch((err) => {
+        log.error("Failed to set badge:", err);
+        res.status(500).send("Failed to update badge");
       });
   });
 

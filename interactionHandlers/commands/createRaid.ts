@@ -1,6 +1,9 @@
 import { SlashCommandBuilder } from "discord.js";
 import { ChannelUpdates } from "../../islander/ChannelUpdates";
 import { IHandler } from "../../interfaces/IHandler";
+import { createLogger } from "../../utils/logger";
+
+const log = createLogger("CreateRaid");
 
 export default class CreateRaidCommand implements IHandler {
   name = "create-raid";
@@ -33,11 +36,15 @@ export default class CreateRaidCommand implements IHandler {
         Creator: interaction.user.id,
       },
     });
-    ChannelUpdates.MessageWithRaid("New raid created: " + title);
-    interaction.reply({
-      content:
-        "Successfully created a new raid! Check out the updated list by typing /raids.",
-      ephemeral: true,
-    });
+    ChannelUpdates.MessageWithRaid("New raid created: " + title).catch((err) =>
+      log.error("Failed to send raid channel update:", err)
+    );
+    interaction
+      .reply({
+        content:
+          "Successfully created a new raid! Check out the updated list by typing /raids.",
+        ephemeral: true,
+      })
+      .catch((err) => log.error("Failed to reply:", err));
   }
 }
