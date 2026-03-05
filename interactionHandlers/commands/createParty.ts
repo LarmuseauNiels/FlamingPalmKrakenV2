@@ -1,7 +1,3 @@
-import { createLogger } from "../../utils/logger";
-
-const log = createLogger("CreatePartyCommand");
-
 import {
   SlashCommandBuilder,
   ChatInputCommandInteraction,
@@ -10,6 +6,9 @@ import {
   ForumChannel,
 } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
+import { createLogger } from "../../utils/logger";
+
+const log = createLogger("CreatePartyCommand");
 
 export default class CreatePartyCommand implements IHandler {
   name: string = "create-party";

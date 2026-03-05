@@ -1,7 +1,3 @@
-import { createLogger } from "../utils/logger";
-
-const log = createLogger("ClientReady");
-
 import {
   ActivityOptions,
   ActivityType,
@@ -12,6 +8,9 @@ import {
 } from "discord.js";
 import { FpgClient } from "../components/FpgClient";
 import { IEvent } from "../interfaces/IEvent";
+import { createLogger } from "../utils/logger";
+
+const log = createLogger("ClientReady");
 
 export default class ready implements IEvent {
   name = "clientReady";

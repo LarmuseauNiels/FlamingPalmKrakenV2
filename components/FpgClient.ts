@@ -10,7 +10,7 @@ import { IHandler } from "../interfaces/IHandler";
 import { IEvent } from "../interfaces/IEvent";
 import { createLogger } from "../utils/logger";
 
-const log = createLogger("FpgClient");
+const logger = createLogger("FpgClient");
 type interactionSet = Collection<string, IHandler>;
 
 export class FpgClient extends Client {
@@ -70,7 +70,7 @@ export class FpgClient extends Client {
   }
 
   log(loggText) {
-    log.info(loggText);
+    logger.info(loggText);
     this.logChannel.send("```" + loggText + "```");
   }
 
@@ -99,9 +99,9 @@ export class FpgClient extends Client {
         const handlerSource = require(fileLocation);
         const handler: IHandler = new handlerSource.default();
         actions.set(handler.name, handler);
-        log.info(`Loaded ${type} ${handler.name}`);
+        logger.info(`Loaded ${type} ${handler.name}`);
       } catch (error) {
-        log.error(`Failed to load ${type} ${file}: ${error}`);
+        logger.error(`Failed to load ${type} ${file}: ${error}`);
       }
     }
     return actions;
@@ -113,7 +113,7 @@ export class FpgClient extends Client {
       .filter((file) => file.endsWith(".js"));
 
     for (const file of eventFiles) {
-      log.info(`Loading event ${file}`);
+      logger.info(`Loading event ${file}`);
       try {
         const eventSource = require(path.join(__dirname, `../events/${file}`));
 
@@ -127,13 +127,13 @@ export class FpgClient extends Client {
             this.on(event.name, (...args) => event.execute(...args));
           }
         } else {
-          log.error(
+          logger.error(
             `[Module Error] Event file '${file}' does not have a valid default export. Skipping.`
           );
-          log.debug(`[Module Error] Received:`, eventSource);
+          logger.debug(`[Module Error] Received:`, eventSource);
         }
       } catch (e) {
-        log.error(`[Load Error] Failed to load event ${file}:`, e);
+        logger.error(`[Load Error] Failed to load event ${file}:`, e);
       }
     }
   }

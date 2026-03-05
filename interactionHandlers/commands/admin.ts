@@ -1,7 +1,3 @@
-import { createLogger } from "../../utils/logger";
-
-const log = createLogger("AdminHandler");
-
 import {
   SlashCommandBuilder,
   PermissionFlagsBits,
@@ -15,6 +11,9 @@ import {
   TextChannel,
 } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
+import { createLogger } from "../../utils/logger";
+
+const log = createLogger("AdminHandler");
 
 export default class AdminHandler implements IHandler {
   name = "admin";

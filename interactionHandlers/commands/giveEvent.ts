@@ -1,7 +1,3 @@
-import { createLogger } from "../../utils/logger";
-
-const log = createLogger("GiveEventCommand");
-
 import {
   SlashCommandBuilder,
   PermissionFlagsBits,
@@ -9,6 +5,9 @@ import {
   StringSelectMenuBuilder,
 } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
+import { createLogger } from "../../utils/logger";
+
+const log = createLogger("GiveEventCommand");
 
 const getOffset = (timeZone = "UTC", date = new Date()) => {
   const utcDate = new Date(date.toLocaleString("en-US", { timeZone: "UTC" }));

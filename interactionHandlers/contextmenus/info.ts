@@ -1,7 +1,3 @@
-import { createLogger } from "../../utils/logger";
-
-const log = createLogger("InfoHandler");
-
 import {
   ContextMenuCommandBuilder,
   ApplicationCommandType,
@@ -11,6 +7,9 @@ import {
   InteractionEditReplyOptions,
 } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
+import { createLogger } from "../../utils/logger";
+
+const log = createLogger("InfoHandler");
 
 export default class InfoHandler implements IHandler {
   name = "info";

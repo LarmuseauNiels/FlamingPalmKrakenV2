@@ -1,13 +1,12 @@
-import { createLogger } from "../../utils/logger";
-
-const log = createLogger("PointsCommand");
-
 import {
   SlashCommandBuilder,
   EmbedBuilder,
   ChatInputCommandInteraction,
 } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
+import { createLogger } from "../../utils/logger";
+
+const log = createLogger("PointsCommand");
 
 export default class PointsCommand implements IHandler {
   name = "points";
