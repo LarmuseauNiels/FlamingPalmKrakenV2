@@ -1,3 +1,7 @@
+import { createLogger } from "../../utils/logger";
+
+const log = createLogger("GiveEventCommand");
+
 import {
   SlashCommandBuilder,
   PermissionFlagsBits,
@@ -59,7 +63,7 @@ export default class GiveEventCommand implements IHandler {
       .$queryRaw`select distinct M.ID, M.DisplayName from VoiceConnected join Members M on M.ID = VoiceConnected.ID where HOUR(TimeStamp) = ${hour} and DATE(TimeStamp) = DATE(DATE_ADD(NOW(),INTERVAL ${
       0 - daysago
     } DAY)) `;
-    console.log(results);
+    log.debug("Voice presence query results:", results);
     if (results.length === 0) {
       await interaction.reply({
         ephemeral: true,

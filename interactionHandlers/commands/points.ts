@@ -1,3 +1,7 @@
+import { createLogger } from "../../utils/logger";
+
+const log = createLogger("PointsCommand");
+
 import {
   SlashCommandBuilder,
   EmbedBuilder,
@@ -48,7 +52,7 @@ export default class PointsCommand implements IHandler {
         inline: false,
       });
     });
-    console.log(member);
+    log.debug("Member points data:", member?.Points?.TotalPoints);
     interaction.reply({ embeds: [embed], ephemeral: true });
   }
 }

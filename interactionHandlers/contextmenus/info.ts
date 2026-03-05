@@ -1,3 +1,7 @@
+import { createLogger } from "../../utils/logger";
+
+const log = createLogger("InfoHandler");
+
 import {
   ContextMenuCommandBuilder,
   ApplicationCommandType,
@@ -45,7 +49,7 @@ export default class InfoHandler implements IHandler {
     const labels = lastOnline.map((x) => x.date).join(",");
     const data = lastOnline.map((x) => x.hours).join(",");
     const chart = `https://quickchart.io/chart/render/zm-45881e0a-49bc-4498-8b62-d64ff3adb44a?labels=${labels}&data1=${data}`;
-    console.log(chart);
+    log.debug("Chart URL generated:", chart);
 
     const member = await interaction.guild.members.fetch(interaction.targetId);
     const embed = new EmbedBuilder()

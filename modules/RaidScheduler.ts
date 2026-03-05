@@ -1,6 +1,9 @@
 import { EmbedBuilder, MessageCreateOptions, User } from "discord.js";
 import { RaidAttendees, Raids, RaidSchedulingOption } from "@prisma/client";
 import { RaidEmbeds } from "./RaidEmbeds";
+import { createLogger } from "../utils/logger";
+
+const log = createLogger("RaidScheduler");
 
 export abstract class RaidScheduler {
   static async getRaid(raidId: number) {
@@ -17,7 +20,7 @@ export abstract class RaidScheduler {
   }
 
   static async SchedulingCreationCheck(raidId: number) {
-    console.log("Checking if raid is ready for scheduling");
+    log.info("Checking if raid is ready for scheduling");
     let raid = await global.client.prisma.raids.findFirst({
       include: {
         RaidAttendees: true,
@@ -29,11 +32,11 @@ export abstract class RaidScheduler {
     });
 
     if (raid == null) {
-      console.log("Raid not found");
+      log.warn("Raid not found");
       return;
     }
 
-    console.log(
+    log.info(
       "Raid found with " +
         raid.RaidAttendees.length +
         " attendees out of " +
@@ -41,7 +44,7 @@ export abstract class RaidScheduler {
         " required"
     );
     if (raid.RaidAttendees.length >= raid.MinPlayers) {
-      console.log("Raid is starting scheduling");
+      log.info("Raid is starting scheduling");
 
       await global.client.prisma.raids.update({
         where: { ID: raidId },
@@ -57,7 +60,7 @@ export abstract class RaidScheduler {
       if (firstSchedulingOption.getTime() - new Date().getTime() < 259200000) {
         firstSchedulingOption.setDate(firstSchedulingOption.getDate() + 7);
       }
-      console.log("Scheduling starts on " + firstSchedulingOption);
+      log.info("Scheduling starts on " + firstSchedulingOption);
 
       await this.AddDayToRaidSchedulingOptions(raidId, firstSchedulingOption);
       await this.SendSchedulingMessage(raidId);
@@ -131,7 +134,7 @@ export abstract class RaidScheduler {
                 user.id +
                 ">"
             );
-            console.log(err);
+            log.error("Error sending scheduling message:", err);
           });
       });
     });
@@ -176,7 +179,7 @@ export abstract class RaidScheduler {
   }
 
   static async checkSchedules() {
-    console.log("Collecting scheduling raids");
+    log.info("Collecting scheduling raids");
     let raids = await global.client.prisma.raids.findMany({
       include: {
         RaidAttendees: true,
@@ -196,7 +199,7 @@ export abstract class RaidScheduler {
       RaidSchedulingOption: RaidSchedulingOption[];
     }
   ) {
-    console.log("Collecting raid " + raid.ID);
+    log.info("Collecting raid " + raid.ID);
     let votes = await this.CollectSchedulingVotes(raid);
     let consensusVotes = new Map<RaidSchedulingOption, string[]>();
     votes.forEach((value, key) => {
@@ -214,20 +217,20 @@ export abstract class RaidScheduler {
             },
           });
         if (existingRaid == null) {
-          console.log("Creating raid for " + key.Timestamp);
+          log.info("Creating raid for " + key.Timestamp);
           await this.CreateRaid(key, raid);
           return;
         } else {
-          console.log("Raid already exists for " + key.Timestamp);
+          log.info("Raid already exists for " + key.Timestamp);
         }
       }
     } else {
-      console.log("No consensus reached for raid " + raid.ID);
+      log.info("No consensus reached for raid " + raid.ID);
       let finishingTime = new Date(raid.RaidSchedulingOption[0].Timestamp);
       finishingTime.setDate(finishingTime.getDate() - 1);
       finishingTime.setHours(0, 0, 0, 0);
       if (new Date().getTime() > finishingTime.getTime()) {
-        console.log("Cancelling raid " + raid.ID);
+        log.info("Cancelling raid " + raid.ID);
         await this.cancelRaid(raid);
       }
     }
@@ -250,7 +253,7 @@ export abstract class RaidScheduler {
         await user.createDM();
       }
       const messages = await user.dmChannel.messages.fetch({ limit: 50 });
-      console.log(messages.size);
+      log.debug("DM messages fetched:", messages.size);
       const message = messages.find((m) => m.content == raid.ID.toString());
       if (!message) {
         global.client.log(
@@ -261,7 +264,7 @@ export abstract class RaidScheduler {
         );
         return;
       }
-      console.log(message);
+      log.debug("Scheduling message found:", message?.id);
       const optionVotesPromises = raid.RaidSchedulingOption.map(
         async (option) => {
           const users = await message.reactions

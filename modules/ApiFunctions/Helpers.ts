@@ -1,4 +1,7 @@
 import jwt from "jsonwebtoken";
+import { createLogger } from "../../utils/logger";
+
+const log = createLogger("Helpers");
 
 export function jsonify(obj) {
   return JSON.stringify(obj, (key, value) =>
@@ -13,7 +16,7 @@ export function authenticateToken(req, res, next) {
   if (token == null) return res.sendStatus(401);
 
   jwt.verify(token, process.env.JWT_SECRET as string, (err: any, user: any) => {
-    console.log(err);
+    if (err) log.warn("JWT verification error:", err);
 
     if (err) return res.sendStatus(403);
 

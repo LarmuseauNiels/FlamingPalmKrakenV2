@@ -1,4 +1,7 @@
 import { OpenAI } from "openai";
+import { createLogger } from "../utils/logger";
+
+const log = createLogger("Assistant");
 
 export class Assistant {
   private openai: any;
@@ -74,7 +77,7 @@ export class Assistant {
       });
       return await this.createAndPollRun();
     } catch (error) {
-      console.error("Error in ask method:", error);
+      log.error("Error in ask method:", error);
       return [{ content: [{ text: { value: "Sorry, I encountered an error processing your request." } }] }];
     }
   }
@@ -89,7 +92,7 @@ export class Assistant {
       );
       return await this.handleRunStatus(run);
     } catch (error) {
-      console.error("Error creating and polling run:", error);
+      log.error("Error creating and polling run:", error);
       return [{ content: [{ text: { value: "Sorry, I encountered an error while processing your request." } }] }];
     }
   }
@@ -101,7 +104,7 @@ export class Assistant {
       case "requires_action":
         return await this.handleRequiresAction(run);
       default:
-        console.error("Run did not complete successfully:", run);
+        log.error("Run did not complete successfully:", run);
         return [{ content: [{ text: { value: "Sorry, the request did not complete successfully." } }] }];
     }
   }
@@ -113,7 +116,7 @@ export class Assistant {
       );
       
       // Debug the actual structure of the returned messages
-      console.log("Messages structure:", JSON.stringify(messages, null, 2));
+      log.debug("Messages structure:", messages);
       
       // Format the response to match the expected structure in messageCreate.ts
       if (messages && messages.data && messages.data.length > 0) {
@@ -128,14 +131,14 @@ export class Assistant {
           };
         });
         
-        console.log("Formatted response:", JSON.stringify(formattedResponse, null, 2));
+        log.debug("Formatted response:", formattedResponse);
         return formattedResponse;
       }
       
-      console.warn("No messages found in response");
+      log.warn("No messages found in response");
       return [{ content: [{ text: { value: "No response was generated." } }] }];
     } catch (error) {
-      console.error("Error fetching messages:", error);
+      log.error("Error fetching messages:", error);
       return [{ content: [{ text: { value: "Sorry, I encountered an error retrieving the response." } }] }];
     }
   }
@@ -150,18 +153,18 @@ export class Assistant {
         const toolOutputs = await this.collectToolOutputs(
           run.required_action.submit_tool_outputs.tool_calls
         );
-        console.log("Tool outputs collected:", toolOutputs);
+        log.debug("Tool outputs collected:", toolOutputs);
 
         if (toolOutputs.length > 0) {
           run = await this.submitToolOutputs(run, toolOutputs);
-          console.log("Tool outputs submitted successfully.");
+          log.info("Tool outputs submitted successfully.");
         } else {
-          console.log("No tool outputs to submit.");
+          log.debug("No tool outputs to submit.");
         }
 
         return await this.handleRunStatus(run);
       } catch (error) {
-        console.error("Error handling requires action:", error);
+        log.error("Error handling requires action:", error);
         return [{ content: [{ text: { value: "Sorry, I encountered an error while processing tools." } }] }];
       }
     }
@@ -172,7 +175,7 @@ export class Assistant {
 
   // Helper method to collect tool outputs asynchronously
   async collectToolOutputs(toolCalls) {
-    console.log(toolCalls);
+    log.debug("Tool calls:", toolCalls);
     // Wait for all asynchronous tool calls to complete
     const toolOutputs = await Promise.all(
       toolCalls.map(async (tool) => {
@@ -216,16 +219,16 @@ export class Assistant {
   async getEventsString(): Promise<string> {
     let string = "";
     for (let e of globalThis.client.events) {
-      console.log(e[0]);
+      log.debug("Event key:", e[0]);
       let event = globalThis.client.events.get(e[0]);
-      console.log(event);
+      log.debug("Event:", event);
       string += `Event: ${event.name} - Date: ${new Date(
         event.scheduledStartTimestamp
       ).toString()} - Description: ${event.description} - Link: ${
         event.url
       } \n`;
     }
-    console.log(string);
+    log.debug("Events string:", string);
     return string;
   }
 
@@ -257,7 +260,7 @@ export class Assistant {
         { tool_outputs: toolOutputs }
       );
     } catch (error) {
-      console.error("Error submitting tool outputs:", error);
+      log.error("Error submitting tool outputs:", error);
     }
   }
 }

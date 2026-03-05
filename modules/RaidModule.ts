@@ -2,6 +2,9 @@ import { EmbedBuilder } from "discord.js";
 import { ChannelUpdates } from "../islander/ChannelUpdates";
 import { RaidEmbeds } from "./RaidEmbeds";
 import { RaidScheduler } from "./RaidScheduler";
+import { createLogger } from "../utils/logger";
+
+const log = createLogger("RaidModule");
 
 /**
  * RaidModule handles raid attendance and builds the public-facing raid list UI.
@@ -9,7 +12,7 @@ import { RaidScheduler } from "./RaidScheduler";
  */
 export abstract class RaidModule {
   static async AddUserToRaid(userId: string, raidId: number) {
-    console.log("Adding user to raid");
+    log.info("Adding user to raid");
     await global.client.prisma.raidAttendees.create({
       data: {
         MemberId: userId,

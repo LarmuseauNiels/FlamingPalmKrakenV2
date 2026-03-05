@@ -1,4 +1,7 @@
 import express from "express";
+import { createLogger } from "../utils/logger";
+
+const log = createLogger("WebApi");
 import cors from "cors";
 import passport from "passport";
 import jwt from "jsonwebtoken";
@@ -85,12 +88,12 @@ export class WebApi {
     adminEndPoints(app);
 
     app.use(function (err, req, res, next) {
-      console.error(err.stack);
+      log.error("Unhandled Express error:", err.stack);
       res.status(500).send("Something broke!");
     });
     app.use(middleware.errorHandler);
     app.listen(3000, () => {
-      console.log("WebApi listening on port 3000");
+      log.info("WebApi listening on port 3000");
     });
   }
 }
@@ -112,5 +115,5 @@ async function logDiscordLogin(profile) {
     },
   });
 
-  console.log(`Logged discord login: ${profile.username} ${result.Id}`);
+  log.info(`Logged discord login: ${profile.username} ${result.Id}`);
 }
