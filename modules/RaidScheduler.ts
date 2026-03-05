@@ -114,29 +114,41 @@ export abstract class RaidScheduler {
     let row = RaidEmbeds.buildSchedulingActionRow();
 
     raid.RaidAttendees.forEach((attendee) => {
-      global.client.users.fetch(attendee.MemberId).then((user) => {
-        user
-          .send({
-            embeds: [embed],
-            content: raid.ID.toString(),
-            components: [row],
-          } as MessageCreateOptions)
-          .then((message) => {
-            raid.RaidSchedulingOption.forEach((option) => {
-              message.react(RaidEmbeds.getUniCodeEmoji(option.Option));
+      global.client.users
+        .fetch(attendee.MemberId)
+        .then((user) => {
+          user
+            .send({
+              embeds: [embed],
+              content: raid.ID.toString(),
+              components: [row],
+            } as MessageCreateOptions)
+            .then((message) => {
+              raid.RaidSchedulingOption.forEach((option) => {
+                message
+                  .react(RaidEmbeds.getUniCodeEmoji(option.Option))
+                  .catch((err) =>
+                    log.error("Failed to react to scheduling message:", err)
+                  );
+              });
+            })
+            .catch((err) => {
+              global.log(
+                "Error sending scheduling message for raid " +
+                  raid.ID +
+                  "  to <@" +
+                  user.id +
+                  ">"
+              );
+              log.error("Error sending scheduling message:", err);
             });
-          })
-          .catch((err) => {
-            global.log(
-              "Error sending scheduling message for raid " +
-                raid.ID +
-                "  to <@" +
-                user.id +
-                ">"
-            );
-            log.error("Error sending scheduling message:", err);
-          });
-      });
+        })
+        .catch((err) =>
+          log.error(
+            "Failed to fetch user " + attendee.MemberId + " for scheduling:",
+            err
+          )
+        );
     });
 
     let participants = "";
@@ -153,7 +165,9 @@ export abstract class RaidScheduler {
           "https://flamingpalm.com/assets/images/logo/FlamingPalmLogoSmall.png",
       })
       .setColor("#0099ff");
-    global.client.lfg.send({ embeds: [updateEmbed] });
+    global.client.lfg
+      .send({ embeds: [updateEmbed] })
+      .catch((err) => log.error("Failed to send scheduling update to lfg:", err));
   }
 
   static async resendRaid(raidID: number, user: User) {
@@ -317,9 +331,24 @@ export abstract class RaidScheduler {
     });
 
     raid.RaidAttendees.forEach((attendee) => {
-      global.client.users.fetch(attendee.MemberId).then((user) => {
-        user.send({ embeds: [embed] });
-      });
+      global.client.users
+        .fetch(attendee.MemberId)
+        .then((user) => {
+          user
+            .send({ embeds: [embed] })
+            .catch((err) =>
+              log.error(
+                "Failed to send raid scheduled DM to " + attendee.MemberId + ":",
+                err
+              )
+            );
+        })
+        .catch((err) =>
+          log.error(
+            "Failed to fetch user " + attendee.MemberId + " for raid DM:",
+            err
+          )
+        );
     });
     global.client.log(
       "Raid scheduled: " +
@@ -328,7 +357,9 @@ export abstract class RaidScheduler {
         Math.floor(key.Timestamp.getTime() / 1000) +
         ":F>"
     );
-    global.client.lfg.send({ embeds: [embed] });
+    global.client.lfg
+      .send({ embeds: [embed] })
+      .catch((err) => log.error("Failed to send raid scheduled embed to lfg:", err));
   }
 
   static async cancelRaid(
@@ -344,9 +375,24 @@ export abstract class RaidScheduler {
       )
       .setColor("#0099ff");
     raid.RaidAttendees.forEach((attendee) => {
-      global.client.users.fetch(attendee.MemberId).then((user) => {
-        user.send({ embeds: [embed] });
-      });
+      global.client.users
+        .fetch(attendee.MemberId)
+        .then((user) => {
+          user
+            .send({ embeds: [embed] })
+            .catch((err) =>
+              log.error(
+                "Failed to send raid cancelled DM to " + attendee.MemberId + ":",
+                err
+              )
+            );
+        })
+        .catch((err) =>
+          log.error(
+            "Failed to fetch user " + attendee.MemberId + " for cancellation DM:",
+            err
+          )
+        );
     });
     await global.client.prisma.raids.update({
       where: { ID: raid.ID },

@@ -49,12 +49,18 @@ export default class ready implements IEvent {
         .then((invites) => client.invites.set(guild.id, invites))
         .catch((error) => log.error("Failed to fetch guild invites:", error));
     }
-    client.guilds.fetch(process.env.GUILD_ID!).then((guild: Guild) => {
-      guild.scheduledEvents
-        .fetch()
-        .then((events: Collection<string, GuildScheduledEvent>) => {
-          client.events = events;
-        });
-    });
+    client.guilds
+      .fetch(process.env.GUILD_ID!)
+      .then((guild: Guild) => {
+        guild.scheduledEvents
+          .fetch()
+          .then((events: Collection<string, GuildScheduledEvent>) => {
+            client.events = events;
+          })
+          .catch((error) =>
+            log.error("Failed to fetch guild scheduled events:", error)
+          );
+      })
+      .catch((error) => log.error("Failed to fetch guild:", error));
   }
 }

@@ -93,9 +93,21 @@ export class AchievementsModule {
                   inline: true,
                 }
               );
-            global.client.users.cache.get(memberID).send({ embeds: [embed] });
+            global.client.users.cache
+              .get(memberID)
+              ?.send({ embeds: [embed] })
+              .catch((err) =>
+                global.client.log(
+                  "Failed to send achievement DM to " + memberID + ": " + err
+                )
+              );
           }
-        });
+        })
+        .catch((err) =>
+          global.client.log(
+            "Failed to check achievement notifications for " + memberID + ": " + err
+          )
+        );
     } catch (err) {
       global.client.log(err);
     }
@@ -206,43 +218,53 @@ FROM (
   }
 
   async checkAchievements(members) {
-    global.client.prisma.achievements.findMany().then((achievements) => {
-      let DailyLoginAchievement = achievements.find(
-        (achievement) =>
-          achievement.Type == "VoiceLogin" && achievement.Minimum == 1
-      );
-      let startOfToday = new Date();
-      startOfToday.setHours(0, 0, 0, 0);
-      if (DailyLoginAchievement !== null) {
-        members
-          .filter(
-            (m) =>
-              m.voice.channel != null &&
-              m.voice.channelId === "530537522921734178"
-          )
-          .forEach((member) => {
-            global.client.prisma.achievement_History
-              .findFirst({
-                where: {
-                  UserID: member.id,
-                  AchievementID: DailyLoginAchievement.ID,
-                  TimeStamp: {
-                    gte: startOfToday,
+    global.client.prisma.achievements
+      .findMany()
+      .then((achievements) => {
+        let DailyLoginAchievement = achievements.find(
+          (achievement) =>
+            achievement.Type == "VoiceLogin" && achievement.Minimum == 1
+        );
+        let startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        if (DailyLoginAchievement !== null) {
+          members
+            .filter(
+              (m) =>
+                m.voice.channel != null &&
+                m.voice.channelId === "530537522921734178"
+            )
+            .forEach((member) => {
+              global.client.prisma.achievement_History
+                .findFirst({
+                  where: {
+                    UserID: member.id,
+                    AchievementID: DailyLoginAchievement.ID,
+                    TimeStamp: {
+                      gte: startOfToday,
+                    },
                   },
-                },
-              })
-              .then((achievement) => {
-                if (achievement == null) {
-                  this.GiveAchievement(
-                    member.id,
-                    DailyLoginAchievement.ID,
-                    "178435947816419328",
-                    new Date().toDateString()
-                  );
-                }
-              });
-          });
-      }
+                })
+                .then((achievement) => {
+                  if (achievement == null) {
+                    this.GiveAchievement(
+                      member.id,
+                      DailyLoginAchievement.ID,
+                      "178435947816419328",
+                      new Date().toDateString()
+                    );
+                  }
+                })
+                .catch((err) =>
+                  global.client.log(
+                    "Failed to check daily login achievement for " +
+                      member.id +
+                      ": " +
+                      err
+                  )
+                );
+            });
+        }
       /*
       let BattleBitSquadSize = achievements.find(
         (achievement) => achievement.Type == "BattleBitSquadSize"
@@ -270,7 +292,10 @@ FROM (
         }, {});
       }
       */
-    });
+      })
+      .catch((err) =>
+        global.client.log("Failed to fetch achievements for check: " + err)
+      );
   }
 
   getBadgeUnlocks(achievements: any[]) {

@@ -1,5 +1,8 @@
 import { authenticateToken, jsonify } from "./Helpers";
 import { DashBoardModel } from "./ViewModels/dash-board-model";
+import { createLogger } from "../../utils/logger";
+
+const log = createLogger("MemberEndPoints");
 
 /**
  * Core member endpoints: user profile data and the dashboard aggregate.
@@ -77,6 +80,10 @@ export function memberEndPoints(app) {
           };
         });
         return res.send(jsonify(library));
+      })
+      .catch((err) => {
+        log.error("Failed to fetch library:", err);
+        res.status(500).send("Failed to load library");
       });
   });
 }

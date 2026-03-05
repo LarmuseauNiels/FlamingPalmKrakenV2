@@ -32,6 +32,10 @@ export function shopEndPoints(app) {
             }))
           )
         );
+      })
+      .catch((err) => {
+        log.error("Failed to fetch point history:", err);
+        res.status(500).send("Failed to load point history");
       });
   });
 
@@ -127,8 +131,20 @@ export function shopEndPoints(app) {
                   rewardItem.Reward.Price
                 );
                 return res.send(jsonify(updatedRewardItem));
+              })
+              .catch((err) => {
+                log.error("Failed to deduct points:", err);
+                res.status(500).send("Failed to process redemption");
               });
+          })
+          .catch((err) => {
+            log.error("Failed to update reward item:", err);
+            res.status(500).send("Failed to process redemption");
           });
+      })
+      .catch((err) => {
+        log.error("Failed to find reward item:", err);
+        res.status(500).send("Failed to process redemption");
       });
   });
 }
@@ -146,7 +162,7 @@ function sendPurchaseToDiscord(updatedRewardItem, user, rewardTitle, price) {
       { name: "Redeemed By", value: `${user.username} (${user.id})` },
     ],
   };
-  (
-    global.client.channels.cache.get("1128264366182125664") as TextChannel
-  ).send({ embeds: [embed] });
+  (global.client.channels.cache.get("1128264366182125664") as TextChannel)
+    .send({ embeds: [embed] })
+    .catch((err) => log.error("Failed to send purchase notification to Discord:", err));
 }
