@@ -223,13 +223,11 @@ module.exports = async function (client: FpgClient) {
         })
         .catch((error) => log.error("Failed to fetch guild:", error));
     } catch (e) {
-      global.bugsnag.notify(e);
       log.error("Statistics cron job error:", e);
     }
 
     log.info("Running scheduling checker");
     RaidScheduler.checkSchedules().catch((e) => {
-      global.bugsnag.notify(e);
       log.error("Scheduling checker error:", e);
     });
   });

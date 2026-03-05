@@ -16,7 +16,7 @@ export default class guildMemberAdd implements IEvent {
         await GuildMember.roles.add(memberRole);
       }
     } catch (error) {
-      global.bugsnag.notify(error);
+      log.error("Failed to assign Guest role:", error);
     }
 
     const cachedInvites = global.client.invites.get(GuildMember.guild.id);
@@ -116,7 +116,6 @@ export default class guildMemberAdd implements IEvent {
           );
         }
       } catch (error) {
-        global.bugsnag.notify(error);
         log.error("Error in guildMemberAdd:", error);
       }
       global.client.logChannel
