@@ -3,6 +3,9 @@ import { Routes } from "discord-api-types/v9";
 import fs from "fs";
 import path from "path";
 import { IHandler } from "./interfaces/IHandler";
+import { createLogger } from "./utils/logger";
+
+const log = createLogger("DeployCommands");
 
 const commands = [];
 const guildCommands = [];
@@ -44,11 +47,9 @@ rest
     body: commands,
   })
   .then(() =>
-    console.log(
-      "Successfully registered " + commands.length + " application commands."
-    )
+    log.info("Successfully registered " + commands.length + " application commands.")
   )
-  .catch(console.error);
+  .catch((e) => log.error("Failed to register application commands:", e));
 
 rest
   .put(
@@ -61,8 +62,6 @@ rest
     }
   )
   .then(() =>
-    console.log(
-      "Successfully registered " + guildCommands.length + " guild commands."
-    )
+    log.info("Successfully registered " + guildCommands.length + " guild commands.")
   )
-  .catch(console.error);
+  .catch((e) => log.error("Failed to register guild commands:", e));

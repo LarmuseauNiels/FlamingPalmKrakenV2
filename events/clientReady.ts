@@ -8,6 +8,9 @@ import {
 } from "discord.js";
 import { FpgClient } from "../components/FpgClient";
 import { IEvent } from "../interfaces/IEvent";
+import { createLogger } from "../utils/logger";
+
+const log = createLogger("ClientReady");
 
 export default class ready implements IEvent {
   name = "clientReady";
@@ -44,7 +47,7 @@ export default class ready implements IEvent {
       guild.invites
         .fetch()
         .then((invites) => client.invites.set(guild.id, invites))
-        .catch((error) => console.log(error));
+        .catch((error) => log.error("Failed to fetch guild invites:", error));
     }
     client.guilds.fetch(process.env.GUILD_ID!).then((guild: Guild) => {
       guild.scheduledEvents

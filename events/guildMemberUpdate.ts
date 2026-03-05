@@ -1,5 +1,8 @@
 import { EmbedBuilder, GuildMember, Role } from "discord.js";
 import { IEvent } from "../interfaces/IEvent";
+import { createLogger } from "../utils/logger";
+
+const log = createLogger("GuildMemberUpdate");
 
 export default class guildMemberUpdate implements IEvent {
   name = "guildMemberUpdate";
@@ -9,9 +12,7 @@ export default class guildMemberUpdate implements IEvent {
       (role: Role) => !oldMember.roles.cache.has(role.id)
     );
     if (addedRoles.size > 0) {
-      console.log(
-        `roles changed! added roles: ${addedRoles.map((r: Role) => r.name)}}`
-      );
+      log.info(`Roles changed! Added roles: ${addedRoles.map((r: Role) => r.name)}`);
       if (addedRoles.find((r: Role) => r.name === "Community Regular")) {
         await sendReferralMessage(newMember, false);
       }
@@ -33,7 +34,7 @@ async function sendReferralMessage(member: GuildMember, isMember: boolean) {
   });
 
   if (!referrer) {
-    console.error(`No referral found for user ${member.id}.`);
+    log.error(`No referral found for user ${member.id}.`);
     return;
   }
 

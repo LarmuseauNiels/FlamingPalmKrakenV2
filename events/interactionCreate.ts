@@ -1,11 +1,14 @@
 import { Interaction } from "discord.js";
 import { IHandler } from "../interfaces/IHandler";
 import { IEvent } from "../interfaces/IEvent";
+import { createLogger } from "../utils/logger";
+
+const log = createLogger("InteractionCreate");
 
 export default class interactionCreate implements IEvent {
   name = "interactionCreate";
   async execute(interaction: any) {
-    console.log("executing interaction");
+    log.info("Executing interaction");
     global.bugsnag.startSession();
     global.bugsnag.leaveBreadcrumb(
       interaction.commandName ?? "No command name"
@@ -31,27 +34,27 @@ export default class interactionCreate implements IEvent {
   }
 
   private async handleButton(interaction: any) {
-    console.log(interaction.customId);
+    log.debug("Button interaction:", interaction.customId);
     let buttonId = interaction.customId.split("_")[0];
     let button = global.client.buttons.get(buttonId);
     if (button) await button.execute(interaction);
   }
 
   private async handleSelectMenu(interaction: any) {
-    console.log(interaction.customId);
+    log.debug("Select menu interaction:", interaction.customId);
     let selectID = interaction.customId;
     let select = global.client.selects.get(selectID);
     if (select) await select.execute(interaction);
   }
 
   private async handleContextMenu(interaction: any) {
-    console.log(interaction.commandName);
+    log.debug("Context menu interaction:", interaction.commandName);
     let menu = global.client.contextMenus.get(interaction.commandName);
     if (menu) await menu.execute(interaction);
   }
 
   private async handleCommand(interaction: any) {
-    console.log(interaction.commandName);
+    log.debug("Command interaction:", interaction.commandName);
     let command = global.client.commands.get(interaction.commandName);
     if (command) await command.execute(interaction);
   }

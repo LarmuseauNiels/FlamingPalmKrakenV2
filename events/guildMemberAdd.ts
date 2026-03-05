@@ -1,5 +1,8 @@
 import { EmbedBuilder, Invite, GuildMember, Role } from "discord.js";
 import { IEvent } from "../interfaces/IEvent";
+import { createLogger } from "../utils/logger";
+
+const log = createLogger("GuildMemberAdd");
 
 export default class guildMemberAdd implements IEvent {
   name = "guildMemberAdd";
@@ -20,22 +23,20 @@ export default class guildMemberAdd implements IEvent {
     const oldinvites = cachedInvites.map((i: Invite) => {
       return { code: i.code, uses: i.uses };
     });
-    console.log(oldinvites);
+    log.debug("Cached invites:", oldinvites);
     GuildMember.guild.invites.fetch().then(async (newInvites) => {
       const invitemap = newInvites.map((i: Invite) => {
         return { code: i.code, uses: i.uses };
       });
-      console.log(invitemap);
+      log.debug("New invites:", invitemap);
       const moreUses = invitemap.filter(
         (a) => oldinvites.find((b) => b.code === a.code)?.uses! < a.uses
       );
-      console.log("used");
-      console.log(moreUses);
+      log.debug("Invites with more uses:", moreUses);
       const removed = oldinvites.filter(
         (a) => newInvites.find((b) => b.code === a.code) === undefined
       );
-      console.log("removed");
-      console.log(removed);
+      log.debug("Removed invites:", removed);
       let usedInvite: Invite | undefined;
       if (moreUses.length === 1) usedInvite = newInvites.get(moreUses[0].code);
       else if (removed.length === 1)
@@ -116,7 +117,7 @@ export default class guildMemberAdd implements IEvent {
         }
       } catch (error) {
         global.bugsnag.notify(error);
-        console.log(error);
+        log.error("Error in guildMemberAdd:", error);
       }
       global.client.logChannel.send({ embeds: [embed] });
     });

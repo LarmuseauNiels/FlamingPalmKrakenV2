@@ -2,6 +2,9 @@ import cron from "node-cron";
 import { ActivityType, BaseGuildTextChannel } from "discord.js";
 import axios from "axios";
 import { FpgClient } from "../components/FpgClient";
+import { createLogger } from "../utils/logger";
+
+const log = createLogger("VintageStoryStatus");
 
 async function fetchVintageStoryServers(): Promise<any> {
   const url = "https://masterserver.vintagestory.at/api/v1/servers/list";
@@ -24,7 +27,7 @@ module.exports = function (client: FpgClient) {
   cron.schedule("10 * * * * *", () => {
     fetchVintageStoryServers()
       .then((data) => {
-        console.log("Fetched Vintage Story servers");
+        log.info("Fetched Vintage Story servers");
         let server = data.data.find(
           (s) => s.serverName === process.env.VS_SERVER_NAME
         );
@@ -42,7 +45,7 @@ module.exports = function (client: FpgClient) {
         });
       })
       .catch((err) => {
-        console.error("Failed to fetch Vintage Story servers:", err);
+        log.error("Failed to fetch Vintage Story servers:", err);
         global.client.user.setActivity("flamingpalm.com", {
           type: ActivityType.Watching,
         });

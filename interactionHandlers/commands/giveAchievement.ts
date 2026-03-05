@@ -1,5 +1,8 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
+import { createLogger } from "../../utils/logger";
+
+const log = createLogger("GiveAchievementCommand");
 
 export default class GiveAchievementCommand implements IHandler {
   name = "give-achievement";
@@ -34,7 +37,7 @@ export default class GiveAchievementCommand implements IHandler {
     const user = interaction.options.getUser("user");
     const achievement = +interaction.options.getString("achievement");
     const description = interaction.options.getString("description");
-    console.log(achievement, interaction.options.getString("achievement"));
+    log.debug("Giving achievement:", achievement, interaction.options.getString("achievement"));
     await global.client.achievementsModule.GiveAchievement(
       user.id,
       achievement,

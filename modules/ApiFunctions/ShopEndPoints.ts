@@ -1,5 +1,8 @@
 import { TextChannel } from "discord.js";
 import { authenticateToken, jsonify } from "./Helpers";
+import { createLogger } from "../../utils/logger";
+
+const log = createLogger("ShopEndPoints");
 
 export function shopEndPoints(app) {
   let apiPrefix = "/members/";
@@ -82,7 +85,7 @@ export function shopEndPoints(app) {
         include: { Reward: true },
       })
       .then(async (rewardItem) => {
-        console.log(rewardItem);
+        log.debug("Reward item found:", rewardItem?.RewardItemID);
         if (!rewardItem) {
           return res.status(400).send("No items left");
         }
@@ -107,7 +110,7 @@ export function shopEndPoints(app) {
             },
           })
           .then((updatedRewardItem) => {
-            console.log(updatedRewardItem);
+            log.info("Reward item redeemed:", updatedRewardItem?.RewardItemID);
             global.client.prisma.points
               .update({
                 where: { userid: user.id },

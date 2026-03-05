@@ -6,6 +6,9 @@ import {
   ForumChannel,
 } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
+import { createLogger } from "../../utils/logger";
+
+const log = createLogger("CreatePartyCommand");
 
 export default class CreatePartyCommand implements IHandler {
   name: string = "create-party";
@@ -127,7 +130,7 @@ export default class CreatePartyCommand implements IHandler {
         }" created for ${eventDate.toLocaleString()}.`,
       });
     } catch (error) {
-      console.error("Error creating scheduled event: ", error);
+      log.error("Error creating scheduled event:", error);
       await interaction.reply({
         content: "An error occurred while creating the scheduled event.",
         ephemeral: true,

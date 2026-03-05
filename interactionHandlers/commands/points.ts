@@ -4,6 +4,9 @@ import {
   ChatInputCommandInteraction,
 } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
+import { createLogger } from "../../utils/logger";
+
+const log = createLogger("PointsCommand");
 
 export default class PointsCommand implements IHandler {
   name = "points";
@@ -48,7 +51,7 @@ export default class PointsCommand implements IHandler {
         inline: false,
       });
     });
-    console.log(member);
+    log.debug("Member points data:", member?.Points?.TotalPoints);
     interaction.reply({ embeds: [embed], ephemeral: true });
   }
 }

@@ -2,6 +2,9 @@ import cron from "node-cron";
 import { EmbedBuilder, GuildMember, TextChannel } from "discord.js";
 import { RaidScheduler } from "./RaidScheduler";
 import { FpgClient } from "../components/FpgClient";
+import { createLogger } from "../utils/logger";
+
+const log = createLogger("Statistics");
 
 interface Member {
   ID: string;
@@ -31,13 +34,13 @@ interface PresenceData {
 
 module.exports = async function (client: FpgClient) {
   let knownuserCache: Member[] = [];
-  console.log("loading statistics module");
+  log.info("Loading statistics module");
   await client.prisma.members
     .findMany({ select: { ID: true } })
     .then((members: Member[]) => (knownuserCache = members));
 
   cron.schedule("30 0,15,30,45 * * * *", () => {
-    console.log("running statistics tracking cron job");
+    log.info("Running statistics tracking cron job");
 
     try {
       client.guilds.fetch(process.env.GUILD_ID!).then((guild) => {
@@ -83,7 +86,7 @@ module.exports = async function (client: FpgClient) {
                 } as VoiceConnected)),
             })
             .then((x) =>
-              console.log("tracked " + x.count + " members in voice channels")
+              log.info("Tracked " + x.count + " members in voice channels")
             );
 
           client.prisma.presence
@@ -112,7 +115,7 @@ module.exports = async function (client: FpgClient) {
                 .flat(),
             })
             .then((x) => {
-              console.log(x);
+              log.debug("Presence records created:", x);
             });
 
           global.client.achievementsModule.checkAchievements(members);
@@ -167,15 +170,15 @@ module.exports = async function (client: FpgClient) {
       });
     } catch (e) {
       global.bugsnag.notify(e);
-      console.log(e);
+      log.error("Statistics cron job error:", e);
     }
 
-    console.log("running scheduling checker");
+    log.info("Running scheduling checker");
     try {
       RaidScheduler.checkSchedules();
     } catch (e) {
       global.bugsnag.notify(e);
-      console.log(e);
+      log.error("Scheduling checker error:", e);
     }
   });
 };

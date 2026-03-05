@@ -5,6 +5,9 @@ import {
   StringSelectMenuBuilder,
 } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
+import { createLogger } from "../../utils/logger";
+
+const log = createLogger("GiveEventCommand");
 
 const getOffset = (timeZone = "UTC", date = new Date()) => {
   const utcDate = new Date(date.toLocaleString("en-US", { timeZone: "UTC" }));
@@ -59,7 +62,7 @@ export default class GiveEventCommand implements IHandler {
       .$queryRaw`select distinct M.ID, M.DisplayName from VoiceConnected join Members M on M.ID = VoiceConnected.ID where HOUR(TimeStamp) = ${hour} and DATE(TimeStamp) = DATE(DATE_ADD(NOW(),INTERVAL ${
       0 - daysago
     } DAY)) `;
-    console.log(results);
+    log.debug("Voice presence query results:", results);
     if (results.length === 0) {
       await interaction.reply({
         ephemeral: true,

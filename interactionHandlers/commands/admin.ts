@@ -11,6 +11,9 @@ import {
   TextChannel,
 } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
+import { createLogger } from "../../utils/logger";
+
+const log = createLogger("AdminHandler");
 
 export default class AdminHandler implements IHandler {
   name = "admin";
@@ -87,7 +90,7 @@ Members of our community have the opportunity to earn Achievements through vario
               "Flaming palm is moving to a new server! Pls join https://discord.gg/BFfuQmxNRW"
             );
           } catch (e) {
-            console.log(e);
+            log.error("Error in admin command:", e);
           }
         });
       }
@@ -146,7 +149,7 @@ Members of our community have the opportunity to earn Achievements through vario
             try {
               member.kick();
             } catch (e) {
-              console.log(e);
+              log.error("Error in admin command:", e);
             }
           });
         }
@@ -154,7 +157,7 @@ Members of our community have the opportunity to earn Achievements through vario
       interaction.reply({ content: "done", ephemeral: true });
     } catch (e) {
       global.bugsnag.notify(e);
-      console.log(e);
+      log.error("Admin command error:", e);
     }
   }
 
