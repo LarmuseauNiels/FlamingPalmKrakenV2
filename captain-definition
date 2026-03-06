@@ -3,6 +3,7 @@
   "dockerfileLines":
     [
         "FROM node:24-alpine",
+        "RUN apk add --no-cache openssl",
         "COPY ./fonts/Manrope-Bold.ttf ./",
         "COPY ./fonts/Manrope-Regular.ttf ./",
         "RUN mkdir -p /usr/share/fonts/truetype/",
