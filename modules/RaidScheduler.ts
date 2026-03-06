@@ -133,7 +133,7 @@ export abstract class RaidScheduler {
               });
             })
             .catch((err) => {
-              global.log(
+              global.client.log(
                 "Error sending scheduling message for raid " +
                   raid.ID +
                   "  to <@" +

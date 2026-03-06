@@ -15,7 +15,7 @@ export default class interactionCreate implements IEvent {
     );
     try {
       if (interaction.isButton()) {
-+        await this.handleButton(interaction);
+        await this.handleButton(interaction);
       } else if (interaction.isStringSelectMenu()) {
         await this.handleSelectMenu(interaction);
       } else if (interaction.isMessageContextMenuCommand() || interaction.isUserContextMenuCommand()) {
