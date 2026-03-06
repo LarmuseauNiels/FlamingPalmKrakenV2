@@ -70,6 +70,18 @@ class Logger {
     if (this.shouldLog(LogLevel.ERROR)) {
       console.error(formatMessage(LogLevel.ERROR, this.context, args));
     }
+    // Automatically report Error instances to Bugsnag so every log.error() call
+    // with an Error object is tracked in production, regardless of whether the
+    // call site explicitly calls global.bugsnag.notify().
+    const bugsnag = (global as any).bugsnag;
+    if (bugsnag) {
+      for (const arg of args) {
+        if (arg instanceof Error) {
+          bugsnag.notify(arg);
+          break;
+        }
+      }
+    }
   }
 }
 

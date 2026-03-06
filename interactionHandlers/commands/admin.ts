@@ -156,7 +156,6 @@ Members of our community have the opportunity to earn Achievements through vario
       }
       interaction.reply({ content: "done", ephemeral: true });
     } catch (e) {
-      global.bugsnag.notify(e);
       log.error("Admin command error:", e);
     }
   }

@@ -71,7 +71,7 @@ export default class interactionCreate implements IEvent {
   }
 
   private async handleError(interaction: any, error: any) {
-    global.bugsnag.notify(error);
+    log.error("Interaction handler error:", error);
     global.client.log(error);
     if (interaction.isCommand()) {
       if (interaction.deferred) {
