@@ -94,11 +94,13 @@ function apiGet(baseUrl: string, apiKey: string, path: string): Promise<any> {
 
 async function fetchServers(baseUrl: string, apiKey: string): Promise<PelicanServer[]> {
   const res = await apiGet(baseUrl, apiKey, "/api/client?type=admin-all");
-  return res.data.data.map((s: any) => ({
-    identifier: s.attributes.identifier,
-    name:       s.attributes.name,
-    limits:     s.attributes.limits,
-  }));
+  return res.data.data
+    .filter((s: any) => !s.attributes.is_suspended)
+    .map((s: any) => ({
+      identifier: s.attributes.identifier,
+      name:       s.attributes.name,
+      limits:     s.attributes.limits,
+    }));
 }
 
 async function fetchResources(baseUrl: string, apiKey: string, id: string): Promise<ServerResources> {
