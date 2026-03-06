@@ -6,6 +6,15 @@ import { createLogger } from "../utils/logger";
 
 const log = createLogger("PelicanStatus");
 
+interface Allocation {
+  address: string; // "host:port" or "ip:port"
+}
+
+interface ServerVariable {
+  name: string;
+  server_value: string;
+}
+
 interface PelicanServer {
   identifier: string;
   name: string;
@@ -14,6 +23,8 @@ interface PelicanServer {
     disk: number;   // MB, 0 = unlimited
     cpu: number;    // %, 0 = unlimited
   };
+  allocation: Allocation | null;
+  variables: ServerVariable[];
 }
 
 interface ServerResources {
@@ -29,24 +40,13 @@ interface ServerResources {
   };
 }
 
-interface Allocation {
-  address: string; // "host:port" or "ip:port"
-}
-
 interface LastBackup {
   age: string;     // e.g. "3h ago"
   size: string;    // e.g. "1.4GB"
 }
 
-interface ServerVariable {
-  name: string;
-  server_value: string;
-}
-
 interface ServerExtra {
-  allocation: Allocation | null;
   lastBackup: LastBackup | null;
-  variables: ServerVariable[];
 }
 
 // ── Formatters ────────────────────────────────────────────────────────────────
@@ -102,11 +102,24 @@ async function fetchServers(baseUrl: string, apiKey: string): Promise<PelicanSer
   const res = await apiGet(baseUrl, apiKey, "/api/client?type=admin-all");
   return res.data.data
     .filter((s: any) => !s.attributes.is_suspended)
-    .map((s: any) => ({
-      identifier: s.attributes.identifier,
-      name:       s.attributes.name,
-      limits:     s.attributes.limits,
-    }));
+    .map((s: any) => {
+      const allocs = s.attributes.relationships?.allocations?.data ?? [];
+      const primary = allocs.find((a: any) => a.attributes.is_default) ?? allocs[0];
+      const allocation: Allocation | null = primary
+        ? { address: `${primary.attributes.ip_alias || primary.attributes.ip}:${primary.attributes.port}` }
+        : null;
+
+      const variables: ServerVariable[] = (s.attributes.relationships?.variables?.data ?? [])
+        .map((v: any) => ({ name: v.attributes.name, server_value: v.attributes.server_value }));
+
+      return {
+        identifier: s.attributes.identifier,
+        name:       s.attributes.name,
+        limits:     s.attributes.limits,
+        allocation,
+        variables,
+      };
+    });
 }
 
 async function fetchResources(baseUrl: string, apiKey: string, id: string): Promise<ServerResources> {
@@ -114,32 +127,6 @@ async function fetchResources(baseUrl: string, apiKey: string, id: string): Prom
   return res.data.attributes;
 }
 
-async function fetchAllocation(baseUrl: string, apiKey: string, id: string): Promise<Allocation | null> {
-  try {
-    const res = await apiGet(baseUrl, apiKey, `/api/client/servers/${id}/network/allocations`);
-    const primary = res.data.data.find((a: any) => a.attributes.is_default) ?? res.data.data[0];
-    if (!primary) return null;
-    const { ip, ip_alias, port } = primary.attributes;
-    const host = ip_alias || ip;
-    return { address: `${host}:${port}` };
-  } catch (err) {
-    log.error(`Failed to fetch allocations for ${id}:`, err);
-    return null;
-  }
-}
-
-async function fetchVariables(baseUrl: string, apiKey: string, id: string): Promise<ServerVariable[]> {
-  try {
-    const res = await apiGet(baseUrl, apiKey, `/api/client/servers/${id}/startup`);
-    return res.data.data.map((v: any) => ({
-      name:         v.attributes.name,
-      server_value: v.attributes.server_value,
-    }));
-  } catch (err) {
-    log.error(`Failed to fetch variables for ${id}:`, err);
-    return [];
-  }
-}
 
 async function fetchLastBackup(baseUrl: string, apiKey: string, id: string): Promise<LastBackup | null> {
   try {
@@ -202,8 +189,8 @@ function buildEmbed(
       lines.push("Offline");
     } else {
       // Line 1 — connection address
-      if (extra?.allocation) {
-        lines.push(`🔗 \`${extra.allocation.address}\``);
+      if (server.allocation) {
+        lines.push(`🔗 \`${server.allocation.address}\``);
       }
 
       // Line 2 — CPU · RAM · Disk
@@ -238,8 +225,8 @@ function buildEmbed(
       }
 
       // Line 5 — Variables
-      if (extra?.variables?.length) {
-        const varList = extra.variables
+      if (server.variables.length) {
+        const varList = server.variables
           .map(v => `${v.name}: \`${v.server_value}\``)
           .join(" · ");
         lines.push(`⚙️ ${varList}`);
@@ -272,7 +259,7 @@ module.exports = async function (client: FpgClient) {
     try {
       const servers = await fetchServers(baseUrl, apiKey);
 
-      // Fetch resources, allocations, and backups in parallel for all servers
+      // Fetch resources and backups in parallel for all servers
       const [resourceMap, extrasMap] = await Promise.all([
         (async () => {
           const map = new Map<string, ServerResources>();
@@ -291,12 +278,8 @@ module.exports = async function (client: FpgClient) {
           const map = new Map<string, ServerExtra>();
           await Promise.all(
             servers.map(async (server) => {
-              const [allocation, lastBackup, variables] = await Promise.all([
-                fetchAllocation(baseUrl, apiKey, server.identifier),
-                fetchLastBackup(baseUrl, apiKey, server.identifier),
-                fetchVariables(baseUrl, apiKey, server.identifier),
-              ]);
-              map.set(server.identifier, { allocation, lastBackup, variables });
+              const lastBackup = await fetchLastBackup(baseUrl, apiKey, server.identifier);
+              map.set(server.identifier, { lastBackup });
             })
           );
           return map;
