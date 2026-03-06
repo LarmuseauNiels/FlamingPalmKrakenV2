@@ -6,14 +6,26 @@ import { createLogger } from "../utils/logger";
 
 const log = createLogger("PelicanStatus");
 
+interface Allocation {
+  address: string; // "host:port" or "ip:port"
+}
+
+interface ServerVariable {
+  name: string;
+  server_value: string;
+}
+
 interface PelicanServer {
   identifier: string;
   name: string;
+  node: string;
   limits: {
     memory: number; // MB, 0 = unlimited
     disk: number;   // MB, 0 = unlimited
     cpu: number;    // %, 0 = unlimited
   };
+  allocation: Allocation | null;
+  variables: ServerVariable[];
 }
 
 interface ServerResources {
@@ -29,17 +41,12 @@ interface ServerResources {
   };
 }
 
-interface Allocation {
-  address: string; // "host:port" or "ip:port"
-}
-
 interface LastBackup {
   age: string;     // e.g. "3h ago"
   size: string;    // e.g. "1.4GB"
 }
 
 interface ServerExtra {
-  allocation: Allocation | null;
   lastBackup: LastBackup | null;
 }
 
@@ -94,11 +101,27 @@ function apiGet(baseUrl: string, apiKey: string, path: string): Promise<any> {
 
 async function fetchServers(baseUrl: string, apiKey: string): Promise<PelicanServer[]> {
   const res = await apiGet(baseUrl, apiKey, "/api/client?type=admin-all");
-  return res.data.data.map((s: any) => ({
-    identifier: s.attributes.identifier,
-    name:       s.attributes.name,
-    limits:     s.attributes.limits,
-  }));
+  return res.data.data
+    .filter((s: any) => !s.attributes.is_suspended)
+    .map((s: any) => {
+      const allocs = s.attributes.relationships?.allocations?.data ?? [];
+      const primary = allocs.find((a: any) => a.attributes.is_default) ?? allocs[0];
+      const allocation: Allocation | null = primary
+        ? { address: `${primary.attributes.ip_alias || primary.attributes.ip}:${primary.attributes.port}` }
+        : null;
+
+      const variables: ServerVariable[] = (s.attributes.relationships?.variables?.data ?? [])
+        .map((v: any) => ({ name: v.attributes.name, server_value: v.attributes.server_value }));
+
+      return {
+        identifier: s.attributes.identifier,
+        name:       s.attributes.name,
+        node:       s.attributes.node?.trim() ?? "Unknown",
+        limits:     s.attributes.limits,
+        allocation,
+        variables,
+      };
+    });
 }
 
 async function fetchResources(baseUrl: string, apiKey: string, id: string): Promise<ServerResources> {
@@ -106,19 +129,6 @@ async function fetchResources(baseUrl: string, apiKey: string, id: string): Prom
   return res.data.attributes;
 }
 
-async function fetchAllocation(baseUrl: string, apiKey: string, id: string): Promise<Allocation | null> {
-  try {
-    const res = await apiGet(baseUrl, apiKey, `/api/client/servers/${id}/network/allocations`);
-    const primary = res.data.data.find((a: any) => a.attributes.is_default) ?? res.data.data[0];
-    if (!primary) return null;
-    const { ip, ip_alias, port } = primary.attributes;
-    const host = ip_alias || ip;
-    return { address: `${host}:${port}` };
-  } catch (err) {
-    log.error(`Failed to fetch allocations for ${id}:`, err);
-    return null;
-  }
-}
 
 async function fetchLastBackup(baseUrl: string, apiKey: string, id: string): Promise<LastBackup | null> {
   try {
@@ -180,10 +190,10 @@ function buildEmbed(
     } else if (res.current_state === "offline") {
       lines.push("Offline");
     } else {
-      // Line 1 — connection address
-      if (extra?.allocation) {
-        lines.push(`🔗 \`${extra.allocation.address}\``);
-      }
+      // Line 1 — node · connection address
+      const nodeParts = [`🖧 \`${server.node}\``];
+      if (server.allocation) nodeParts.push(`🔗 \`${server.allocation.address}\``);
+      lines.push(nodeParts.join(" · "));
 
       // Line 2 — CPU · RAM · Disk
       const resourceParts = [
@@ -215,6 +225,14 @@ function buildEmbed(
       } else if (extra?.lastBackup === null) {
         lines.push("💾 No backups found");
       }
+
+      // Line 5 — Variables
+      if (server.variables.length) {
+        const varList = server.variables
+          .map(v => `${v.name}: \`${v.server_value}\``)
+          .join(" · ");
+        lines.push(`⚙️ ${varList}`);
+      }
     }
 
     embed.addFields({ name: `${emoji} ${server.name}`, value: lines.join("\n"), inline: false });
@@ -239,11 +257,19 @@ module.exports = async function (client: FpgClient) {
 
   let statusMessageId: string | null = null;
 
+  async function resolveStatusMessage(channel: TextChannel): Promise<string | null> {
+    const messages = await channel.messages.fetch({ limit: 50 });
+    const existing = messages.find(
+      m => m.author.id === client.user?.id && m.embeds[0]?.title === "🖥️ Server Status"
+    );
+    return existing?.id ?? null;
+  }
+
   async function updateStatus(): Promise<void> {
     try {
       const servers = await fetchServers(baseUrl, apiKey);
 
-      // Fetch resources, allocations, and backups in parallel for all servers
+      // Fetch resources and backups in parallel for all servers
       const [resourceMap, extrasMap] = await Promise.all([
         (async () => {
           const map = new Map<string, ServerResources>();
@@ -262,11 +288,8 @@ module.exports = async function (client: FpgClient) {
           const map = new Map<string, ServerExtra>();
           await Promise.all(
             servers.map(async (server) => {
-              const [allocation, lastBackup] = await Promise.all([
-                fetchAllocation(baseUrl, apiKey, server.identifier),
-                fetchLastBackup(baseUrl, apiKey, server.identifier),
-              ]);
-              map.set(server.identifier, { allocation, lastBackup });
+              const lastBackup = await fetchLastBackup(baseUrl, apiKey, server.identifier);
+              map.set(server.identifier, { lastBackup });
             })
           );
           return map;
@@ -275,6 +298,11 @@ module.exports = async function (client: FpgClient) {
 
       const embed   = buildEmbed(servers, resourceMap, extrasMap);
       const channel = (await client.channels.fetch(channelId)) as TextChannel;
+
+      // On first run after reboot, scan the channel to recover the existing message
+      if (!statusMessageId) {
+        statusMessageId = await resolveStatusMessage(channel);
+      }
 
       if (statusMessageId) {
         try {
