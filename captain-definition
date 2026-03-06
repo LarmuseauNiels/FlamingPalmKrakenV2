@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "dockerfileLines":
     [
-        "FROM node:21-alpine",
+        "FROM node:24-alpine",
         "COPY ./fonts/Manrope-Bold.ttf ./",
         "COPY ./fonts/Manrope-Regular.ttf ./",
         "RUN mkdir -p /usr/share/fonts/truetype/",
