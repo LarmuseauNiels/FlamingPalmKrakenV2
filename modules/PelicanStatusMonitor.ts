@@ -38,9 +38,15 @@ interface LastBackup {
   size: string;    // e.g. "1.4GB"
 }
 
+interface ServerVariable {
+  name: string;
+  server_value: string;
+}
+
 interface ServerExtra {
   allocation: Allocation | null;
   lastBackup: LastBackup | null;
+  variables: ServerVariable[];
 }
 
 // ── Formatters ────────────────────────────────────────────────────────────────
@@ -119,6 +125,19 @@ async function fetchAllocation(baseUrl: string, apiKey: string, id: string): Pro
   } catch (err) {
     log.error(`Failed to fetch allocations for ${id}:`, err);
     return null;
+  }
+}
+
+async function fetchVariables(baseUrl: string, apiKey: string, id: string): Promise<ServerVariable[]> {
+  try {
+    const res = await apiGet(baseUrl, apiKey, `/api/client/servers/${id}/startup`);
+    return res.data.data.map((v: any) => ({
+      name:         v.attributes.name,
+      server_value: v.attributes.server_value,
+    }));
+  } catch (err) {
+    log.error(`Failed to fetch variables for ${id}:`, err);
+    return [];
   }
 }
 
@@ -217,6 +236,14 @@ function buildEmbed(
       } else if (extra?.lastBackup === null) {
         lines.push("💾 No backups found");
       }
+
+      // Line 5 — Variables
+      if (extra?.variables?.length) {
+        const varList = extra.variables
+          .map(v => `${v.name}: \`${v.server_value}\``)
+          .join(" · ");
+        lines.push(`⚙️ ${varList}`);
+      }
     }
 
     embed.addFields({ name: `${emoji} ${server.name}`, value: lines.join("\n"), inline: false });
@@ -264,11 +291,12 @@ module.exports = async function (client: FpgClient) {
           const map = new Map<string, ServerExtra>();
           await Promise.all(
             servers.map(async (server) => {
-              const [allocation, lastBackup] = await Promise.all([
+              const [allocation, lastBackup, variables] = await Promise.all([
                 fetchAllocation(baseUrl, apiKey, server.identifier),
                 fetchLastBackup(baseUrl, apiKey, server.identifier),
+                fetchVariables(baseUrl, apiKey, server.identifier),
               ]);
-              map.set(server.identifier, { allocation, lastBackup });
+              map.set(server.identifier, { allocation, lastBackup, variables });
             })
           );
           return map;
