@@ -3,15 +3,15 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  SelectMenuInteraction,
+  StringSelectMenuInteraction,
 } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
 
 export default class RaidSignupHandler implements IHandler {
   name = "raidsignup";
 
-  async execute(interaction: SelectMenuInteraction) {
-    if (!interaction.isSelectMenu()) return;
+  async execute(interaction: StringSelectMenuInteraction) {
+    if (!interaction.isStringSelectMenu()) return;
 
     let raid = await global.client.prisma.raids.findUnique({
       where: {
