@@ -257,6 +257,14 @@ module.exports = async function (client: FpgClient) {
 
   let statusMessageId: string | null = null;
 
+  async function resolveStatusMessage(channel: TextChannel): Promise<string | null> {
+    const messages = await channel.messages.fetch({ limit: 50 });
+    const existing = messages.find(
+      m => m.author.id === client.user?.id && m.embeds[0]?.title === "🖥️ Server Status"
+    );
+    return existing?.id ?? null;
+  }
+
   async function updateStatus(): Promise<void> {
     try {
       const servers = await fetchServers(baseUrl, apiKey);
@@ -290,6 +298,11 @@ module.exports = async function (client: FpgClient) {
 
       const embed   = buildEmbed(servers, resourceMap, extrasMap);
       const channel = (await client.channels.fetch(channelId)) as TextChannel;
+
+      // On first run after reboot, scan the channel to recover the existing message
+      if (!statusMessageId) {
+        statusMessageId = await resolveStatusMessage(channel);
+      }
 
       if (statusMessageId) {
         try {
