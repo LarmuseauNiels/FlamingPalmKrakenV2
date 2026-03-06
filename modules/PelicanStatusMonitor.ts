@@ -93,23 +93,12 @@ function apiGet(baseUrl: string, apiKey: string, path: string): Promise<any> {
 }
 
 async function fetchServers(baseUrl: string, apiKey: string): Promise<PelicanServer[]> {
-  const [ownRes, adminRes] = await Promise.all([
-    apiGet(baseUrl, apiKey, "/api/client"),
-    apiGet(baseUrl, apiKey, "/api/client?type=admin"),
-  ]);
-
-  const seen = new Set<string>();
-  const servers: PelicanServer[] = [];
-  for (const s of [...ownRes.data.data, ...adminRes.data.data]) {
-    if (seen.has(s.attributes.identifier)) continue;
-    seen.add(s.attributes.identifier);
-    servers.push({
-      identifier: s.attributes.identifier,
-      name:       s.attributes.name,
-      limits:     s.attributes.limits,
-    });
-  }
-  return servers;
+  const res = await apiGet(baseUrl, apiKey, "/api/client?type=admin-all");
+  return res.data.data.map((s: any) => ({
+    identifier: s.attributes.identifier,
+    name:       s.attributes.name,
+    limits:     s.attributes.limits,
+  }));
 }
 
 async function fetchResources(baseUrl: string, apiKey: string, id: string): Promise<ServerResources> {
