@@ -19,7 +19,7 @@ export default class RaidSignupHandler implements IHandler {
       },
     });
 
-    if (raid.Status !== 1) {
+    if (!raid || raid.Status !== 1) {
       interaction.reply({
         content: "This raid is no longer accepting signups.",
         ephemeral: true,

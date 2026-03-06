@@ -46,7 +46,7 @@ export class AchievementsModule {
     //check if achievement gives points
     if (achievement.points > 0) {
       ChannelUpdates.MessageWithProfile(
-        `<@${memberID}>recieved an achievement!: ${achievement.Name} \n${description}`,
+        `<@${memberID}> received an achievement!: ${achievement.Name} \n${description}`,
         memberID
       ).catch((err) =>
         global.client.log("Failed to send achievement profile message for " + memberID + ": " + err)

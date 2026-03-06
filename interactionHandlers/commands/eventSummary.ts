@@ -19,7 +19,7 @@ export default class EventSummaryHandler implements IHandler {
     .setDefaultMemberPermissions(
       PermissionFlagsBits.Administrator
     ) as SlashCommandBuilder;
-  isGuild: true;
+  isGuild = true;
   async execute(interaction) {
     const channel = interaction.guild.channels.cache.get(
       interaction.options.get("channel")?.value || interaction.channel.id
@@ -36,10 +36,10 @@ export default class EventSummaryHandler implements IHandler {
       .fetch()
       .then(async (events) => {
         events = events.sort((e) => e.scheduledStartTimestamp).reverse();
-        client.events = events;
+        global.client.events = events;
         var contentText = "Upcoming events!\n";
 
-        let sortedEvents = client.events.sort((a, b) => {
+        let sortedEvents = global.client.events.sort((a, b) => {
           return a.scheduledStartTimestamp - b.scheduledStartTimestamp;
         });
         sortedEvents.forEach((event) => {

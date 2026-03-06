@@ -70,9 +70,9 @@ export abstract class RaidScheduler {
   static async AddDayToRaidSchedulingOptions(raidId: number, day: Date) {
     let tuesday = new Date(day.getTime());
     let wednesday = new Date(tuesday.getTime());
-    wednesday.setDate(tuesday.getDate() + 2);
+    wednesday.setDate(tuesday.getDate() + 1);
     let thursday = new Date(tuesday.getTime());
-    thursday.setDate(tuesday.getDate() + 5);
+    thursday.setDate(tuesday.getDate() + 2);
 
     return global.client.prisma.raidSchedulingOption.createMany({
       data: [
@@ -110,6 +110,10 @@ export abstract class RaidScheduler {
 
   static async SendSchedulingMessage(raidId: number) {
     let raid = await this.getRaid(raidId);
+    if (raid == null) {
+      log.warn("Raid not found for scheduling message: " + raidId);
+      return;
+    }
     let embed = RaidEmbeds.buildSchedulingMessage(raid);
     let row = RaidEmbeds.buildSchedulingActionRow();
 
@@ -172,6 +176,10 @@ export abstract class RaidScheduler {
 
   static async resendRaid(raidID: number, user: User) {
     let raid = await this.getRaid(raidID);
+    if (raid == null) {
+      log.warn("Raid not found for resend: " + raidID);
+      return "Raid not found";
+    }
     let embed = RaidEmbeds.buildSchedulingMessage(raid);
     let row = RaidEmbeds.buildSchedulingActionRow();
 
@@ -286,9 +294,9 @@ export abstract class RaidScheduler {
       log.debug("Scheduling message found:", message?.id);
       const optionVotesPromises = raid.RaidSchedulingOption.map(
         async (option) => {
-          const users = await message.reactions
-            .resolve(RaidEmbeds.getUniCodeEmoji(option.Option))
-            .users.fetch();
+          const reaction = message.reactions.resolve(RaidEmbeds.getUniCodeEmoji(option.Option));
+          if (!reaction) return;
+          const users = await reaction.users.fetch();
           if (users.some((u) => u.id == attendee.MemberId)) {
             votes.get(option).push(attendee.MemberId);
           }
