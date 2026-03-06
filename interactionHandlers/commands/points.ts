@@ -26,6 +26,11 @@ export default class PointsCommand implements IHandler {
       },
     });
 
+    if (!member || !member.Points) {
+      await interaction.reply({ content: "No points record found.", ephemeral: true });
+      return;
+    }
+
     let embed = new EmbedBuilder()
       .setColor("#FD8612")
       .setTitle(`You have ${member.Points.TotalPoints} :palm_tree:`)

@@ -17,7 +17,7 @@ const getOffset = (timeZone = "UTC", date = new Date()) => {
 
 export default class GiveEventCommand implements IHandler {
   name = "give-event";
-  isGuild: true;
+  isGuild = true;
   data = new SlashCommandBuilder()
     .setName("give-event")
     .setDescription("give event to users")

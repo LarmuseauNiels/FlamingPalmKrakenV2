@@ -162,7 +162,7 @@ module.exports = async function (client: FpgClient) {
                     .setTimestamp(event.scheduledStartTimestamp)
                     .setFooter({ text: "Event at " });
                   let eventText =
-                    event.name + event.description ? event.description : "";
+                    event.name + (event.description ? event.description : "");
                   guild.roles
                     .fetch()
                     .then((roles) => {

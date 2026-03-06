@@ -24,7 +24,7 @@ export function memberEndPoints(app) {
       let points = await global.client.prisma.points.findFirst({
         where: { userid: req.user.id },
       });
-      dashboard.dashboardPoints = points.TotalPoints;
+      dashboard.dashboardPoints = points?.TotalPoints ?? 0;
 
       let raids = await global.client.prisma.raids.findMany({
         include: { RaidAttendees: true },
