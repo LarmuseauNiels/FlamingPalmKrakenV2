@@ -18,6 +18,7 @@ interface ServerVariable {
 interface PelicanServer {
   identifier: string;
   name: string;
+  node: string;
   limits: {
     memory: number; // MB, 0 = unlimited
     disk: number;   // MB, 0 = unlimited
@@ -115,6 +116,7 @@ async function fetchServers(baseUrl: string, apiKey: string): Promise<PelicanSer
       return {
         identifier: s.attributes.identifier,
         name:       s.attributes.name,
+        node:       s.attributes.node?.trim() ?? "Unknown",
         limits:     s.attributes.limits,
         allocation,
         variables,
@@ -188,10 +190,10 @@ function buildEmbed(
     } else if (res.current_state === "offline") {
       lines.push("Offline");
     } else {
-      // Line 1 — connection address
-      if (server.allocation) {
-        lines.push(`🔗 \`${server.allocation.address}\``);
-      }
+      // Line 1 — node · connection address
+      const nodeParts = [`🖧 \`${server.node}\``];
+      if (server.allocation) nodeParts.push(`🔗 \`${server.allocation.address}\``);
+      lines.push(nodeParts.join(" · "));
 
       // Line 2 — CPU · RAM · Disk
       const resourceParts = [
