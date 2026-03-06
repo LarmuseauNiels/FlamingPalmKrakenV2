@@ -12,7 +12,7 @@ import { profileEndPoints } from "./ApiFunctions/ProfileEndPoints";
 import { shopEndPoints } from "./ApiFunctions/ShopEndPoints";
 import bodyParser from "body-parser";
 import { adminEndPoints } from "./ApiFunctions/AdminEndPoints";
-const DiscordStrategy = require("passport-discord").Strategy;
+import { Strategy as DiscordStrategy } from "passport-discord-auth";
 const app = express();
 const prompt = "consent";
 
@@ -22,11 +22,10 @@ export class WebApi {
     passport.use(
       new DiscordStrategy(
         {
-          clientID: process.env.CLIENT_ID,
+          clientId: process.env.CLIENT_ID,
           clientSecret: process.env.OAUTHSECRET,
-          callbackURL: process.env.CALLBACK_URL,
+          callbackUrl: process.env.CALLBACK_URL,
           scope: ["identify", "guilds"],
-          prompt: prompt,
         },
         function (accessToken, refreshToken, profile, done) {
           logDiscordLogin(profile).catch((err) =>
@@ -43,7 +42,7 @@ export class WebApi {
             return done(null, null);
           }
         }
-      )
+      ) as any
     );
 
     app.use(middleware.requestHandler);

@@ -26,8 +26,8 @@
     "moment-timezone": "^0.5.45",
     "node-cron": "^3.0.0",
     "openai": "^4.54.0",
-    "passport": "^0.6.0",
-    "passport-discord": "^0.1.4",
+    "passport": "^0.7.0",
+    "passport-discord-auth": "^1.2.0",
     "typescript": "^5.0.2"
   },
   "overrides": {
