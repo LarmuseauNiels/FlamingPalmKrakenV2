@@ -93,7 +93,7 @@ function apiGet(baseUrl: string, apiKey: string, path: string): Promise<any> {
 }
 
 async function fetchServers(baseUrl: string, apiKey: string): Promise<PelicanServer[]> {
-  const res = await apiGet(baseUrl, apiKey, "/api/client");
+  const res = await apiGet(baseUrl, apiKey, "/api/client?type=admin");
   return res.data.data.map((s: any) => ({
     identifier: s.attributes.identifier,
     name:       s.attributes.name,
