@@ -189,6 +189,8 @@ function buildEmbed(
       lines.push("Suspended");
     } else if (res.current_state === "offline") {
       lines.push("Offline");
+    } else if (res.current_state === "missing") {
+        lines.push("Missing (machine offline)");
     } else {
       // Line 1 — node · connection address
       const nodeParts = [`🖧 \`${server.node}\``];
