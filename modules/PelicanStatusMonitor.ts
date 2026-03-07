@@ -290,7 +290,13 @@ function buildServerButtons(
     .setStyle(ButtonStyle.Danger)
     .setDisabled(!isRunning);
 
-  return new ActionRowBuilder<ButtonBuilder>().addComponents(startBtn, restartBtn, stopBtn);
+  const controlPanelBtn = new ButtonBuilder()
+    .setLabel("Control Panel")
+    .setEmoji("🖥️")
+    .setStyle(ButtonStyle.Link)
+    .setURL(`https://pelican.majesty.flamingpalm.com/server/${server.identifier}`);
+
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(startBtn, restartBtn, stopBtn, controlPanelBtn);
 }
 
 // ── Module entry ──────────────────────────────────────────────────────────────
