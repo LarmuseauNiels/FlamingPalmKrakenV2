@@ -63,8 +63,12 @@ export default class PelicanControl implements IHandler {
         }
       );
 
+      // Strip the leading state emoji from the embed title to get the server name
+      const embedTitle = interaction.message?.embeds[0]?.title ?? "";
+      const serverName = embedTitle.replace(/^\S+ /, "") || serverId;
+
       await interaction.editReply({
-        content: `Server **${serverId}** ${SIGNAL_LABELS[action]} successfully.`,
+        content: `**${serverName}** ${SIGNAL_LABELS[action]} successfully.`,
       });
 
       log.info(`${interaction.user.tag} sent "${action}" signal to server ${serverId}`);

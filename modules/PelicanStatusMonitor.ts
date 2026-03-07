@@ -108,7 +108,6 @@ function apiGet(baseUrl: string, apiKey: string, path: string): Promise<any> {
 async function fetchServers(baseUrl: string, apiKey: string): Promise<PelicanServer[]> {
   const res = await apiGet(baseUrl, apiKey, "/api/client?type=admin-all");
   return res.data.data
-    .filter((s: any) => !s.attributes.is_suspended)
     .map((s: any) => {
       const allocs = s.attributes.relationships?.allocations?.data ?? [];
       const primary = allocs.find((a: any) => a.attributes.is_default) ?? allocs[0];
@@ -264,7 +263,7 @@ function buildServerButtons(
   server: PelicanServer,
   res: ServerResources | undefined
 ): ActionRowBuilder<ButtonBuilder> {
-  const state = res?.current_state ?? "offline";
+  const state = res?.current_state ?? "unknown";
   const suspended = res?.is_suspended ?? false;
 
   const isRunning = state === "running" && !suspended;
