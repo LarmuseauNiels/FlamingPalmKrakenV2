@@ -268,7 +268,7 @@ function buildServerButtons(
   const suspended = res?.is_suspended ?? false;
 
   const isRunning = state === "running" && !suspended;
-  const isOffline = (state === "offline" || state === "missing") && !suspended;
+  const isOffline = state === "offline" && !suspended;
 
   const startBtn = new ButtonBuilder()
     .setCustomId(`pelican_start_${server.identifier}`)
