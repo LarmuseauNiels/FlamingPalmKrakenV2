@@ -1,6 +1,12 @@
 import cron from "node-cron";
 import axios from "axios";
-import { EmbedBuilder, TextChannel } from "discord.js";
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  EmbedBuilder,
+  TextChannel,
+} from "discord.js";
 import { FpgClient } from "../components/FpgClient";
 import { createLogger } from "../utils/logger";
 
@@ -129,7 +135,6 @@ async function fetchResources(baseUrl: string, apiKey: string, id: string): Prom
   return res.data.attributes;
 }
 
-
 async function fetchLastBackup(baseUrl: string, apiKey: string, id: string): Promise<LastBackup | null> {
   try {
     const res = await apiGet(baseUrl, apiKey, `/api/client/servers/${id}/backups`);
@@ -150,97 +155,143 @@ async function fetchLastBackup(baseUrl: string, apiKey: string, id: string): Pro
   }
 }
 
-// ── Embed builder ─────────────────────────────────────────────────────────────
+// ── Per-server embed & buttons ─────────────────────────────────────────────────
 
-function buildEmbed(
-  servers: PelicanServer[],
-  resources: Map<string, ServerResources>,
-  extras: Map<string, ServerExtra>
+function buildServerEmbed(
+  server: PelicanServer,
+  res: ServerResources | undefined,
+  extra: ServerExtra | undefined
 ): EmbedBuilder {
-  const statuses  = [...resources.values()];
-  const allOnline = statuses.length > 0 && statuses.every(r => r.current_state === "running");
-  const anyOnline = statuses.some(r => r.current_state === "running");
-  const color     = allOnline ? 0x57f287 : anyOnline ? 0xfee75c : 0xed4245;
+  if (!res) {
+    return new EmbedBuilder()
+      .setTitle(`❓ ${server.name}`)
+      .setColor(0x95a5a6)
+      .setDescription("Status unavailable")
+      .setFooter({ text: `${server.identifier} · Last updated` })
+      .setTimestamp();
+  }
+
+  const emoji = stateEmoji(res.current_state, res.is_suspended);
+  const color = res.is_suspended
+    ? 0x95a5a6
+    : res.current_state === "running"
+      ? 0x57f287
+      : res.current_state === "starting" || res.current_state === "stopping"
+        ? 0xfee75c
+        : 0xed4245;
 
   const embed = new EmbedBuilder()
-    .setTitle("🖥️ Server Status")
+    .setTitle(`${emoji} ${server.name}`)
     .setColor(color)
-    .setTimestamp()
-    .setFooter({ text: "Last updated" });
+    .setFooter({ text: `${server.identifier} · Last updated` })
+    .setTimestamp();
 
-  if (servers.length === 0) {
-    embed.setDescription("No servers found.");
+  if (res.is_suspended) {
+    embed.setDescription("Suspended");
     return embed;
   }
 
-  for (const server of servers) {
-    const res   = resources.get(server.identifier);
-    const extra = extras.get(server.identifier);
+  if (res.current_state === "offline") {
+    embed.setDescription("Offline");
+    return embed;
+  }
 
-    if (!res) {
-      embed.addFields({ name: `❓ ${server.name}`, value: "Status unavailable", inline: false });
-      continue;
-    }
+  if (res.current_state === "missing") {
+    embed.setDescription("Missing (machine offline)");
+    return embed;
+  }
 
-    const emoji = stateEmoji(res.current_state, res.is_suspended);
-    const lines: string[] = [];
+  // Node + address
+  const nodeParts = [`\`${server.node}\``];
+  if (server.allocation) nodeParts.push(`\`${server.allocation.address}\``);
+  embed.addFields({ name: "Node", value: nodeParts.join(" · "), inline: true });
 
-    if (res.is_suspended) {
-      lines.push("Suspended");
-    } else if (res.current_state === "offline") {
-      lines.push("Offline");
-    } else if (res.current_state === "missing") {
-        lines.push("Missing (machine offline)");
-    } else {
-      // Line 1 — node · connection address
-      const nodeParts = [`🖧 \`${server.node}\``];
-      if (server.allocation) nodeParts.push(`🔗 \`${server.allocation.address}\``);
-      lines.push(nodeParts.join(" · "));
+  // State / uptime
+  const stateValue = res.current_state === "running"
+    ? `Running · \`${formatUptime(res.resources.uptime)}\``
+    : res.current_state.charAt(0).toUpperCase() + res.current_state.slice(1);
+  embed.addFields({ name: "State", value: stateValue, inline: true });
 
-      // Line 2 — CPU · RAM · Disk
-      const resourceParts = [
-        `CPU: \`${res.resources.cpu_absolute.toFixed(1)}%\``,
-        server.limits.memory > 0
-          ? `RAM: \`${formatBytes(res.resources.memory_bytes)} / ${server.limits.memory}MB\``
-          : `RAM: \`${formatBytes(res.resources.memory_bytes)}\``,
-        server.limits.disk > 0
-          ? `Disk: \`${formatBytes(res.resources.disk_bytes)} / ${server.limits.disk}MB\``
-          : `Disk: \`${formatBytes(res.resources.disk_bytes)}\``,
-      ];
-      lines.push(resourceParts.join(" · "));
+  // Blank for layout
+  embed.addFields({ name: "\u200b", value: "\u200b", inline: true });
 
-      // Line 3 — Network I/O · Uptime
-      const networkParts = [
-        `↓ \`${formatBytes(res.resources.network_rx_bytes)}\``,
-        `↑ \`${formatBytes(res.resources.network_tx_bytes)}\``,
-      ];
-      if (res.current_state === "running") {
-        networkParts.push(`Uptime: \`${formatUptime(res.resources.uptime)}\``);
-      } else {
-        networkParts.push(`State: \`${res.current_state}\``);
-      }
-      lines.push(networkParts.join(" · "));
+  // CPU · RAM · Disk
+  embed.addFields({
+    name: "Resources",
+    value: [
+      `CPU: \`${res.resources.cpu_absolute.toFixed(1)}%\``,
+      server.limits.memory > 0
+        ? `RAM: \`${formatBytes(res.resources.memory_bytes)} / ${server.limits.memory}MB\``
+        : `RAM: \`${formatBytes(res.resources.memory_bytes)}\``,
+      server.limits.disk > 0
+        ? `Disk: \`${formatBytes(res.resources.disk_bytes)} / ${server.limits.disk}MB\``
+        : `Disk: \`${formatBytes(res.resources.disk_bytes)}\``,
+    ].join("  ·  "),
+    inline: false,
+  });
 
-      // Line 4 — Last backup (if available)
-      if (extra?.lastBackup) {
-        lines.push(`💾 Last backup: \`${extra.lastBackup.age}\` · \`${extra.lastBackup.size}\``);
-      } else if (extra?.lastBackup === null) {
-        lines.push("💾 No backups found");
-      }
+  // Network
+  embed.addFields({
+    name: "Network",
+    value: `↓ \`${formatBytes(res.resources.network_rx_bytes)}\`  ·  ↑ \`${formatBytes(res.resources.network_tx_bytes)}\``,
+    inline: true,
+  });
 
-      // Line 5 — Variables
-      if (server.variables.length) {
-        const varList = server.variables
-          .map(v => `${v.name}: \`${v.server_value}\``)
-          .join(" · ");
-        lines.push(`⚙️ ${varList}`);
-      }
-    }
+  // Last backup
+  if (extra?.lastBackup) {
+    embed.addFields({
+      name: "Last Backup",
+      value: `\`${extra.lastBackup.age}\` · \`${extra.lastBackup.size}\``,
+      inline: true,
+    });
+  } else {
+    embed.addFields({ name: "Last Backup", value: "None found", inline: true });
+  }
 
-    embed.addFields({ name: `${emoji} ${server.name}`, value: lines.join("\n"), inline: false });
+  // Variables
+  if (server.variables.length) {
+    embed.addFields({
+      name: "Variables",
+      value: server.variables.map(v => `${v.name}: \`${v.server_value}\``).join("  ·  "),
+      inline: false,
+    });
   }
 
   return embed;
+}
+
+function buildServerButtons(
+  server: PelicanServer,
+  res: ServerResources | undefined
+): ActionRowBuilder<ButtonBuilder> {
+  const state = res?.current_state ?? "offline";
+  const suspended = res?.is_suspended ?? false;
+
+  const isRunning = state === "running" && !suspended;
+  const isOffline = state === "offline" && !suspended;
+
+  const startBtn = new ButtonBuilder()
+    .setCustomId(`pelican_start_${server.identifier}`)
+    .setLabel("Start")
+    .setEmoji("▶️")
+    .setStyle(ButtonStyle.Success)
+    .setDisabled(!isOffline);
+
+  const restartBtn = new ButtonBuilder()
+    .setCustomId(`pelican_restart_${server.identifier}`)
+    .setLabel("Restart")
+    .setEmoji("🔄")
+    .setStyle(ButtonStyle.Primary)
+    .setDisabled(!isRunning);
+
+  const stopBtn = new ButtonBuilder()
+    .setCustomId(`pelican_stop_${server.identifier}`)
+    .setLabel("Stop")
+    .setEmoji("⏹️")
+    .setStyle(ButtonStyle.Danger)
+    .setDisabled(!isRunning);
+
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(startBtn, restartBtn, stopBtn);
 }
 
 // ── Module entry ──────────────────────────────────────────────────────────────
@@ -257,14 +308,22 @@ module.exports = async function (client: FpgClient) {
     return;
   }
 
-  let statusMessageId: string | null = null;
+  // Map of server identifier → Discord message ID
+  const serverMessages = new Map<string, string>();
 
-  async function resolveStatusMessage(channel: TextChannel): Promise<string | null> {
+  // Scan the channel for previously sent per-server messages from this bot.
+  // Each message's embed footer starts with the server identifier.
+  async function resolveServerMessages(channel: TextChannel): Promise<void> {
     const messages = await channel.messages.fetch({ limit: 50 });
-    const existing = messages.find(
-      m => m.author.id === client.user?.id && m.embeds[0]?.title === "🖥️ Server Status"
-    );
-    return existing?.id ?? null;
+    for (const msg of messages.values()) {
+      if (msg.author.id !== client.user?.id) continue;
+      const footer = msg.embeds[0]?.footer?.text;
+      if (!footer) continue;
+      const identifier = footer.split(" · ")[0].trim();
+      if (/^[a-z0-9]+$/.test(identifier) && identifier.length >= 6) {
+        serverMessages.set(identifier, msg.id);
+      }
+    }
   }
 
   async function updateStatus(): Promise<void> {
@@ -298,27 +357,35 @@ module.exports = async function (client: FpgClient) {
         })(),
       ]);
 
-      const embed   = buildEmbed(servers, resourceMap, extrasMap);
       const channel = (await client.channels.fetch(channelId)) as TextChannel;
 
-      // On first run after reboot, scan the channel to recover the existing message
-      if (!statusMessageId) {
-        statusMessageId = await resolveStatusMessage(channel);
+      // On first run after reboot, scan the channel to recover existing messages
+      if (serverMessages.size === 0) {
+        await resolveServerMessages(channel);
       }
 
-      if (statusMessageId) {
-        try {
-          const existing = await channel.messages.fetch(statusMessageId);
-          await existing.edit({ embeds: [embed] });
-          return;
-        } catch {
-          // Message was deleted — post a fresh one below
-          statusMessageId = null;
+      // Update or send a message for each server
+      for (const server of servers) {
+        const res   = resourceMap.get(server.identifier);
+        const extra = extrasMap.get(server.identifier);
+        const embed = buildServerEmbed(server, res, extra);
+        const row   = buildServerButtons(server, res);
+
+        const existingId = serverMessages.get(server.identifier);
+        if (existingId) {
+          try {
+            const existing = await channel.messages.fetch(existingId);
+            await existing.edit({ embeds: [embed], components: [row] });
+            continue;
+          } catch {
+            // Message was deleted — send a fresh one below
+            serverMessages.delete(server.identifier);
+          }
         }
-      }
 
-      const msg = await channel.send({ embeds: [embed] });
-      statusMessageId = msg.id;
+        const msg = await channel.send({ embeds: [embed], components: [row] });
+        serverMessages.set(server.identifier, msg.id);
+      }
     } catch (err) {
       log.error("Failed to update Pelican server status:", err);
     }
