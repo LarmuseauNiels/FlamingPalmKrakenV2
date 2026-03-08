@@ -3,6 +3,18 @@ import { createLogger } from "../../utils/logger";
 
 const log = createLogger("AdminEndPoints");
 
+function toShopItemDto(reward: any) {
+  return {
+    id: reward.RewardID,
+    title: reward.Title,
+    description: reward.Description,
+    price: reward.Price,
+    image: reward.imageurl,
+    stock: reward.RewardItem.length,
+    nonSalePrice: reward.nonSalePrice,
+  };
+}
+
 interface yearOverviewItem {
   date: string;
   activity: number;
@@ -42,7 +54,6 @@ export function adminEndPoints(app) {
           global.client.prisma.rewardItem.count({
             where: {
               NOT: { RedeemedBy: "" },
-              RedeemedBy: { not: null },
               FulfilledAt: null,
             },
           }),
@@ -80,17 +91,7 @@ export function adminEndPoints(app) {
         },
       });
 
-      const result = shopItems.map((item) => ({
-        id: item.RewardID,
-        title: item.Title,
-        description: item.Description,
-        price: item.Price,
-        image: item.imageurl,
-        stock: item.RewardItem.length,
-        nonSalePrice: item.nonSalePrice,
-      }));
-
-      res.send(jsonify(result));
+      res.send(jsonify(shopItems.map(toShopItemDto)));
     } catch (err) {
       log.error("Failed to fetch admin shop items:", err);
       res.status(500).send("Failed to load shop items");
@@ -129,17 +130,7 @@ export function adminEndPoints(app) {
         });
       }
 
-      const created = {
-        id: reward.RewardID,
-        title: reward.Title,
-        description: reward.Description,
-        price: reward.Price,
-        image: reward.imageurl,
-        stock: stockCount,
-        nonSalePrice: reward.nonSalePrice,
-      };
-
-      res.status(201).send(jsonify(created));
+      res.status(201).send(jsonify(toShopItemDto({ ...reward, RewardItem: Array(stockCount) })));
     } catch (err) {
       log.error("Failed to create shop item:", err);
       res.status(500).send("Failed to create shop item");
@@ -151,13 +142,6 @@ export function adminEndPoints(app) {
     try {
       const rewardId = parseInt(req.params.id, 10);
       const { title, description, price, nonSalePrice, image } = req.body;
-
-      const existing = await global.client.prisma.reward.findUnique({
-        where: { RewardID: rewardId },
-      });
-      if (!existing) {
-        return res.status(404).send("Shop item not found");
-      }
 
       const updateData: any = {};
       if (title !== undefined) updateData.Title = title;
@@ -177,18 +161,9 @@ export function adminEndPoints(app) {
         },
       });
 
-      const result = {
-        id: updated.RewardID,
-        title: updated.Title,
-        description: updated.Description,
-        price: updated.Price,
-        image: updated.imageurl,
-        stock: updated.RewardItem.length,
-        nonSalePrice: updated.nonSalePrice,
-      };
-
-      res.send(jsonify(result));
+      res.send(jsonify(toShopItemDto(updated)));
     } catch (err) {
+      if (err?.code === "P2025") return res.status(404).send("Shop item not found");
       log.error("Failed to update shop item:", err);
       res.status(500).send("Failed to update shop item");
     }
@@ -198,20 +173,10 @@ export function adminEndPoints(app) {
   app.delete(apiPrefix + "shopItems/:id", authenticateAdmin, async function (req, res) {
     try {
       const rewardId = parseInt(req.params.id, 10);
-
-      const existing = await global.client.prisma.reward.findUnique({
-        where: { RewardID: rewardId },
-      });
-      if (!existing) {
-        return res.status(404).send("Shop item not found");
-      }
-
-      await global.client.prisma.reward.delete({
-        where: { RewardID: rewardId },
-      });
-
+      await global.client.prisma.reward.delete({ where: { RewardID: rewardId } });
       res.status(204).send();
     } catch (err) {
+      if (err?.code === "P2025") return res.status(404).send("Shop item not found");
       log.error("Failed to delete shop item:", err);
       res.status(500).send("Failed to delete shop item");
     }
@@ -263,7 +228,6 @@ export function adminEndPoints(app) {
       const redemptions = await global.client.prisma.rewardItem.findMany({
         where: {
           NOT: { RedeemedBy: "" },
-          RedeemedBy: { not: null },
           FulfilledAt: null,
         },
         select: {
