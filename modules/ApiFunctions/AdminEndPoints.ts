@@ -36,7 +36,7 @@ export function adminEndPoints(app) {
   // GET admin/stats — dashboard summary cards
   app.get(apiPrefix + "stats", authenticateAdmin, async function (req, res) {
     try {
-      const [totalMembers, pointsAggregate, activeShopItems, pendingRedemptions] =
+      const [totalMembers, pointsAggregate, activeShopItems, totalRedemptions] =
         await Promise.all([
           global.client.prisma.members.count(),
           global.client.prisma.pointHistory.aggregate({
@@ -52,10 +52,7 @@ export function adminEndPoints(app) {
             },
           }),
           global.client.prisma.rewardItem.count({
-            where: {
-              NOT: { RedeemedBy: "" },
-              FulfilledAt: null,
-            },
+            where: { NOT: { RedeemedBy: "" } },
           }),
         ]);
 
@@ -64,7 +61,7 @@ export function adminEndPoints(app) {
           totalMembers,
           totalPointsAwarded: pointsAggregate._sum.points ?? 0,
           activeShopItems,
-          pendingRedemptions,
+          totalRedemptions,
         })
       );
     } catch (err) {
@@ -222,79 +219,4 @@ export function adminEndPoints(app) {
     }
   });
 
-  // GET admin/pendingRedemptions — list unfulfilled redemptions
-  app.get(apiPrefix + "pendingRedemptions", authenticateAdmin, async function (req, res) {
-    try {
-      const redemptions = await global.client.prisma.rewardItem.findMany({
-        where: {
-          NOT: { RedeemedBy: "" },
-          FulfilledAt: null,
-        },
-        select: {
-          RewardItemID: true,
-          RewardID: true,
-          RedeemedBy: true,
-          RedemptionTimeStamp: true,
-          Reward: {
-            select: { Title: true },
-          },
-        },
-        orderBy: { RedemptionTimeStamp: "asc" } as any,
-      });
-
-      const memberIds = [...new Set(redemptions.map((r) => r.RedeemedBy).filter(Boolean))];
-      const members = await global.client.prisma.members.findMany({
-        where: { ID: { in: memberIds } },
-        select: { ID: true, DisplayName: true },
-      });
-      const memberMap = new Map(members.map((m) => [m.ID, m.DisplayName ?? m.ID]));
-
-      const result = redemptions.map((r) => ({
-        rewardItemId: r.RewardItemID,
-        rewardId: r.RewardID,
-        itemTitle: r.Reward.Title,
-        redeemedBy: r.RedeemedBy,
-        username: memberMap.get(r.RedeemedBy) ?? r.RedeemedBy,
-        creationTimestamp: r.RedemptionTimeStamp,
-      }));
-
-      res.send(jsonify(result));
-    } catch (err) {
-      log.error("Failed to fetch pending redemptions:", err);
-      res.status(500).send("Failed to load pending redemptions");
-    }
-  });
-
-  // POST admin/fulfillRedemption/:rewardItemId — mark redemption as fulfilled
-  app.post(
-    apiPrefix + "fulfillRedemption/:rewardItemId",
-    authenticateAdmin,
-    async function (req, res) {
-      try {
-        const rewardItemId = parseInt(req.params.rewardItemId, 10);
-
-        const rewardItem = await global.client.prisma.rewardItem.findUnique({
-          where: { RewardItemID: rewardItemId },
-        });
-
-        if (!rewardItem || !rewardItem.RedeemedBy) {
-          return res.status(404).send("Redemption not found");
-        }
-
-        if (rewardItem.FulfilledAt !== null) {
-          return res.status(409).send("Redemption already fulfilled");
-        }
-
-        await global.client.prisma.rewardItem.update({
-          where: { RewardItemID: rewardItemId },
-          data: { FulfilledAt: new Date() },
-        });
-
-        res.status(204).send();
-      } catch (err) {
-        log.error("Failed to fulfill redemption:", err);
-        res.status(500).send("Failed to fulfill redemption");
-      }
-    }
-  );
 }
