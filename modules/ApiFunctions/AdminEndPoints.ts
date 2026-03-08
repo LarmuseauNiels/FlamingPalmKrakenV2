@@ -54,7 +54,7 @@ export function adminEndPoints(app) {
           global.client.prisma.rewardItem.count({
             where: {
               NOT: { RedeemedBy: "" },
-              FulfilledAt: null,
+              Fulfilled: false,
             },
           }),
         ]);
@@ -228,7 +228,7 @@ export function adminEndPoints(app) {
       const redemptions = await global.client.prisma.rewardItem.findMany({
         where: {
           NOT: { RedeemedBy: "" },
-          FulfilledAt: null,
+          Fulfilled: false,
         },
         select: {
           RewardItemID: true,
@@ -281,13 +281,13 @@ export function adminEndPoints(app) {
           return res.status(404).send("Redemption not found");
         }
 
-        if (rewardItem.FulfilledAt !== null) {
+        if (rewardItem.Fulfilled) {
           return res.status(409).send("Redemption already fulfilled");
         }
 
         await global.client.prisma.rewardItem.update({
           where: { RewardItemID: rewardItemId },
-          data: { FulfilledAt: new Date() },
+          data: { Fulfilled: true },
         });
 
         res.status(204).send();

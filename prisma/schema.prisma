@@ -78,7 +78,7 @@ model RewardItem {
   RedemptionTimeStamp DateTime? @db.DateTime(0)
   RedemptionText      String    @db.Text
   RedeemedBy          String?   @default("") @db.VarChar(25)
-  FulfilledAt         DateTime? @db.DateTime(0)
+  Fulfilled           Boolean   @default(false)
   Reward              Reward    @relation(fields: [RewardID], references: [RewardID], onDelete: Cascade, map: "RewardItem_ibfk_1")
 
   @@index([RedeemedBy], map: "RedeemedBy")
