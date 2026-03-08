@@ -26,3 +26,15 @@ export function authenticateToken(req, res, next) {
     next();
   });
 }
+
+const adminIdList = (process.env.ADMIN_IDS || "").split(",").map((id) => id.trim()).filter(Boolean);
+
+export function authenticateAdmin(req, res, next) {
+  authenticateToken(req, res, () => {
+    if (!adminIdList.includes(req.user.id)) {
+      log.warn("Non-admin user attempted admin access:", req.user.id);
+      return res.sendStatus(403);
+    }
+    next();
+  });
+}
