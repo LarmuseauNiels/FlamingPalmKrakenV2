@@ -380,6 +380,7 @@ Base prefix: `/admin/`
 | `POST` | `/admin/shopItems` | Admin | Create a new shop item |
 | `PUT` | `/admin/shopItems/:id` | Admin | Update an existing shop item |
 | `DELETE` | `/admin/shopItems/:id` | Admin | Delete a shop item |
+| `POST` | `/admin/shopItems/:id/stock` | Admin | Add a single stock item to an existing shop item |
 | `GET` | `/admin/members` | Admin | List all members with stats |
 
 ---
@@ -525,6 +526,29 @@ Permanently deletes a shop item and all its associated `RewardItem` rows.
 - **Path parameter:** `id` — the `RewardID` of the shop item to delete
 - **Response (204):** No content
 - **Error responses:**
+  - `404 Shop item not found` — no `Reward` with that ID
+
+---
+
+#### `POST /admin/shopItems/:id/stock`
+
+Adds a single redeemable stock item (a `RewardItem`) to an existing shop item. Only `redemptionText` is required — the `rewardId` is taken from the URL path parameter.
+
+- **Auth:** Admin required
+- **Path parameter:** `id` — the `RewardID` of the shop item to stock
+- **Body:**
+
+```json
+{ "redemptionText": "XXXX-YYYY-ZZZZ" }
+```
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `redemptionText` | Yes | The redeemable value (e.g. a game key or voucher code) |
+
+- **Response (201):** The updated `ShopItem` with the new stock count reflected
+- **Error responses:**
+  - `400 Missing required field: redemptionText` — body field absent or empty
   - `404 Shop item not found` — no `Reward` with that ID
 
 ---
