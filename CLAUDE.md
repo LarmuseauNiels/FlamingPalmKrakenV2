@@ -276,3 +276,4 @@ Key models and their purpose:
 4. **Using `console.log` instead of `logger`** — errors won't reach Bugsnag in production.
 5. **Handler `name` mismatches** — the `name` in a handler must exactly match the Discord command name or button `customId`.
 6. **`disabledCommands/` directory** — files here are intentionally not loaded; don't move files there expecting them to work.
+7. **Editing API endpoints without updating `API_DOCS.md`** — whenever you add, remove, or change a field or behaviour in any endpoint under `modules/ApiFunctions/`, update the corresponding section in `API_DOCS.md` to keep the docs in sync.

@@ -12,6 +12,7 @@ function toShopItemDto(reward: any) {
     image: reward.imageurl,
     stock: reward.RewardItem.length,
     nonSalePrice: reward.nonSalePrice,
+    visible: reward.visible,
   };
 }
 
@@ -81,6 +82,7 @@ export function adminEndPoints(app) {
           Price: true,
           imageurl: true,
           nonSalePrice: true,
+          visible: true,
           RewardItem: {
             where: { RedeemedBy: "" },
             select: { RewardItemID: true },
@@ -98,7 +100,7 @@ export function adminEndPoints(app) {
   // POST admin/shopItems — create a new shop item
   app.post(apiPrefix + "shopItems", authenticateAdmin, async function (req, res) {
     try {
-      const { title, description, price, nonSalePrice, stock, image } = req.body;
+      const { title, description, price, nonSalePrice, stock, image, visible } = req.body;
 
       if (!title || !description || price == null || !image) {
         return res.status(400).send("Missing required fields");
@@ -111,7 +113,7 @@ export function adminEndPoints(app) {
           Price: price,
           nonSalePrice: nonSalePrice ?? null,
           imageurl: image,
-          visible: true,
+          visible: visible ?? true,
         },
       });
 
@@ -138,7 +140,7 @@ export function adminEndPoints(app) {
   app.put(apiPrefix + "shopItems/:id", authenticateAdmin, async function (req, res) {
     try {
       const rewardId = parseInt(req.params.id, 10);
-      const { title, description, price, nonSalePrice, image } = req.body;
+      const { title, description, price, nonSalePrice, image, visible } = req.body;
 
       const updateData: any = {};
       if (title !== undefined) updateData.Title = title;
@@ -146,6 +148,7 @@ export function adminEndPoints(app) {
       if (price !== undefined) updateData.Price = price;
       if (nonSalePrice !== undefined) updateData.nonSalePrice = nonSalePrice;
       if (image !== undefined) updateData.imageurl = image;
+      if (visible !== undefined) updateData.visible = visible;
 
       const updated = await global.client.prisma.reward.update({
         where: { RewardID: rewardId },
