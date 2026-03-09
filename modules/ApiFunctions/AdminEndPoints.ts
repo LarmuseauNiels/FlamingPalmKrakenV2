@@ -169,6 +169,47 @@ export function adminEndPoints(app) {
     }
   });
 
+  // POST admin/shopItems/:id/stock — add a single stock item to an existing shop item
+  app.post(apiPrefix + "shopItems/:id/stock", authenticateAdmin, async function (req, res) {
+    try {
+      const rewardId = parseInt(req.params.id, 10);
+      const { redemptionText } = req.body;
+
+      if (!redemptionText) {
+        return res.status(400).send("Missing required field: redemptionText");
+      }
+
+      // Verify the reward exists
+      const reward = await global.client.prisma.reward.findUnique({
+        where: { RewardID: rewardId },
+        include: { RewardItem: { where: { RedeemedBy: "" }, select: { RewardItemID: true } } },
+      });
+
+      if (!reward) {
+        return res.status(404).send("Shop item not found");
+      }
+
+      await global.client.prisma.rewardItem.create({
+        data: {
+          RewardID: rewardId,
+          RedemptionText: redemptionText,
+          RedeemedBy: "",
+        },
+      });
+
+      // Re-fetch updated stock count
+      const updated = await global.client.prisma.reward.findUnique({
+        where: { RewardID: rewardId },
+        include: { RewardItem: { where: { RedeemedBy: "" }, select: { RewardItemID: true } } },
+      });
+
+      res.status(201).send(jsonify(toShopItemDto(updated)));
+    } catch (err) {
+      log.error("Failed to add stock item:", err);
+      res.status(500).send("Failed to add stock item");
+    }
+  });
+
   // DELETE admin/shopItems/:id — delete a shop item
   app.delete(apiPrefix + "shopItems/:id", authenticateAdmin, async function (req, res) {
     try {
