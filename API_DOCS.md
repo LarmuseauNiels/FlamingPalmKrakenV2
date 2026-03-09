@@ -47,6 +47,13 @@ JWT payload:
 Only users who are members of the configured Discord guild (`GUILD_ID`) can
 log in. Non-members receive a `null` profile and are denied a token.
 
+### Admin Access
+
+Admin endpoints require the authenticated user's Discord ID to appear in the
+`ADMIN_IDS` environment variable (a comma-separated list of Discord snowflake
+IDs). Requests that pass JWT validation but fail the admin check receive
+`403 Forbidden`.
+
 ---
 
 ## Endpoint Reference
@@ -359,12 +366,30 @@ through achievements.
 
 Base prefix: `/admin/`
 
+> **Admin auth vs regular auth:** Most admin endpoints use a stricter
+> `authenticateAdmin` check. This requires a valid JWT **and** the
+> authenticated user's Discord ID must be present in the `ADMIN_IDS`
+> environment variable (comma-separated list of snowflake IDs).
+> Non-admin authenticated users receive `403`.
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/admin/yearOverview` | JWT | Voice-activity overview for the current year |
+| `GET` | `/admin/stats` | Admin | Dashboard summary counts |
+| `GET` | `/admin/shopItems` | Admin | List all shop items with stock |
+| `POST` | `/admin/shopItems` | Admin | Create a new shop item |
+| `PUT` | `/admin/shopItems/:id` | Admin | Update an existing shop item |
+| `DELETE` | `/admin/shopItems/:id` | Admin | Delete a shop item |
+| `GET` | `/admin/members` | Admin | List all members with stats |
+
+---
+
 #### `GET /admin/yearOverview`
 
 Returns daily voice-channel activity counts for the current calendar year.
 Intended for admin dashboards / activity graphs.
 
-- **Auth:** Required (any authenticated user — no role check currently)
+- **Auth:** Required (any authenticated user — no admin role check)
 - **Response:** `yearOverviewItem[]`
 
 ```json
@@ -375,6 +400,160 @@ Intended for admin dashboards / activity graphs.
 ```
 
 `activity` is the number of `VoiceConnected` log entries for that day.
+
+---
+
+#### `GET /admin/stats`
+
+Returns high-level dashboard summary counts for the admin panel.
+
+- **Auth:** Admin required
+- **Response:**
+
+```json
+{
+  "totalMembers": 142,
+  "totalPointsAwarded": 358200,
+  "activeShopItems": 8,
+  "totalRedemptions": 34
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `totalMembers` | Total `Members` rows |
+| `totalPointsAwarded` | Sum of all positive `PointHistory.points` entries |
+| `activeShopItems` | `Reward` rows that are visible and have at least one unredeemed item |
+| `totalRedemptions` | Total `RewardItem` rows that have been redeemed |
+
+---
+
+#### `GET /admin/shopItems`
+
+Returns all shop items (including hidden ones) with current stock levels. Uses
+the same `ShopItem` shape as the member-facing endpoint.
+
+- **Auth:** Admin required
+- **Response:** `ShopItem[]`
+
+```json
+[
+  {
+    "id": 3,
+    "title": "Elden Ring",
+    "description": "Soulslike game key",
+    "price": 1000,
+    "image": "https://example.com/elden-ring.jpg",
+    "stock": 2,
+    "nonSalePrice": null
+  }
+]
+```
+
+`stock` is the count of unredeemed `RewardItem` rows for that reward.
+
+---
+
+#### `POST /admin/shopItems`
+
+Creates a new shop item. Optionally pre-populates it with empty stock
+placeholder rows.
+
+- **Auth:** Admin required
+- **Body:**
+
+```json
+{
+  "title": "Elden Ring",
+  "description": "Soulslike game key",
+  "price": 1000,
+  "image": "https://example.com/elden-ring.jpg",
+  "nonSalePrice": null,
+  "stock": 5
+}
+```
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `title` | Yes | Display name |
+| `description` | Yes | Short description |
+| `price` | Yes | Cost in points |
+| `image` | Yes | URL to cover image |
+| `nonSalePrice` | No | Original price when on sale; `null` otherwise |
+| `stock` | No | Number of empty `RewardItem` placeholders to create (default `0`) |
+
+- **Response (201):** The created `ShopItem` (same shape as `GET /admin/shopItems`)
+- **Error responses:**
+  - `400 Missing required fields` — `title`, `description`, `price`, or `image` absent
+
+---
+
+#### `PUT /admin/shopItems/:id`
+
+Updates one or more fields on an existing shop item. All body fields are
+optional — only supplied fields are updated.
+
+- **Auth:** Admin required
+- **Path parameter:** `id` — the `RewardID` of the shop item
+- **Body (all fields optional):**
+
+```json
+{
+  "title": "Elden Ring GOTY",
+  "description": "Updated description",
+  "price": 900,
+  "nonSalePrice": 1000,
+  "image": "https://example.com/elden-ring-goty.jpg"
+}
+```
+
+- **Response:** The updated `ShopItem`
+- **Error responses:**
+  - `404 Shop item not found` — no `Reward` with that ID
+
+---
+
+#### `DELETE /admin/shopItems/:id`
+
+Permanently deletes a shop item and all its associated `RewardItem` rows.
+
+- **Auth:** Admin required
+- **Path parameter:** `id` — the `RewardID` of the shop item to delete
+- **Response (204):** No content
+- **Error responses:**
+  - `404 Shop item not found` — no `Reward` with that ID
+
+---
+
+#### `GET /admin/members`
+
+Returns all guild members with their current point balance, last seen
+timestamp, and join date.
+
+- **Auth:** Admin required
+- **Response:**
+
+```json
+[
+  {
+    "userid": "534686392589221898",
+    "username": "Kraken",
+    "avatar": "cb24eca24fbf24e075d2eca04102e070",
+    "points": 1200,
+    "lastSeen": "2026-03-08T21:00:00.000Z",
+    "joinDate": "2024-11-01T10:30:00.000Z"
+  }
+]
+```
+
+| Field | Description |
+|-------|-------------|
+| `userid` | Discord snowflake ID |
+| `username` | Server display name (falls back to Discord ID if unset) |
+| `avatar` | Discord avatar hash (empty string if not set) |
+| `points` | Current `Points.TotalPoints` balance |
+| `lastSeen` | Timestamp of most recent `VoiceConnected` event; `null` if never seen |
+| `joinDate` | Timestamp of earliest `PointHistory` entry; `null` if no history |
 
 ---
 
