@@ -445,12 +445,13 @@ the same `ShopItem` shape as the member-facing endpoint.
     "price": 1000,
     "image": "https://example.com/elden-ring.jpg",
     "stock": 2,
-    "nonSalePrice": null
+    "nonSalePrice": null,
+    "visible": true
   }
 ]
 ```
 
-`stock` is the count of unredeemed `RewardItem` rows for that reward.
+`stock` is the count of unredeemed `RewardItem` rows for that reward. `visible` indicates whether the item is shown in the member-facing shop.
 
 ---
 
@@ -469,7 +470,8 @@ placeholder rows.
   "price": 1000,
   "image": "https://example.com/elden-ring.jpg",
   "nonSalePrice": null,
-  "stock": 5
+  "stock": 5,
+  "visible": true
 }
 ```
 
@@ -481,6 +483,7 @@ placeholder rows.
 | `image` | Yes | URL to cover image |
 | `nonSalePrice` | No | Original price when on sale; `null` otherwise |
 | `stock` | No | Number of empty `RewardItem` placeholders to create (default `0`) |
+| `visible` | No | Whether shown in the member-facing shop (default `true`) |
 
 - **Response (201):** The created `ShopItem` (same shape as `GET /admin/shopItems`)
 - **Error responses:**
@@ -503,7 +506,8 @@ optional — only supplied fields are updated.
   "description": "Updated description",
   "price": 900,
   "nonSalePrice": 1000,
-  "image": "https://example.com/elden-ring-goty.jpg"
+  "image": "https://example.com/elden-ring-goty.jpg",
+  "visible": false
 }
 ```
 
