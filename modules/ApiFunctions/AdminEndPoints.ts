@@ -278,9 +278,7 @@ export function adminEndPoints(app) {
   app.post(apiPrefix + "referrals/:userId/:referrerId/reward-regular", authenticateAdmin, async function (req, res) {
     try {
       const { userId, referrerId } = req.params;
-      const { points } = req.body;
-      const pointsToAward = points ?? 500;
-      if (!Number.isInteger(pointsToAward) || pointsToAward < 1) return res.status(400).send("points must be a positive integer");
+      const pointsToAward = 50;
 
       const referral = await global.client.prisma.refferals.findUnique({
         where: { userid_refferer: { userid: userId, refferer: referrerId } },
@@ -316,9 +314,7 @@ export function adminEndPoints(app) {
   app.post(apiPrefix + "referrals/:userId/:referrerId/reward-member", authenticateAdmin, async function (req, res) {
     try {
       const { userId, referrerId } = req.params;
-      const { points } = req.body;
-      const pointsToAward = points ?? 1000;
-      if (!Number.isInteger(pointsToAward) || pointsToAward < 1) return res.status(400).send("points must be a positive integer");
+      const pointsToAward = 100;
 
       const referral = await global.client.prisma.refferals.findUnique({
         where: { userid_refferer: { userid: userId, refferer: referrerId } },

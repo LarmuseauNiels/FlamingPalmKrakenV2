@@ -688,25 +688,16 @@ Marks a referral as valid by setting its `IsValid` timestamp to now.
 
 #### `POST /admin/referrals/:userId/:referrerId/reward-regular`
 
-Awards points to the **referrer** as their regular referral reward. Atomically
-updates `Points`, creates a `PointHistory` entry, and marks `RegularRewarded`
-on the referral record. Requires the referral to already be validated.
+Awards **50 points** to the **referrer** as their regular referral reward.
+Atomically updates `Points`, creates a `PointHistory` entry, and marks
+`RegularRewarded` on the referral record. Requires the referral to already
+be validated.
 
 - **Auth:** Admin required
 - **Path parameters:** `userId` — referred member's Discord ID; `referrerId` — referrer's Discord ID
-- **Body:**
-
-```json
-{ "points": 500 }
-```
-
-| Field | Required | Description |
-|-------|----------|-------------|
-| `points` | No | Points to award to the referrer (default `500`; must be ≥ 1) |
-
-- **Response (200):** `{ "success": true, "pointsAwarded": 500 }`
+- **Body:** _(none)_
+- **Response (200):** `{ "success": true, "pointsAwarded": 50 }`
 - **Error responses:**
-  - `400 points must be a positive integer`
   - `400 Referral has not been validated yet`
   - `400 Regular reward already given`
   - `404 Referral not found`
@@ -715,26 +706,16 @@ on the referral record. Requires the referral to already be validated.
 
 #### `POST /admin/referrals/:userId/:referrerId/reward-member`
 
-Awards points to **both** the referrer and the referred user as their member
-reward. Atomically updates `Points` and `PointHistory` for both users and
-marks `MemberRewarded` on the referral record. Requires the referral to already
-be validated.
+Awards **100 points** each to **both** the referrer and the referred user as
+their member reward. Atomically updates `Points` and `PointHistory` for both
+users and marks `MemberRewarded` on the referral record. Requires the referral
+to already be validated.
 
 - **Auth:** Admin required
 - **Path parameters:** `userId` — referred member's Discord ID; `referrerId` — referrer's Discord ID
-- **Body:**
-
-```json
-{ "points": 1000 }
-```
-
-| Field | Required | Description |
-|-------|----------|-------------|
-| `points` | No | Points to award to each user (default `1000`; must be ≥ 1) |
-
-- **Response (200):** `{ "success": true, "pointsAwarded": 1000 }`
+- **Body:** _(none)_
+- **Response (200):** `{ "success": true, "pointsAwarded": 100 }`
 - **Error responses:**
-  - `400 points must be a positive integer`
   - `400 Referral has not been validated yet`
   - `400 Member reward already given`
   - `404 Referral not found`
