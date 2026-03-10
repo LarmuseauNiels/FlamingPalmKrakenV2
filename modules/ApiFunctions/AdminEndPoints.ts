@@ -223,6 +223,123 @@ export function adminEndPoints(app) {
     }
   });
 
+  // GET admin/referrals — list all referrals with referrer and referred user info
+  app.get(apiPrefix + "referrals", authenticateAdmin, async function (req, res) {
+    try {
+      const referrals = await global.client.prisma.refferals.findMany({
+        include: {
+          Members_MembersToRefferals_userid: {
+            select: { DisplayName: true, avatar: true },
+          },
+          Members_MembersToRefferals_refferer: {
+            select: { DisplayName: true, avatar: true },
+          },
+        },
+        orderBy: { CreatedTimestamp: "desc" } as any,
+      });
+
+      const result = referrals.map((r) => ({
+        userId: r.userid,
+        userDisplayName: r.Members_MembersToRefferals_userid?.DisplayName ?? r.userid,
+        userAvatar: r.Members_MembersToRefferals_userid?.avatar ?? null,
+        referrerId: r.refferer,
+        referrerDisplayName: r.Members_MembersToRefferals_refferer?.DisplayName ?? r.refferer,
+        referrerAvatar: r.Members_MembersToRefferals_refferer?.avatar ?? null,
+        createdTimestamp: r.CreatedTimestamp,
+        isValid: r.IsValid,
+        regularRewarded: r.RegularRewarded,
+        memberRewarded: r.MemberRewarded,
+      }));
+
+      res.send(jsonify(result));
+    } catch (err) {
+      log.error("Failed to fetch referrals:", err);
+      res.status(500).send("Failed to load referrals");
+    }
+  });
+
+  // POST admin/referrals/:userId/:referrerId/validate — mark referral as valid
+  app.post(apiPrefix + "referrals/:userId/:referrerId/validate", authenticateAdmin, async function (req, res) {
+    try {
+      const { userId, referrerId } = req.params;
+      await global.client.prisma.refferals.update({
+        where: { userid_refferer: { userid: userId, refferer: referrerId } },
+        data: { IsValid: new Date() },
+      });
+      res.status(200).send(jsonify({ success: true }));
+    } catch (err) {
+      if (err?.code === "P2025") return res.status(404).send("Referral not found");
+      log.error("Failed to validate referral:", err);
+      res.status(500).send("Failed to validate referral");
+    }
+  });
+
+  // POST admin/referrals/:userId/:referrerId/reward-regular — give regular reward points to referrer
+  app.post(apiPrefix + "referrals/:userId/:referrerId/reward-regular", authenticateAdmin, async function (req, res) {
+    try {
+      const { userId, referrerId } = req.params;
+      const pointsToAward = 50;
+
+      const referral = await global.client.prisma.refferals.findUnique({
+        where: { userid_refferer: { userid: userId, refferer: referrerId } },
+      });
+      if (!referral) return res.status(404).send("Referral not found");
+      if (!referral.IsValid) return res.status(400).send("Referral has not been validated yet");
+      if (referral.RegularRewarded) return res.status(400).send("Regular reward already given");
+
+      await global.client.prisma.$transaction([
+        global.client.prisma.refferals.update({
+          where: { userid_refferer: { userid: userId, refferer: referrerId } },
+          data: { RegularRewarded: new Date() },
+        }),
+        global.client.prisma.points.upsert({
+          where: { userid: referrerId },
+          update: { TotalPoints: { increment: pointsToAward }, lastComment: "Referral regular reward" },
+          create: { userid: referrerId, TotalPoints: pointsToAward, lastComment: "Referral regular reward" },
+        }),
+      ]);
+
+      res.status(200).send(jsonify({ success: true, pointsAwarded: pointsToAward }));
+    } catch (err) {
+      if (err?.code === "P2025") return res.status(404).send("Referral not found");
+      log.error("Failed to give regular reward:", err);
+      res.status(500).send("Failed to give regular reward");
+    }
+  });
+
+  // POST admin/referrals/:userId/:referrerId/reward-member — give member reward points to referrer and referred user
+  app.post(apiPrefix + "referrals/:userId/:referrerId/reward-member", authenticateAdmin, async function (req, res) {
+    try {
+      const { userId, referrerId } = req.params;
+      const pointsToAward = 100;
+
+      const referral = await global.client.prisma.refferals.findUnique({
+        where: { userid_refferer: { userid: userId, refferer: referrerId } },
+      });
+      if (!referral) return res.status(404).send("Referral not found");
+      if (!referral.IsValid) return res.status(400).send("Referral has not been validated yet");
+      if (referral.MemberRewarded) return res.status(400).send("Member reward already given");
+
+      await global.client.prisma.$transaction([
+        global.client.prisma.refferals.update({
+          where: { userid_refferer: { userid: userId, refferer: referrerId } },
+          data: { MemberRewarded: new Date() },
+        }),
+        global.client.prisma.points.upsert({
+          where: { userid: referrerId },
+          update: { TotalPoints: { increment: pointsToAward }, lastComment: "Referral member reward" },
+          create: { userid: referrerId, TotalPoints: pointsToAward, lastComment: "Referral member reward" },
+        }),
+      ]);
+
+      res.status(200).send(jsonify({ success: true, pointsAwarded: pointsToAward }));
+    } catch (err) {
+      if (err?.code === "P2025") return res.status(404).send("Referral not found");
+      log.error("Failed to give member reward:", err);
+      res.status(500).send("Failed to give member reward");
+    }
+  });
+
   // GET admin/members — list all members with stats
   app.get(apiPrefix + "members", authenticateAdmin, async function (req, res) {
     try {
