@@ -280,11 +280,13 @@ export function adminEndPoints(app) {
       const { userId, referrerId } = req.params;
       const { points } = req.body;
       const pointsToAward = points ?? 500;
+      if (!Number.isInteger(pointsToAward) || pointsToAward < 1) return res.status(400).send("points must be a positive integer");
 
       const referral = await global.client.prisma.refferals.findUnique({
         where: { userid_refferer: { userid: userId, refferer: referrerId } },
       });
       if (!referral) return res.status(404).send("Referral not found");
+      if (!referral.IsValid) return res.status(400).send("Referral has not been validated yet");
       if (referral.RegularRewarded) return res.status(400).send("Regular reward already given");
 
       await global.client.prisma.$transaction([
@@ -316,11 +318,13 @@ export function adminEndPoints(app) {
       const { userId, referrerId } = req.params;
       const { points } = req.body;
       const pointsToAward = points ?? 1000;
+      if (!Number.isInteger(pointsToAward) || pointsToAward < 1) return res.status(400).send("points must be a positive integer");
 
       const referral = await global.client.prisma.refferals.findUnique({
         where: { userid_refferer: { userid: userId, refferer: referrerId } },
       });
       if (!referral) return res.status(404).send("Referral not found");
+      if (!referral.IsValid) return res.status(400).send("Referral has not been validated yet");
       if (referral.MemberRewarded) return res.status(400).send("Member reward already given");
 
       await global.client.prisma.$transaction([

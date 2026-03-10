@@ -417,6 +417,10 @@ Base prefix: `/admin/`
 | `DELETE` | `/admin/shopItems/:id` | Admin | Delete a shop item |
 | `POST` | `/admin/shopItems/:id/stock` | Admin | Add a single stock item to an existing shop item |
 | `GET` | `/admin/members` | Admin | List all members with stats |
+| `GET` | `/admin/referrals` | Admin | List all referrals with user info and reward status |
+| `POST` | `/admin/referrals/:userId/:referrerId/validate` | Admin | Mark a referral as valid |
+| `POST` | `/admin/referrals/:userId/:referrerId/reward-regular` | Admin | Award regular reward points to referrer |
+| `POST` | `/admin/referrals/:userId/:referrerId/reward-member` | Admin | Award member reward points to both referrer and referred user |
 
 ---
 
@@ -624,6 +628,116 @@ timestamp, and join date.
 | `points` | Current `Points.TotalPoints` balance |
 | `lastSeen` | Timestamp of most recent `VoiceConnected` event; `null` if never seen |
 | `joinDate` | Timestamp of earliest `PointHistory` entry; `null` if no history |
+
+---
+
+#### `GET /admin/referrals`
+
+Returns all referrals across the entire community, including display names and
+avatars for both the referred user and the referrer.
+
+- **Auth:** Admin required
+- **Response:** `AdminReferral[]`
+
+```json
+[
+  {
+    "userId": "123456789012345678",
+    "userDisplayName": "NewPlayer",
+    "userAvatar": "abc123",
+    "referrerId": "534686392589221898",
+    "referrerDisplayName": "Kraken",
+    "referrerAvatar": "cb24eca24fbf24e075d2eca04102e070",
+    "createdTimestamp": "2026-01-10T12:00:00.000Z",
+    "isValid": "2026-01-12T08:30:00.000Z",
+    "regularRewarded": null,
+    "memberRewarded": null
+  }
+]
+```
+
+| Field | Description |
+|-------|-------------|
+| `userId` | Discord snowflake ID of the referred member |
+| `userDisplayName` | Display name of the referred member (falls back to ID) |
+| `userAvatar` | Discord avatar hash of the referred member (`null` if not set) |
+| `referrerId` | Discord snowflake ID of the referring member |
+| `referrerDisplayName` | Display name of the referring member (falls back to ID) |
+| `referrerAvatar` | Discord avatar hash of the referring member (`null` if not set) |
+| `createdTimestamp` | When the referral was created |
+| `isValid` | Timestamp when validated, or `null` |
+| `regularRewarded` | Timestamp when regular reward was given, or `null` |
+| `memberRewarded` | Timestamp when member reward was given, or `null` |
+
+Results ordered by `createdTimestamp` descending.
+
+---
+
+#### `POST /admin/referrals/:userId/:referrerId/validate`
+
+Marks a referral as valid by setting its `IsValid` timestamp to now.
+
+- **Auth:** Admin required
+- **Path parameters:** `userId` — referred member's Discord ID; `referrerId` — referrer's Discord ID
+- **Body:** _(none)_
+- **Response (200):** `{ "success": true }`
+- **Error responses:**
+  - `404 Referral not found`
+
+---
+
+#### `POST /admin/referrals/:userId/:referrerId/reward-regular`
+
+Awards points to the **referrer** as their regular referral reward. Atomically
+updates `Points`, creates a `PointHistory` entry, and marks `RegularRewarded`
+on the referral record. Requires the referral to already be validated.
+
+- **Auth:** Admin required
+- **Path parameters:** `userId` — referred member's Discord ID; `referrerId` — referrer's Discord ID
+- **Body:**
+
+```json
+{ "points": 500 }
+```
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `points` | No | Points to award to the referrer (default `500`; must be ≥ 1) |
+
+- **Response (200):** `{ "success": true, "pointsAwarded": 500 }`
+- **Error responses:**
+  - `400 points must be a positive integer`
+  - `400 Referral has not been validated yet`
+  - `400 Regular reward already given`
+  - `404 Referral not found`
+
+---
+
+#### `POST /admin/referrals/:userId/:referrerId/reward-member`
+
+Awards points to **both** the referrer and the referred user as their member
+reward. Atomically updates `Points` and `PointHistory` for both users and
+marks `MemberRewarded` on the referral record. Requires the referral to already
+be validated.
+
+- **Auth:** Admin required
+- **Path parameters:** `userId` — referred member's Discord ID; `referrerId` — referrer's Discord ID
+- **Body:**
+
+```json
+{ "points": 1000 }
+```
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `points` | No | Points to award to each user (default `1000`; must be ≥ 1) |
+
+- **Response (200):** `{ "success": true, "pointsAwarded": 1000 }`
+- **Error responses:**
+  - `400 points must be a positive integer`
+  - `400 Referral has not been validated yet`
+  - `400 Member reward already given`
+  - `404 Referral not found`
 
 ---
 
