@@ -135,6 +135,39 @@ Point history is the 5 most recent entries for the current user.
 
 ---
 
+#### `GET /members/referrals`
+
+Returns the list of members that the authenticated user has referred, along
+with their reward status.
+
+- **Auth:** Required
+- **Response:** `ReferralItem[]`
+
+```json
+[
+  {
+    "displayName": "SomePlayer",
+    "avatar": "abc123",
+    "createdTimestamp": "2026-01-10T12:00:00.000Z",
+    "isValid": "2026-01-12T08:30:00.000Z",
+    "regularRewarded": "2026-01-15T09:00:00.000Z",
+    "memberRewarded": null
+  }
+]
+```
+
+Fields:
+- `displayName` — Discord display name of the referred member.
+- `avatar` — Discord avatar hash of the referred member (may be `null`).
+- `createdTimestamp` — When the referral record was created.
+- `isValid` — Timestamp when the referral was validated, or `null` if not yet valid.
+- `regularRewarded` — Timestamp when the referrer received their regular reward points, or `null` if not yet rewarded.
+- `memberRewarded` — Timestamp when the referrer received their member-tier reward points, or `null` if not yet rewarded.
+
+Results are ordered by `createdTimestamp` descending (newest first).
+
+---
+
 #### `GET /members/library`
 
 Returns the list of shop items the authenticated user has previously redeemed.

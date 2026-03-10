@@ -51,6 +51,35 @@ export function memberEndPoints(app) {
     }
   );
 
+  // GET /members/referrals — list of users referred by the authenticated member
+  app.get(apiPrefix + "referrals", authenticateToken, async function (req, res) {
+    try {
+      const referrals = await global.client.prisma.refferals.findMany({
+        where: { refferer: req.user.id },
+        include: {
+          Members_MembersToRefferals_userid: {
+            select: { DisplayName: true, avatar: true },
+          },
+        },
+        orderBy: { CreatedTimestamp: "desc" } as any,
+      });
+
+      const result = referrals.map((r) => ({
+        displayName: r.Members_MembersToRefferals_userid.DisplayName ?? "Unknown",
+        avatar: r.Members_MembersToRefferals_userid.avatar,
+        createdTimestamp: r.CreatedTimestamp,
+        isValid: r.IsValid,
+        regularRewarded: r.RegularRewarded,
+        memberRewarded: r.MemberRewarded,
+      }));
+
+      res.send(JSON.stringify(result));
+    } catch (err) {
+      log.error("Failed to fetch referrals:", err);
+      res.status(500).send("Failed to load referrals");
+    }
+  });
+
   //getLibrary for user
   app.get(apiPrefix + "library", authenticateToken, function (req, res) {
     let user = req.user;
