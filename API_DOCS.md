@@ -454,6 +454,13 @@ the same `ShopItem` shape as the member-facing endpoint.
 
 `stock` is the count of unredeemed `RewardItem` rows for that reward. `visible` indicates whether the item is shown in the member-facing shop.
 
+> **Frontend display note — `/admin/shop` page:** Reward images (`image` URL)
+> must be rendered at a **2:1 aspect ratio** (width : height) in every context
+> where they appear — both in the main shop-item grid/list and inside the
+> edit-item modal. Apply `aspect-ratio: 2 / 1; object-fit: cover;` (or
+> equivalent) to the `<img>` element so that all images are uniformly cropped
+> to this ratio regardless of their original dimensions.
+
 ---
 
 #### `POST /admin/shopItems`
@@ -481,7 +488,7 @@ placeholder rows.
 | `title` | Yes | Display name |
 | `description` | Yes | Short description |
 | `price` | Yes | Cost in points |
-| `image` | Yes | URL to cover image |
+| `image` | Yes | URL to cover image (displayed at 2:1 aspect ratio in the admin UI) |
 | `nonSalePrice` | No | Original price when on sale; `null` otherwise |
 | `stock` | No | Number of empty `RewardItem` placeholders to create (default `0`) |
 | `visible` | No | Whether shown in the member-facing shop (default `true`) |
