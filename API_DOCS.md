@@ -146,6 +146,7 @@ with their reward status.
 ```json
 [
   {
+    "userId": "123456789012345678",
     "displayName": "SomePlayer",
     "avatar": "abc123",
     "createdTimestamp": "2026-01-10T12:00:00.000Z",
@@ -157,6 +158,7 @@ with their reward status.
 ```
 
 Fields:
+- `userId` — Discord snowflake ID of the referred member. Use with `avatar` to build the CDN URL: `https://cdn.discordapp.com/avatars/{userId}/{avatar}.png`.
 - `displayName` — Discord display name of the referred member.
 - `avatar` — Discord avatar hash of the referred member (may be `null`).
 - `createdTimestamp` — When the referral record was created.

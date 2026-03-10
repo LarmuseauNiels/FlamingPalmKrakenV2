@@ -65,6 +65,7 @@ export function memberEndPoints(app) {
       });
 
       const result = referrals.map((r) => ({
+        userId: r.userid,
         displayName: r.Members_MembersToRefferals_userid.DisplayName ?? "Unknown",
         avatar: r.Members_MembersToRefferals_userid.avatar,
         createdTimestamp: r.CreatedTimestamp,
@@ -73,7 +74,7 @@ export function memberEndPoints(app) {
         memberRewarded: r.MemberRewarded,
       }));
 
-      res.send(JSON.stringify(result));
+      res.send(jsonify(result));
     } catch (err) {
       log.error("Failed to fetch referrals:", err);
       res.status(500).send("Failed to load referrals");
