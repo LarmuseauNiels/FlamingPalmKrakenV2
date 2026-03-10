@@ -330,11 +330,6 @@ export function adminEndPoints(app) {
           update: { TotalPoints: { increment: pointsToAward }, lastComment: "Referral member reward" },
           create: { userid: referrerId, TotalPoints: pointsToAward, lastComment: "Referral member reward" },
         }),
-        global.client.prisma.points.upsert({
-          where: { userid: userId },
-          update: { TotalPoints: { increment: pointsToAward }, lastComment: "Referral member reward (referred)" },
-          create: { userid: userId, TotalPoints: pointsToAward, lastComment: "Referral member reward (referred)" },
-        }),
       ]);
 
       res.status(200).send(jsonify({ success: true, pointsAwarded: pointsToAward }));

@@ -420,7 +420,7 @@ Base prefix: `/admin/`
 | `GET` | `/admin/referrals` | Admin | List all referrals with user info and reward status |
 | `POST` | `/admin/referrals/:userId/:referrerId/validate` | Admin | Mark a referral as valid |
 | `POST` | `/admin/referrals/:userId/:referrerId/reward-regular` | Admin | Award regular reward points to referrer |
-| `POST` | `/admin/referrals/:userId/:referrerId/reward-member` | Admin | Award member reward points to both referrer and referred user |
+| `POST` | `/admin/referrals/:userId/:referrerId/reward-member` | Admin | Award member reward points (100 pts) to the referrer |
 
 ---
 
@@ -706,10 +706,9 @@ be validated.
 
 #### `POST /admin/referrals/:userId/:referrerId/reward-member`
 
-Awards **100 points** each to **both** the referrer and the referred user as
-their member reward. Atomically updates `Points` and `PointHistory` for both
-users and marks `MemberRewarded` on the referral record. Requires the referral
-to already be validated.
+Awards **100 points** to the **referrer** as their member reward. Atomically
+updates `Points` for the referrer and marks `MemberRewarded` on the referral
+record. Requires the referral to already be validated.
 
 - **Auth:** Admin required
 - **Path parameters:** `userId` — referred member's Discord ID; `referrerId` — referrer's Discord ID
