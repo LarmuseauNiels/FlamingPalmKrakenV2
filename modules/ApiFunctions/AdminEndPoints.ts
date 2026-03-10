@@ -297,9 +297,6 @@ export function adminEndPoints(app) {
           update: { TotalPoints: { increment: pointsToAward }, lastComment: "Referral regular reward" },
           create: { userid: referrerId, TotalPoints: pointsToAward, lastComment: "Referral regular reward" },
         }),
-        global.client.prisma.pointHistory.create({
-          data: { userid: referrerId, points: pointsToAward, comment: `Referral regular reward for ${userId}` },
-        }),
       ]);
 
       res.status(200).send(jsonify({ success: true, pointsAwarded: pointsToAward }));
@@ -333,16 +330,10 @@ export function adminEndPoints(app) {
           update: { TotalPoints: { increment: pointsToAward }, lastComment: "Referral member reward" },
           create: { userid: referrerId, TotalPoints: pointsToAward, lastComment: "Referral member reward" },
         }),
-        global.client.prisma.pointHistory.create({
-          data: { userid: referrerId, points: pointsToAward, comment: `Referral member reward for ${userId}` },
-        }),
         global.client.prisma.points.upsert({
           where: { userid: userId },
           update: { TotalPoints: { increment: pointsToAward }, lastComment: "Referral member reward (referred)" },
           create: { userid: userId, TotalPoints: pointsToAward, lastComment: "Referral member reward (referred)" },
-        }),
-        global.client.prisma.pointHistory.create({
-          data: { userid: userId, points: pointsToAward, comment: `Referral member reward (referred by ${referrerId})` },
         }),
       ]);
 
