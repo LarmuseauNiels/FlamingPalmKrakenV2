@@ -22,6 +22,7 @@ model Members {
   AchievementNotifications              Boolean?
   Blocked                               Boolean?              @default(false)
   NotifyLevel                           Int?                  @default(0)
+  Timezone                              String?               @db.VarChar(50)
   Achievement_History                   Achievement_History[]
   PointHistory                          PointHistory[]
   Points                                Points?
