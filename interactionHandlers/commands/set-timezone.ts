@@ -61,6 +61,7 @@ export default class SetTimezoneCommand implements IHandler {
       );
     } catch (error) {
       log.error("Autocomplete error", error);
+      await interaction.respond([]).catch(() => {});
     }
   }
 }
