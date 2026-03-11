@@ -645,6 +645,7 @@ avatars for both the referred user and the referrer.
     "userId": "123456789012345678",
     "userDisplayName": "NewPlayer",
     "userAvatar": "abc123",
+    "userLevel": 12,
     "referrerId": "534686392589221898",
     "referrerDisplayName": "Kraken",
     "referrerAvatar": "cb24eca24fbf24e075d2eca04102e070",
@@ -661,6 +662,7 @@ avatars for both the referred user and the referrer.
 | `userId` | Discord snowflake ID of the referred member |
 | `userDisplayName` | Display name of the referred member (falls back to ID) |
 | `userAvatar` | Discord avatar hash of the referred member (`null` if not set) |
+| `userLevel` | XP level of the referred member (`Math.floor(0.2 * sqrt(xp))`); `null` if member record not found |
 | `referrerId` | Discord snowflake ID of the referring member |
 | `referrerDisplayName` | Display name of the referring member (falls back to ID) |
 | `referrerAvatar` | Discord avatar hash of the referring member (`null` if not set) |
