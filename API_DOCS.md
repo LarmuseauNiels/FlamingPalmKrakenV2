@@ -421,6 +421,10 @@ Base prefix: `/admin/`
 | `POST` | `/admin/referrals/:userId/:referrerId/validate` | Admin | Mark a referral as valid |
 | `POST` | `/admin/referrals/:userId/:referrerId/reward-regular` | Admin | Award regular reward points to referrer |
 | `POST` | `/admin/referrals/:userId/:referrerId/reward-member` | Admin | Award member reward points (100 pts) to the referrer |
+| `GET` | `/admin/raids` | Admin | List all raids with attendee counts |
+| `POST` | `/admin/raids` | Admin | Create a new raid |
+| `PUT` | `/admin/raids/:id` | Admin | Update an existing raid |
+| `DELETE` | `/admin/raids/:id` | Admin | Delete a raid and all its attendees/scheduling data |
 
 ---
 
@@ -720,6 +724,102 @@ record. Requires the referral to already be validated.
   - `400 Referral has not been validated yet`
   - `400 Member reward already given`
   - `404 Referral not found`
+
+---
+
+#### `GET /admin/raids`
+
+Returns all raids ordered by creation time descending, including attendee count and creator display name.
+
+- **Auth:** Admin required
+- **Response:** `AdminRaid[]`
+
+```json
+[
+  {
+    "id": 42,
+    "title": "Saturday Night Raid",
+    "minPlayers": 5,
+    "creationTime": "2026-03-07T18:00:00.000Z",
+    "status": 1,
+    "creatorId": "534686392589221898",
+    "creatorName": "Kraken",
+    "attending": 3
+  }
+]
+```
+
+| Field | Description |
+|-------|-------------|
+| `id` | Raid primary key |
+| `title` | Raid display name |
+| `minPlayers` | Minimum player target |
+| `creationTime` | When the raid was created |
+| `status` | `1` = active/open; `0` = inactive/closed |
+| `creatorId` | Discord snowflake ID of the creator |
+| `creatorName` | Display name of the creator (falls back to `creatorId` if not found) |
+| `attending` | Number of signed-up attendees |
+
+---
+
+#### `POST /admin/raids`
+
+Creates a new raid. The authenticated admin becomes the creator.
+
+- **Auth:** Admin required
+- **Body:**
+
+```json
+{
+  "title": "Saturday Night Raid",
+  "minPlayers": 5
+}
+```
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `title` | Yes | Raid display name |
+| `minPlayers` | Yes | Minimum player target |
+
+- **Response (201):** The created `AdminRaid` (same shape as `GET /admin/raids`)
+- **Error responses:**
+  - `400 Missing required fields: title, minPlayers`
+
+---
+
+#### `PUT /admin/raids/:id`
+
+Updates one or more fields on an existing raid. All body fields are optional.
+
+- **Auth:** Admin required
+- **Path parameter:** `id` — the `Raids.ID`
+- **Body (all fields optional):**
+
+```json
+{
+  "title": "Updated Raid Title",
+  "minPlayers": 8,
+  "status": 0
+}
+```
+
+- **Response:** The updated `AdminRaid`
+- **Error responses:**
+  - `404 Raid not found`
+
+---
+
+#### `DELETE /admin/raids/:id`
+
+Permanently deletes a raid and cascades the delete to all related data:
+`RaidAvailability` → `RaidSchedulingOption` → `RaidAttendees` → `Raids`.
+All deletes happen in a single transaction.
+
+- **Auth:** Admin required
+- **Path parameter:** `id` — the `Raids.ID`
+- **Response (204):** No content
+- **Error responses:**
+  - `404 Raid not found`
 
 ---
 
