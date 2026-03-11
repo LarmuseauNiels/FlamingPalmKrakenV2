@@ -190,6 +190,20 @@ Returns the list of shop items the authenticated user has previously redeemed.
 
 ---
 
+#### `POST /members/raids/:id/join`
+
+Joins the authenticated user to the specified raid.
+
+- **Auth:** Required
+- **URL param:** `id` — numeric raid ID
+- **Response:** `200 OK` with plain text `"Joined raid successfully"`
+- **Errors:**
+  - `404` — raid not found or not open (Status ≠ 1)
+  - `409` — user has already joined this raid
+  - `500` — unexpected server error
+
+---
+
 ### Shop / Points
 
 Base prefix: `/members/`

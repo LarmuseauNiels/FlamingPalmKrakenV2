@@ -1,5 +1,6 @@
 import { authenticateToken, jsonify } from "./Helpers";
 import { DashBoardModel } from "./ViewModels/dash-board-model";
+import { RaidModule } from "../../modules/RaidModule";
 import { createLogger } from "../../utils/logger";
 
 const log = createLogger("MemberEndPoints");
@@ -78,6 +79,36 @@ export function memberEndPoints(app) {
     } catch (err) {
       log.error("Failed to fetch referrals:", err);
       res.status(500).send("Failed to load referrals");
+    }
+  });
+
+  // POST /members/raids/:id/join — join a raid
+  app.post(apiPrefix + "raids/:id/join", authenticateToken, async function (req, res) {
+    try {
+      const raidId = parseInt(req.params.id, 10);
+      const userId: string = req.user.id;
+
+      const raid = await global.client.prisma.raids.findUnique({
+        where: { ID: raidId },
+      });
+
+      if (!raid || raid.Status !== 1) {
+        return res.status(404).send("Raid not found or not open");
+      }
+
+      const existing = await global.client.prisma.raidAttendees.count({
+        where: { RaidId: raidId, MemberId: userId },
+      });
+
+      if (existing > 0) {
+        return res.status(409).send("Already joined this raid");
+      }
+
+      await RaidModule.AddUserToRaid(userId, raidId);
+      res.status(200).send("Joined raid successfully");
+    } catch (err) {
+      log.error("Failed to join raid:", err);
+      res.status(500).send("Failed to join raid");
     }
   });
 
