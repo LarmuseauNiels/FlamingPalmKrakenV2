@@ -12,6 +12,7 @@ import { profileEndPoints } from "./ApiFunctions/ProfileEndPoints";
 import { shopEndPoints } from "./ApiFunctions/ShopEndPoints";
 import bodyParser from "body-parser";
 import { adminEndPoints } from "./ApiFunctions/AdminEndPoints";
+import { raidEndPoints } from "./ApiFunctions/RaidEndPoints";
 import { Strategy as DiscordStrategy } from "passport-discord-auth";
 const app = express();
 const prompt = "consent";
@@ -87,6 +88,7 @@ export class WebApi {
     profileEndPoints(app);
     shopEndPoints(app);
     adminEndPoints(app);
+    raidEndPoints(app);
 
     app.use(function (err, req, res, next) {
       log.error("Unhandled Express error:", err.stack);
