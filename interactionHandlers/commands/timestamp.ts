@@ -15,6 +15,38 @@ const FORMAT_OPTIONS = [
   { name: "Relative (2 hours ago)", value: "R" },
 ];
 
+// DD/MM/YYYY is the only date convention used — no MM/DD/YYYY ambiguity.
+// AM/PM variants cover both uppercase (6:30PM) and lowercase (6:30pm),
+// with and without a separating space.
+const PARSE_FORMATS = [
+  "YYYY-MM-DD HH:mm",
+  "YYYY-MM-DD H:mm",
+  "YYYY-MM-DD hh:mm A",
+  "YYYY-MM-DD hh:mma",
+  "YYYY-MM-DD h:mm A",
+  "YYYY-MM-DD h:mma",
+  "DD/MM/YYYY HH:mm",
+  "DD/MM/YYYY H:mm",
+  "DD/MM/YYYY hh:mm A",
+  "DD/MM/YYYY hh:mma",
+  "DD/MM/YYYY h:mm A",
+  "DD/MM/YYYY h:mma",
+  "MMMM D YYYY hh:mm A",
+  "MMMM D YYYY hh:mma",
+  "MMMM D YYYY h:mm A",
+  "MMMM D YYYY h:mma",
+  "MMMM D YYYY HH:mm",
+  "D MMMM YYYY HH:mm",
+  "YYYY-MM-DD",
+  "DD/MM/YYYY",
+  "HH:mm",
+  "H:mm",
+  "hh:mm A",
+  "hh:mma",
+  "h:mm A",
+  "h:mma",
+];
+
 export default class TimestampCommand implements IHandler {
   name = "timestamp";
   isGuild = false;
@@ -27,7 +59,7 @@ export default class TimestampCommand implements IHandler {
       option
         .setName("datetime")
         .setDescription(
-          'Date and/or time to convert, e.g. "2026-03-15 18:30", "18:30", "March 15 2026 6:30pm"'
+          'Date and/or time to convert, e.g. "15/03/2026 18:30", "18:30", "March 15 2026 6:30pm"'
         )
         .setRequired(true)
     )
@@ -47,6 +79,7 @@ export default class TimestampCommand implements IHandler {
 
     // Look up the member's timezone
     let timezone = "UTC";
+    let timezoneWasSet = false;
     try {
       const member = await global.client.prisma.members.findUnique({
         where: { ID: interaction.user.id },
@@ -54,27 +87,11 @@ export default class TimestampCommand implements IHandler {
       });
       if (member?.Timezone) {
         timezone = member.Timezone;
+        timezoneWasSet = true;
       }
     } catch (error) {
       log.error("Failed to fetch member timezone", error);
     }
-
-    // Parse the input — try several common formats
-    const PARSE_FORMATS = [
-      "YYYY-MM-DD HH:mm",
-      "YYYY-MM-DD H:mm",
-      "YYYY-MM-DD hh:mmA",
-      "YYYY-MM-DD h:mmA",
-      "DD/MM/YYYY HH:mm",
-      "MM/DD/YYYY HH:mm",
-      "MMMM D YYYY h:mmA",
-      "MMMM D YYYY HH:mm",
-      "D MMMM YYYY HH:mm",
-      "YYYY-MM-DD",
-      "HH:mm",
-      "H:mm",
-      "h:mmA",
-    ];
 
     const parsed = moment.tz(datetimeInput, PARSE_FORMATS, true, timezone);
 
@@ -82,7 +99,7 @@ export default class TimestampCommand implements IHandler {
       await interaction.editReply({
         content: [
           `Could not parse **${datetimeInput}** as a date/time.`,
-          `Accepted formats: \`YYYY-MM-DD HH:mm\`, \`HH:mm\`, \`March 15 2026 6:30pm\`, etc.`,
+          `Accepted formats: \`DD/MM/YYYY HH:mm\`, \`HH:mm\`, \`March 15 2026 6:30pm\`, etc.`,
           `Your configured timezone is **${timezone}**. Use \`/set-timezone\` to change it.`,
         ].join("\n"),
       });
@@ -90,17 +107,21 @@ export default class TimestampCommand implements IHandler {
     }
 
     const unixSeconds = parsed.unix();
-
-    // Build the Discord timestamp tag and a copyable code block
+    const interpretedAs = parsed.format("DD/MM/YYYY HH:mm");
     const tag = `<t:${unixSeconds}:${format}>`;
 
     const allFormats = FORMAT_OPTIONS.map(
       (f) => `\`<t:${unixSeconds}:${f.value}>\` → <t:${unixSeconds}:${f.value}>`
     ).join("\n");
 
+    const timezoneNote = timezoneWasSet
+      ? `Timezone: **${timezone}**`
+      : `Timezone: **UTC** *(no timezone set — use \`/set-timezone\` to configure yours)*`;
+
     await interaction.editReply({
       content: [
-        `**Timestamp for** \`${datetimeInput}\` **in ${timezone}**`,
+        `**Timestamp for** \`${datetimeInput}\``,
+        `Interpreted as: \`${interpretedAs}\` | ${timezoneNote}`,
         "",
         `Selected format: ${tag}`,
         `Copy: \`${tag}\``,
