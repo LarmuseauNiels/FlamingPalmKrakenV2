@@ -229,7 +229,7 @@ export function adminEndPoints(app) {
       const referrals = await global.client.prisma.refferals.findMany({
         include: {
           Members_MembersToRefferals_userid: {
-            select: { DisplayName: true, avatar: true },
+            select: { DisplayName: true, avatar: true, XP: true },
           },
           Members_MembersToRefferals_refferer: {
             select: { DisplayName: true, avatar: true },
@@ -238,18 +238,23 @@ export function adminEndPoints(app) {
         orderBy: { CreatedTimestamp: "desc" } as any,
       });
 
-      const result = referrals.map((r) => ({
-        userId: r.userid,
-        userDisplayName: r.Members_MembersToRefferals_userid?.DisplayName ?? r.userid,
-        userAvatar: r.Members_MembersToRefferals_userid?.avatar ?? null,
-        referrerId: r.refferer,
-        referrerDisplayName: r.Members_MembersToRefferals_refferer?.DisplayName ?? r.refferer,
-        referrerAvatar: r.Members_MembersToRefferals_refferer?.avatar ?? null,
-        createdTimestamp: r.CreatedTimestamp,
-        isValid: r.IsValid,
-        regularRewarded: r.RegularRewarded,
-        memberRewarded: r.MemberRewarded,
-      }));
+      const result = referrals.map((r) => {
+        const xp = r.Members_MembersToRefferals_userid?.XP ?? null;
+        const userLevel = xp !== null ? Math.floor(0.2 * Math.sqrt(xp)) : null;
+        return {
+          userId: r.userid,
+          userDisplayName: r.Members_MembersToRefferals_userid?.DisplayName ?? r.userid,
+          userAvatar: r.Members_MembersToRefferals_userid?.avatar ?? null,
+          userLevel,
+          referrerId: r.refferer,
+          referrerDisplayName: r.Members_MembersToRefferals_refferer?.DisplayName ?? r.refferer,
+          referrerAvatar: r.Members_MembersToRefferals_refferer?.avatar ?? null,
+          createdTimestamp: r.CreatedTimestamp,
+          isValid: r.IsValid,
+          regularRewarded: r.RegularRewarded,
+          memberRewarded: r.MemberRewarded,
+        };
+      });
 
       res.send(jsonify(result));
     } catch (err) {
