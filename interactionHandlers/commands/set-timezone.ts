@@ -9,7 +9,8 @@ const IANA_TIMEZONES: string[] = (Intl as any).supportedValuesOf("timeZone");
 
 export default class SetTimezoneCommand implements IHandler {
   name = "set-timezone";
-  data = new SlashCommandBuilder()
+  isGuild = false;
+    data = new SlashCommandBuilder()
     .setName("set-timezone")
     .setDescription("Set your timezone so the bot can parse date/time inputs correctly.")
     .addStringOption((option) =>
