@@ -1,4 +1,4 @@
-import { authenticateAdmin } from "./Helpers";
+import { authenticateAdmin, jsonify } from "./Helpers";
 import { createLogger } from "../../utils/logger";
 
 const log = createLogger("RaidEndPoints");
@@ -30,7 +30,7 @@ export function raidEndPoints(app) {
         orderBy: { CreationTime: "desc" } as any,
       });
 
-      res.send(JSON.stringify(raids.map(toRaidDto)));
+      res.send(jsonify(raids.map(toRaidDto)));
     } catch (err) {
       log.error("Failed to fetch raids:", err);
       res.status(500).send("Failed to load raids");
@@ -63,7 +63,7 @@ export function raidEndPoints(app) {
         },
       });
 
-      res.status(201).send(JSON.stringify(toRaidDto(raid)));
+      res.status(201).send(jsonify(toRaidDto(raid)));
     } catch (err) {
       log.error("Failed to create raid:", err);
       res.status(500).send("Failed to create raid");
@@ -90,7 +90,7 @@ export function raidEndPoints(app) {
         },
       });
 
-      res.send(JSON.stringify(toRaidDto(raid)));
+      res.send(jsonify(toRaidDto(raid)));
     } catch (err) {
       if ((err as any)?.code === "P2025") return res.status(404).send("Raid not found");
       log.error("Failed to update raid:", err);
