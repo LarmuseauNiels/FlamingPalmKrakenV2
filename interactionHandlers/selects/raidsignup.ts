@@ -13,6 +13,8 @@ export default class RaidSignupHandler implements IHandler {
   async execute(interaction: StringSelectMenuInteraction) {
     if (!interaction.isStringSelectMenu()) return;
 
+    await interaction.deferReply({ ephemeral: true });
+
     let raid = await global.client.prisma.raids.findUnique({
       where: {
         ID: parseInt(interaction.values[0]),
@@ -20,9 +22,8 @@ export default class RaidSignupHandler implements IHandler {
     });
 
     if (!raid || raid.Status !== 1) {
-      interaction.reply({
+      await interaction.editReply({
         content: "This raid is no longer accepting signups.",
-        ephemeral: true,
       });
       return;
     }
@@ -42,11 +43,10 @@ export default class RaidSignupHandler implements IHandler {
           .setStyle(ButtonStyle.Secondary)
       );
 
-      interaction.reply({
+      await interaction.editReply({
         content:
           "You've previously enlisted for the raid! Should you wish to opt out, simply hit the button below to withdraw your participation.",
         components: [row],
-        ephemeral: true,
       });
       return;
     }
@@ -55,10 +55,9 @@ export default class RaidSignupHandler implements IHandler {
       interaction.user.id,
       parseInt(interaction.values[0])
     );
-    interaction.reply({
+    await interaction.editReply({
       content:
         "You've successfully enlisted for the raid! Type /raids again to view any updates or changes.",
-      ephemeral: true,
     });
   }
 }

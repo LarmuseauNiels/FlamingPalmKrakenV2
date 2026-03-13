@@ -29,6 +29,21 @@ export default class CreateRaidCommand implements IHandler {
     const title = interaction.options.getString("title");
     const minPlayers = interaction.options.getInteger("minplayers");
 
+    if (minPlayers < 2) {
+      await interaction.reply({
+        content: "Minimum players must be at least 2.",
+        ephemeral: true,
+      });
+      return;
+    }
+    if (minPlayers > 20) {
+      await interaction.reply({
+        content: "Minimum players cannot exceed 20.",
+        ephemeral: true,
+      });
+      return;
+    }
+
     await global.client.prisma.raids.create({
       data: {
         Title: title,

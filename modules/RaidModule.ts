@@ -13,19 +13,24 @@ const log = createLogger("RaidModule");
 export abstract class RaidModule {
   static async AddUserToRaid(userId: string, raidId: number) {
     log.info("Adding user to raid");
-    await global.client.prisma.raidAttendees.create({
-      data: {
-        MemberId: userId,
-        RaidId: raidId,
-      },
-    });
-    let raid = await global.client.prisma.raids.findFirst({
-      where: { ID: raidId },
-    });
-    await ChannelUpdates.MessageWithRaid(
-      `<@${userId}> has joined the raid: ${raid.Title}`
-    );
-    await RaidScheduler.SchedulingCreationCheck(raidId);
+    try {
+      await global.client.prisma.raidAttendees.create({
+        data: {
+          MemberId: userId,
+          RaidId: raidId,
+        },
+      });
+      let raid = await global.client.prisma.raids.findFirst({
+        where: { ID: raidId },
+      });
+      await ChannelUpdates.MessageWithRaid(
+        `<@${userId}> has joined the raid: ${raid.Title}`
+      );
+      await RaidScheduler.SchedulingCreationCheck(raidId);
+    } catch (error) {
+      log.error("Failed to add user " + userId + " to raid " + raidId + ":", error);
+      throw error;
+    }
   }
 
   static async AddAttendeeToRaid(raidId: number, id: string) {

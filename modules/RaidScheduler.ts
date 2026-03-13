@@ -60,6 +60,7 @@ export abstract class RaidScheduler {
       if (firstSchedulingOption.getTime() - new Date().getTime() < 259200000) {
         firstSchedulingOption.setDate(firstSchedulingOption.getDate() + 7);
       }
+      firstSchedulingOption.setHours(0, 0, 0, 0);
       log.info("Scheduling starts on " + firstSchedulingOption);
 
       await this.AddDayToRaidSchedulingOptions(raidId, firstSchedulingOption);
@@ -253,6 +254,10 @@ export abstract class RaidScheduler {
       }
     } else {
       log.info("No consensus reached for raid " + raid.ID);
+      if (raid.RaidSchedulingOption.length === 0) {
+        log.warn("Raid " + raid.ID + " has no scheduling options; skipping");
+        return;
+      }
       let finishingTime = new Date(raid.RaidSchedulingOption[0].Timestamp);
       finishingTime.setDate(finishingTime.getDate() - 1);
       finishingTime.setHours(0, 0, 0, 0);
@@ -279,7 +284,7 @@ export abstract class RaidScheduler {
       if (!user.dmChannel) {
         await user.createDM();
       }
-      const messages = await user.dmChannel.messages.fetch({ limit: 50 });
+      const messages = await user.dmChannel.messages.fetch({ limit: 100 });
       log.debug("DM messages fetched:", messages.size);
       const message = messages.find((m) => m.content == raid.ID.toString());
       if (!message) {

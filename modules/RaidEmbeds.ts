@@ -29,6 +29,13 @@ export abstract class RaidEmbeds {
       case "Q": return "🇶";
       case "R": return "🇷";
       case "S": return "🇸";
+      case "T": return "🇹";
+      case "U": return "🇺";
+      case "V": return "🇻";
+      case "W": return "🇼";
+      case "X": return "🇽";
+      case "Y": return "🇾";
+      case "Z": return "🇿";
       default:  return char;
     }
   }
@@ -97,10 +104,13 @@ export abstract class RaidEmbeds {
 
       raids.slice(0, 25).forEach((raid) => {
         let participants = "";
-        if (raid.RaidAttendees.length > 4) participants = "Too many to list!";
-        raid.RaidAttendees.forEach((attendee) => {
-          participants += "<@" + attendee.MemberId + "> ";
-        });
+        if (raid.RaidAttendees.length > 4) {
+          participants = "Too many to list!";
+        } else {
+          raid.RaidAttendees.forEach((attendee) => {
+            participants += "<@" + attendee.MemberId + "> ";
+          });
+        }
         embed.addFields({
           name: raid.Title,
           value: `Attendees: ${raid.RaidAttendees.length}/${raid.MinPlayers} \n ${participants} \n`,
