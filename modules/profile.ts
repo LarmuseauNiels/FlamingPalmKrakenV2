@@ -111,9 +111,8 @@ function abbrev(num: number | string): string {
 }
 
 class Util {
-  private constructor() {
-    throw new Error(`The ${this.constructor.name} class may not be instantiated!`);
-  }
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  private constructor() {}
 
   static validateHex(hex: string): boolean {
     if (!hex || typeof hex !== "string") return false;
@@ -467,7 +466,6 @@ export default class Rank {
     if (!this.data.username.name) throw new Error("Missing username");
 
     const fontX = ops.fontX ?? "MANROPE_BOLD,NOTO_COLOR_EMOJI";
-    const fontY = ops.fontY ?? "MANROPE_BOLD,NOTO_COLOR_EMOJI";
 
     let bg: Canvas.Image | null = null;
     if (this.data.background.type === "image") {
@@ -503,7 +501,7 @@ export default class Rank {
     if (!this.data.renderEmojis) {
       ctx.fillText(`${name}`, 257 + 18.5, 50);
     } else {
-      await Util.renderEmoji(ctx, name, 257 + 18.5, 50);
+      Util.renderEmoji(ctx, name, 257 + 18.5, 50);
     }
 
     // Achievements
@@ -650,7 +648,7 @@ export default class Rank {
       ctx.stroke();
     }
 
-    return canvas.encode("png") as unknown as Buffer;
+    return await canvas.encode("png");
   }
 
   private get _calculateProgress(): number {
@@ -663,7 +661,7 @@ export default class Rank {
     if (this.data.minXP.data > 0) {
       const mx = this.data.minXP.data;
       if (cx < mx) return 0;
-      return ((cx - mx) * 615) / (rx - mx);
+      return parseInt(String(((cx - mx) * 615) / (rx - mx))) || 0;
     }
 
     const width = (cx * 615) / rx;
