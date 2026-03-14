@@ -10,7 +10,7 @@ A Discord bot for the FlamingPalm gaming community, providing raid scheduling, a
 - **Reward Shop** — Points-based reward redemption system
 - **AI Assistant** — OpenAI GPT-4o-mini powered community assistant with tool-calling
 - **Web API** — Express server with Discord OAuth for a companion website
-- **Game Server Status** — Vintage Story server monitoring
+- **Game Server Status** — Vintage Story and Pelican-managed game server monitoring
 
 ## Stack
 
@@ -108,20 +108,29 @@ FlamingPalmKrakenV2/
 │   └── Assistant.ts          # OpenAI wrapper with tool-calling
 ├── events/                   # Discord.js event handlers
 ├── interactionHandlers/
-│   ├── commands/             # Slash command handlers
-│   ├── buttons/              # Button interaction handlers
-│   ├── selects/              # Select menu handlers
-│   └── contextmenus/         # Right-click context menu handlers
+│   ├── commands/             # 23 slash command handlers
+│   ├── buttons/              # 5 button interaction handlers
+│   ├── selects/              # 1 select menu handler
+│   ├── contextmenus/         # 3 right-click context menu handlers
+│   └── disabledCommands/     # Archived/disabled commands (not loaded)
 ├── modules/
 │   ├── RaidModule.ts         # Raid CRUD and attendance
 │   ├── RaidScheduler.ts      # Scheduling lifecycle
 │   ├── RaidEmbeds.ts         # Discord embed builders
 │   ├── AchievementsModule.ts # Achievement tracking and profile images
 │   ├── WebApi.ts             # Express server and OAuth
+│   ├── PelicanStatusMonitor.ts # Pelican panel game server monitoring
+│   ├── VintageStoryStatus.ts # Vintage Story server monitoring
+│   ├── NotificationLevels.ts # User notification preferences
+│   ├── statistics.ts         # Cron-based stat collection
+│   ├── profile.js            # Profile image generation (legacy JS)
 │   └── ApiFunctions/         # Route handlers by domain
+├── islander/
+│   └── ChannelUpdates.ts     # Island game mechanics module
 ├── utils/
 │   └── logger.ts             # Colored logger with Bugsnag integration
-└── assets/                   # Images and badge files
+├── assets/                   # Images and badge files
+└── fonts/                    # TTF fonts used by @napi-rs/canvas
 ```
 
 ## Development
