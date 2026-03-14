@@ -10,11 +10,11 @@ export function profileEndPoints(app) {
   // Dev tool: render a profile card with query-param overrides
   app.get("/profileTester", async function (req, res) {
     var achievements = [];
-    if (req.query.achievement1) achievements.push({ icon: `assets/badges/${req.query.achievement1}.png` });
-    if (req.query.achievement2) achievements.push({ icon: `assets/badges/${req.query.achievement2}.png` });
-    if (req.query.achievement3) achievements.push({ icon: `assets/badges/${req.query.achievement3}.png` });
-    if (req.query.achievement4) achievements.push({ icon: `assets/badges/${req.query.achievement4}.png` });
-    if (req.query.achievement5) achievements.push({ icon: `assets/badges/${req.query.achievement5}.png` });
+    if (req.query.achievement1) achievements.push({ imagePath: `assets/badges/${req.query.achievement1}.png` });
+    if (req.query.achievement2) achievements.push({ imagePath: `assets/badges/${req.query.achievement2}.png` });
+    if (req.query.achievement3) achievements.push({ imagePath: `assets/badges/${req.query.achievement3}.png` });
+    if (req.query.achievement4) achievements.push({ imagePath: `assets/badges/${req.query.achievement4}.png` });
+    if (req.query.achievement5) achievements.push({ imagePath: `assets/badges/${req.query.achievement5}.png` });
 
     const rank = new Rank()
       .setUsername("Kraken")
