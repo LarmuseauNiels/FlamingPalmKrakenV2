@@ -13,6 +13,7 @@ AI assistant guide for the FlamingPalm Discord bot codebase.
 - Reward shop
 - OpenAI-powered community assistant
 - Web API with Discord OAuth for a companion website
+- Game server monitoring (Vintage Story + Pelican-managed servers)
 
 **Stack:** TypeScript · Node.js 21 · Discord.js 14 · Prisma + MySQL · Express · OpenAI GPT-4o-mini · CapRover Docker deployment
 
@@ -34,8 +35,8 @@ FlamingPalmKrakenV2/
 │   └── Assistant.ts          # OpenAI GPT-4o-mini wrapper with tool-calling
 ├── events/                   # Discord.js event handlers (8 files)
 ├── interactionHandlers/
-│   ├── commands/             # 21 slash command handlers
-│   ├── buttons/              # 4 button interaction handlers
+│   ├── commands/             # 23 slash command handlers
+│   ├── buttons/              # 5 button interaction handlers
 │   ├── selects/              # 1 select menu handler
 │   ├── contextmenus/         # 3 right-click context menu handlers
 │   └── disabledCommands/     # Archived/disabled commands (not loaded)
@@ -46,8 +47,10 @@ FlamingPalmKrakenV2/
 │   ├── AchievementsModule.ts # Achievement tracking, profile image generation
 │   ├── WebApi.ts             # Express server with Passport Discord OAuth
 │   ├── statistics.ts         # Cron-based stat collection
-│   ├── VintageStoryStatus.ts # Game server status monitoring
+│   ├── VintageStoryStatus.ts # Vintage Story server status monitoring
+│   ├── PelicanStatusMonitor.ts # Pelican panel game server monitoring
 │   ├── NotificationLevels.ts # User notification preferences
+│   ├── profile.js            # Profile image generation (legacy JS)
 │   └── ApiFunctions/         # Organized Express route handlers
 │       ├── AdminEndPoints.ts
 │       ├── MemberEndPoints.ts
@@ -231,6 +234,7 @@ await interaction.editReply({ content: '...' });
 | `modules/RaidEmbeds.ts` | All raid-related Discord embeds |
 | `modules/AchievementsModule.ts` | Achievement logic + canvas profile image generation |
 | `modules/WebApi.ts` | Express app, Passport OAuth, JWT auth middleware |
+| `modules/PelicanStatusMonitor.ts` | Pelican panel game server status + Discord embeds |
 | `modules/ApiFunctions/` | Route handlers organized by domain |
 | `utils/logger.ts` | All logging — use this everywhere |
 | `prisma/schema.prisma` | Source of truth for all database models |
