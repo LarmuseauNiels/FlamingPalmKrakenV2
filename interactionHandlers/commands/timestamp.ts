@@ -18,7 +18,9 @@ const FORMAT_OPTIONS = [
 // DD/MM/YYYY is the only date convention used — no MM/DD/YYYY ambiguity.
 // AM/PM variants cover both uppercase (6:30PM) and lowercase (6:30pm),
 // with and without a separating space.
+// Year-less formats (DD/MM, MMMM D, D MMMM) default to the current year via moment.
 const PARSE_FORMATS = [
+  // Full date+time with year
   "YYYY-MM-DD HH:mm",
   "YYYY-MM-DD H:mm",
   "YYYY-MM-DD hh:mm A",
@@ -37,8 +39,33 @@ const PARSE_FORMATS = [
   "MMMM D YYYY h:mma",
   "MMMM D YYYY HH:mm",
   "D MMMM YYYY HH:mm",
+  // Date-only with year
   "YYYY-MM-DD",
   "DD/MM/YYYY",
+  // Date+time without year (defaults to current year)
+  "DD/MM HH:mm",
+  "DD/MM H:mm",
+  "DD/MM hh:mm A",
+  "DD/MM hh:mma",
+  "DD/MM h:mm A",
+  "DD/MM h:mma",
+  "MMMM D HH:mm",
+  "MMMM D H:mm",
+  "MMMM D hh:mm A",
+  "MMMM D hh:mma",
+  "MMMM D h:mm A",
+  "MMMM D h:mma",
+  "D MMMM HH:mm",
+  "D MMMM H:mm",
+  "D MMMM hh:mm A",
+  "D MMMM hh:mma",
+  "D MMMM h:mm A",
+  "D MMMM h:mma",
+  // Date-only without year (defaults to current year)
+  "DD/MM",
+  "MMMM D",
+  "D MMMM",
+  // Time-only (defaults to today)
   "HH:mm",
   "H:mm",
   "hh:mm A",
@@ -59,7 +86,7 @@ export default class TimestampCommand implements IHandler {
       option
         .setName("datetime")
         .setDescription(
-          'Date and/or time to convert, e.g. "15/03/2026 18:30", "18:30", "March 15 2026 6:30pm"'
+          'Date and/or time to convert, e.g. "15/03 18:30", "15/03/2026 18:30", "18:30", "March 15 6:30pm"'
         )
         .setRequired(true)
     )
@@ -99,7 +126,7 @@ export default class TimestampCommand implements IHandler {
       await interaction.editReply({
         content: [
           `Could not parse **${datetimeInput}** as a date/time.`,
-          `Accepted formats: \`DD/MM/YYYY HH:mm\`, \`HH:mm\`, \`March 15 2026 6:30pm\`, etc.`,
+          `Accepted formats: \`DD/MM HH:mm\`, \`DD/MM/YYYY HH:mm\`, \`HH:mm\`, \`March 15 6:30pm\`, etc. Year defaults to current year if omitted.`,
           `Your configured timezone is **${timezone}**. Use \`/set-timezone\` to change it.`,
         ].join("\n"),
       });
