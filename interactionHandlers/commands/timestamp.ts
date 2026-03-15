@@ -18,60 +18,27 @@ const FORMAT_OPTIONS = [
 // DD/MM/YYYY is the only date convention used — no MM/DD/YYYY ambiguity.
 // AM/PM variants cover both uppercase (6:30PM) and lowercase (6:30pm),
 // with and without a separating space.
-// Year-less formats (DD/MM, MMMM D, D MMMM) default to the current year via moment.
-const PARSE_FORMATS = [
-  // Full date+time with year
-  "YYYY-MM-DD HH:mm",
-  "YYYY-MM-DD H:mm",
-  "YYYY-MM-DD hh:mm A",
-  "YYYY-MM-DD hh:mma",
-  "YYYY-MM-DD h:mm A",
-  "YYYY-MM-DD h:mma",
-  "DD/MM/YYYY HH:mm",
-  "DD/MM/YYYY H:mm",
-  "DD/MM/YYYY hh:mm A",
-  "DD/MM/YYYY hh:mma",
-  "DD/MM/YYYY h:mm A",
-  "DD/MM/YYYY h:mma",
-  "MMMM D YYYY hh:mm A",
-  "MMMM D YYYY hh:mma",
-  "MMMM D YYYY h:mm A",
-  "MMMM D YYYY h:mma",
-  "MMMM D YYYY HH:mm",
-  "D MMMM YYYY HH:mm",
+// Year-less date prefixes default to the current year via moment.
+const TIME_SUFFIXES = ["HH:mm", "H:mm", "hh:mm A", "hh:mma", "h:mm A", "h:mma"];
+
+const PARSE_FORMATS: string[] = [
+  // Date+time with year
+  ...["YYYY-MM-DD", "DD/MM/YYYY", "MMMM D YYYY", "D MMMM YYYY"].flatMap((d) =>
+    TIME_SUFFIXES.map((t) => `${d} ${t}`)
+  ),
   // Date-only with year
   "YYYY-MM-DD",
   "DD/MM/YYYY",
   // Date+time without year (defaults to current year)
-  "DD/MM HH:mm",
-  "DD/MM H:mm",
-  "DD/MM hh:mm A",
-  "DD/MM hh:mma",
-  "DD/MM h:mm A",
-  "DD/MM h:mma",
-  "MMMM D HH:mm",
-  "MMMM D H:mm",
-  "MMMM D hh:mm A",
-  "MMMM D hh:mma",
-  "MMMM D h:mm A",
-  "MMMM D h:mma",
-  "D MMMM HH:mm",
-  "D MMMM H:mm",
-  "D MMMM hh:mm A",
-  "D MMMM hh:mma",
-  "D MMMM h:mm A",
-  "D MMMM h:mma",
+  ...["DD/MM", "MMMM D", "D MMMM"].flatMap((d) =>
+    TIME_SUFFIXES.map((t) => `${d} ${t}`)
+  ),
   // Date-only without year (defaults to current year)
   "DD/MM",
   "MMMM D",
   "D MMMM",
   // Time-only (defaults to today)
-  "HH:mm",
-  "H:mm",
-  "hh:mm A",
-  "hh:mma",
-  "h:mm A",
-  "h:mma",
+  ...TIME_SUFFIXES,
 ];
 
 export default class TimestampCommand implements IHandler {
