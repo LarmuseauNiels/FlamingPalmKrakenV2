@@ -92,7 +92,7 @@ export class GoogleAI {
     });
 
     this.proModel = this.genAI.getGenerativeModel({
-      model: "gemini-2.5-pro",
+      model: "gemini-3.1-flash-lite-preview",
       systemInstruction,
       tools,
       safetySettings,
@@ -117,23 +117,56 @@ export class GoogleAI {
     Assume the user's local timezone is ${timezone}. 
     Return only the ISO string or "INVALID" if you cannot parse it. Do not include any other text.`;
 
-    try {
-      // Primary attempt: Pro
-      const result = await this.proModel.generateContent(prompt);
-      const text = result.response.text().trim();
-      return text !== "INVALID" ? text : null;
-    } catch (error: any) {
-      log.warn(`Pro date parsing failed, trying Flash fallback: ${error.message}`);
+    const maxRetries = 2; // For each model
+
+    let retries = 0;
+    while (retries <= maxRetries) {
       try {
-        // Fallback: Flash
-        const result = await this.model.generateContent(prompt);
+        // Primary attempt: Pro
+        const result = await this.proModel.generateContent(prompt);
         const text = result.response.text().trim();
         return text !== "INVALID" ? text : null;
-      } catch (fallbackError: any) {
-        log.error("Error in Gemini date parsing (Pro and Flash failed):", fallbackError);
+      } catch (error: any) {
+        const errorCode = error.status || error.response?.status;
+        const isRetryable = errorCode === 503 || errorCode === 429 || error.message?.includes("503") || error.message?.includes("429");
+
+        if (isRetryable && retries < maxRetries) {
+          retries++;
+          const delay = Math.pow(2, retries) * 1000;
+          log.warn(`Pro date parsing failed, retrying in ${delay}ms... (Attempt ${retries}/${maxRetries}): ${error.message}`);
+          await this.wait(delay);
+          continue;
+        }
+
+        log.warn(`Pro date parsing failed, trying Flash fallback: ${error.message}`);
+
+        let flashRetries = 0;
+        while (flashRetries <= maxRetries) {
+          try {
+            // Fallback: Flash
+            const result = await this.model.generateContent(prompt);
+            const text = result.response.text().trim();
+            return text !== "INVALID" ? text : null;
+          } catch (fallbackError: any) {
+            const fallbackErrorCode = fallbackError.status || fallbackError.response?.status;
+            const fallbackIsRetryable = fallbackErrorCode === 503 || fallbackErrorCode === 429 || fallbackError.message?.includes("503") || fallbackError.message?.includes("429");
+
+            if (fallbackIsRetryable && flashRetries < maxRetries) {
+              flashRetries++;
+              const delay = Math.pow(2, flashRetries) * 1000;
+              log.warn(`Flash date parsing failed, retrying in ${delay}ms... (Attempt ${flashRetries}/${maxRetries}): ${fallbackError.message}`);
+              await this.wait(delay);
+              continue;
+            }
+
+            log.error("Error in Gemini date parsing (Pro and Flash failed):", fallbackError);
+            return null;
+          }
+        }
         return null;
       }
     }
+    return null;
   }
 
   private async wait(ms: number): Promise<void> {
