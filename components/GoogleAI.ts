@@ -110,9 +110,11 @@ export class GoogleAI {
    */
   public async parseDate(input: string, timezone: string): Promise<string | null> {
     try {
-      const prompt = `Convert this natural language date/time into an ISO 8601 string: "${input}". 
-      Today's date is ${new Date().toISOString()}. 
-      Assume the timezone is ${timezone}. 
+      const now = new Date();
+      const nowStr = `${now.toDateString()} ${now.toTimeString()}`;
+      const prompt = `Convert this natural language date/time into an ISO 8601 (JSON format) string: "${input}". 
+      The current date and time is ${nowStr}. 
+      Assume the user's local timezone is ${timezone}. 
       Return only the ISO string or "INVALID" if you cannot parse it. Do not include any other text.`;
       
       const result = await this.model.generateContent(prompt);
