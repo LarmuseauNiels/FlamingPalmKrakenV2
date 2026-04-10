@@ -319,14 +319,29 @@ module.exports = async function (client: FpgClient) {
   // Scan the channel for previously sent per-server messages from this bot.
   // Each message's embed footer starts with the server identifier.
   async function resolveServerMessages(channel: TextChannel): Promise<void> {
-    const messages = await channel.messages.fetch({ limit: 50 });
-    for (const msg of messages.values()) {
+    log.info(`Scanning #${channel.name} for existing server status messages...`);
+    const messages = await channel.messages.fetch({ limit: 100 });
+    
+    for (const msg of Array.from(messages.values())) {
       if (msg.author.id !== client.user?.id) continue;
       const footer = msg.embeds[0]?.footer?.text;
       if (!footer) continue;
+      
       const identifier = footer.split(" · ")[0].trim();
+      // Pelican identifiers are typically 8 characters (hex), but we check for general Alphanumeric
       if (/^[a-z0-9]+$/.test(identifier) && identifier.length >= 6) {
-        serverMessages.set(identifier, msg.id);
+        if (!serverMessages.has(identifier)) {
+          // First one found is the newest (fetch returns newest first)
+          serverMessages.set(identifier, msg.id);
+          log.info(`Found existing message for ${identifier}: ${msg.id}`);
+        } else {
+          // Found an older duplicate, delete it to keep channel clean
+          const newerId = serverMessages.get(identifier);
+          if (msg.id !== newerId) {
+            log.info(`Deleting older duplicate message for ${identifier}: ${msg.id}`);
+            msg.delete().catch(err => log.error(`Failed to delete duplicate message ${msg.id}:`, err));
+          }
+        }
       }
     }
   }
@@ -382,9 +397,18 @@ module.exports = async function (client: FpgClient) {
             const existing = await channel.messages.fetch(existingId);
             await existing.edit({ embeds: [embed], components: [row] });
             continue;
-          } catch {
-            // Message was deleted — send a fresh one below
-            serverMessages.delete(server.identifier);
+          } catch (err: any) {
+            // Only repost if the message was truly deleted or not found
+            // Discord error 10008 is "Unknown Message"
+            const isNotFound = err.code === 10008 || err.status === 404;
+            
+            if (isNotFound) {
+              log.warn(`Message ${existingId} for ${server.identifier} not found, will repost.`);
+              serverMessages.delete(server.identifier);
+            } else {
+              log.error(`Failed to edit message ${existingId} for ${server.identifier} (will retry later):`, err);
+              continue; // Skip this update but keep the ID in map for next time
+            }
           }
         }
 
