@@ -17,8 +17,8 @@ export default class PelicanControl implements IHandler {
   name = "pelican";
 
   async execute(interaction: any): Promise<void> {
-    // Only allow members with Manage Guild or Administrator permission
-    if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
+    // Only allow members with Manage Messages or Administrator permission
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageMessages)) {
       await interaction.reply({
         content: "You don't have permission to control servers.",
         ephemeral: true,
