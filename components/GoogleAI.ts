@@ -206,13 +206,15 @@ export class GoogleAI {
           log.debug("OpenAI requested tool calls:", responseMessage.tool_calls);
           
           for (const call of responseMessage.tool_calls) {
-            const output = await this.handleFunctionCall(call.function);
-            this.openAiMessages.push({
-              tool_call_id: call.id,
-              role: "tool",
-              name: call.function.name,
-              content: output,
-            });
+            if (call.type === "function") {
+              const output = await this.handleFunctionCall(call.function);
+              this.openAiMessages.push({
+                tool_call_id: call.id,
+                role: "tool",
+                name: call.function.name,
+                content: output,
+              });
+            }
           }
 
           // Send tool outputs back to model to get final response
