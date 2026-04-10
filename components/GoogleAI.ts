@@ -61,6 +61,7 @@ export class GoogleAI {
     ];
 
     const systemInstruction = {
+      role: "system",
       parts: [{ text:
         "You are a helpful assistant in the form of a discord bot called Kraken in the gaming clan FlamingPalm. " +
         "You help members with questions about the clan and finding info about the upcoming events.\n\n" +
