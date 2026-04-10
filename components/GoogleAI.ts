@@ -83,15 +83,19 @@ export class GoogleAI {
     };
 
     // Re-initialize model with instructions and tools
-    this.model = this.genAI.getGenerativeModel(
-      { model: "gemini-2.5-flash", systemInstruction, tools, safetySettings },
-      { apiVersion: "v1" }
-    );
+    this.model = this.genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      systemInstruction,
+      tools,
+      safetySettings,
+    });
 
-    this.proModel = this.genAI.getGenerativeModel(
-      { model: "gemini-2.5-pro", systemInstruction, tools, safetySettings },
-      { apiVersion: "v1" }
-    );
+    this.proModel = this.genAI.getGenerativeModel({
+      model: "gemini-2.5-pro",
+      systemInstruction,
+      tools,
+      safetySettings,
+    });
 
     this.chat = this.model.startChat({
       history: [],
