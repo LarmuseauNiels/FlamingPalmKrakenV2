@@ -98,7 +98,7 @@ export class GoogleAI {
       safetySettings,
     });
 
-    this.chat = this.model.startChat({
+    this.chat = this.proModel.startChat({
       history: [],
       generationConfig: {
         maxOutputTokens: 1000,
@@ -118,17 +118,19 @@ export class GoogleAI {
     Return only the ISO string or "INVALID" if you cannot parse it. Do not include any other text.`;
 
     try {
-      const result = await this.model.generateContent(prompt);
+      // Primary attempt: Pro
+      const result = await this.proModel.generateContent(prompt);
       const text = result.response.text().trim();
       return text !== "INVALID" ? text : null;
     } catch (error: any) {
-      log.warn(`Flash date parsing failed, trying Pro fallback: ${error.message}`);
+      log.warn(`Pro date parsing failed, trying Flash fallback: ${error.message}`);
       try {
-        const result = await this.proModel.generateContent(prompt);
+        // Fallback: Flash
+        const result = await this.model.generateContent(prompt);
         const text = result.response.text().trim();
         return text !== "INVALID" ? text : null;
       } catch (fallbackError: any) {
-        log.error("Error in Gemini date parsing (Flash and Pro failed):", fallbackError);
+        log.error("Error in Gemini date parsing (Pro and Flash failed):", fallbackError);
         return null;
       }
     }
@@ -144,7 +146,7 @@ export class GoogleAI {
 
     while (retries <= maxRetries) {
       try {
-        log.debug(`Sending question to Gemini: ${question}${retries > 0 ? ` (Retry ${retries})` : ""}`);
+        log.debug(`Sending question to Gemini Pro: ${question}${retries > 0 ? ` (Retry ${retries})` : ""}`);
         let result = await this.chat.sendMessage(question);
         let response = result.response;
 
@@ -192,22 +194,22 @@ export class GoogleAI {
         if (isRetryable && retries < maxRetries) {
           retries++;
           const delay = Math.pow(2, retries) * 1000;
-          log.warn(`Gemini error ${errorCode} (High Demand/Rate Limit). Retrying in ${delay}ms... (Attempt ${retries}/${maxRetries})`);
+          log.warn(`Gemini Pro error ${errorCode} (High Demand/Rate Limit). Retrying in ${delay}ms... (Attempt ${retries}/${maxRetries})`);
           await this.wait(delay);
           continue;
         }
 
-        // Final Fallback to Pro model if Flash is overloaded
+        // Final Fallback to Flash model if Pro is overloaded
         if (isRetryable && retries === maxRetries) {
-          log.info("Gemini Flash overloaded after all retries. Falling back to Pro model...");
+          log.info("Gemini Pro overloaded after all retries. Falling back to Flash model...");
           try {
             // To maintain context, we grab history from the primary chat
             const history = await this.chat.getHistory();
-            const proChat = this.proModel.startChat({ history });
-            const result = await proChat.sendMessage(question);
+            const flashChat = this.model.startChat({ history });
+            const result = await flashChat.sendMessage(question);
             return result.response.text();
           } catch (fallbackError: any) {
-            log.error("Pro model fallback also failed:", fallbackError.message);
+            log.error("Flash model fallback also failed:", fallbackError.message);
           }
         }
 
