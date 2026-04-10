@@ -41,7 +41,7 @@ export default class TimestampCommand implements IHandler {
     ) as SlashCommandBuilder;
 
   async execute(interaction: any): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ ephemeral: false });
 
     const datetimeInput = interaction.options.getString("datetime");
     const format = interaction.options.getString("format") ?? "F";
@@ -76,12 +76,7 @@ export default class TimestampCommand implements IHandler {
     }
 
     const unixSeconds = parsed.unix();
-    const interpretedAs = parsed.format("DD/MM/YYYY HH:mm");
     const tag = `<t:${unixSeconds}:${format}>`;
-
-    const allFormats = FORMAT_OPTIONS.map(
-      (f) => `\`<t:${unixSeconds}:${f.value}>\` → <t:${unixSeconds}:${f.value}>`
-    ).join("\n");
 
     const timezoneNote = timezoneWasSet
       ? `Timezone: **${timezone}**`
@@ -90,13 +85,9 @@ export default class TimestampCommand implements IHandler {
     await interaction.editReply({
       content: [
         `**Timestamp for** \`${datetimeInput}\``,
-        `Interpreted as: \`${interpretedAs}\` | ${timezoneNote}`,
-        "",
-        `Selected format: ${tag}`,
+        `${tag}`,
         `Copy: \`${tag}\``,
-        "",
-        "**All formats:**",
-        allFormats,
+        `*Interpreted using ${timezoneNote}*`,
       ].join("\n"),
     });
   }
