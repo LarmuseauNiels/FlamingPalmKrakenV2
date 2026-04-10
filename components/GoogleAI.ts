@@ -8,7 +8,8 @@ export class GoogleAI {
   private genAI: GoogleGenerativeAI;
   private openai: OpenAI;
   private proModel: GenerativeModel;
-  private chat: ChatSession;
+  private openAiMessages: any[] = [];
+  private openAiTools: any[] = [];
   private systemInstructionText: string = "";
 
   constructor() {
@@ -32,6 +33,12 @@ export class GoogleAI {
           },
         ],
       },
+    ];
+
+    this.openAiTools = [
+      { type: "function", function: { name: "getEvents", description: "Get the current discord events for the week" } },
+      { type: "function", function: { name: "getRaids", description: "Get the current available raids to join" } },
+      { type: "function", function: { name: "getStore", description: "Get the current available rewards in the FlamingPalm store" } },
     ];
 
     // Removed this.model gemini-2.5-pro initialization
@@ -94,12 +101,7 @@ export class GoogleAI {
       safetySettings,
     });
 
-    this.chat = this.proModel.startChat({
-      history: [],
-      generationConfig: {
-        maxOutputTokens: 1000,
-      },
-    });
+    this.openAiMessages = [{ role: "system", content: this.systemInstructionText }];
   }
 
   /**
@@ -118,9 +120,12 @@ export class GoogleAI {
     let retries = 0;
     while (retries <= maxRetries) {
       try {
-        // Primary attempt: Pro
-        const result = await this.proModel.generateContent(prompt);
-        const text = result.response.text().trim();
+        // Primary attempt: OpenAI
+        const result = await this.openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: prompt }],
+        });
+        const text = result.choices[0]?.message?.content?.trim() || "INVALID";
         if (text.includes("INVALID")) return null;
         
         const match = text.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})/);
@@ -128,28 +133,24 @@ export class GoogleAI {
         
         throw new Error("Failed to parse ISO string from response");
       } catch (error: any) {
-        const errorCode = error.status || error.response?.status;
-        const isRetryable = errorCode === 503 || errorCode === 429 || error.message?.includes("503") || error.message?.includes("429");
+        const isRetryable = error.status === 503 || error.status === 429 || error.message?.includes("503");
 
         if (isRetryable && retries < maxRetries) {
           retries++;
           const delay = Math.pow(2, retries) * 1000;
-          log.warn(`Pro date parsing failed, retrying in ${delay}ms... (Attempt ${retries}/${maxRetries}): ${error.message}`);
+          log.warn(`OpenAI date parsing failed, retrying in ${delay}ms... (Attempt ${retries}/${maxRetries}): ${error.message}`);
           await this.wait(delay);
           continue;
         }
 
-        log.warn(`Pro date parsing failed, trying OpenAI fallback: ${error.message}`);
+        log.warn(`OpenAI date parsing failed, trying Gemini fallback: ${error.message}`);
 
-        let openaiRetries = 0;
-        while (openaiRetries <= maxRetries) {
+        let geminiRetries = 0;
+        while (geminiRetries <= maxRetries) {
           try {
-            // Fallback: OpenAI
-            const result = await this.openai.chat.completions.create({
-              model: "gpt-4o-mini",
-              messages: [{ role: "user", content: prompt }],
-            });
-            const text = result.choices[0]?.message?.content?.trim() || "INVALID";
+            // Fallback: Gemini
+            const result = await this.proModel.generateContent(prompt);
+            const text = result.response.text().trim();
             if (text.includes("INVALID")) return null;
             
             const match = text.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})/);
@@ -157,17 +158,18 @@ export class GoogleAI {
             
             throw new Error("Failed to parse ISO string from fallback response");
           } catch (fallbackError: any) {
-            const fallbackIsRetryable = fallbackError.status === 503 || fallbackError.status === 429;
+            const fallbackErrorCode = fallbackError.status || fallbackError.response?.status;
+            const fallbackIsRetryable = fallbackErrorCode === 503 || fallbackErrorCode === 429 || fallbackError.message?.includes("503") || fallbackError.message?.includes("429");
 
-            if (fallbackIsRetryable && openaiRetries < maxRetries) {
-              openaiRetries++;
-              const delay = Math.pow(2, openaiRetries) * 1000;
-              log.warn(`OpenAI date parsing failed, retrying in ${delay}ms... (Attempt ${openaiRetries}/${maxRetries}): ${fallbackError.message}`);
+            if (fallbackIsRetryable && geminiRetries < maxRetries) {
+              geminiRetries++;
+              const delay = Math.pow(2, geminiRetries) * 1000;
+              log.warn(`Gemini date parsing failed, retrying in ${delay}ms... (Attempt ${geminiRetries}/${maxRetries}): ${fallbackError.message}`);
               await this.wait(delay);
               continue;
             }
 
-            log.error("Error in AI date parsing (Pro and OpenAI failed):", fallbackError);
+            log.error("Error in AI date parsing (OpenAI and Gemini failed):", fallbackError);
             return null;
           }
         }
@@ -185,94 +187,83 @@ export class GoogleAI {
     let retries = 0;
     const maxRetries = 1;
 
+    this.openAiMessages.push({ role: "user", content: question });
+
     while (retries <= maxRetries) {
       try {
-        log.debug(`Sending question to Gemini Pro: ${question}${retries > 0 ? ` (Retry ${retries})` : ""}`);
-        let result = await this.chat.sendMessage(question);
-        let response = result.response;
+        log.debug(`Sending question to OpenAI: ${question}${retries > 0 ? ` (Retry ${retries})` : ""}`);
+        
+        let result = await this.openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: this.openAiMessages,
+          tools: this.openAiTools,
+        });
 
-        // Check for blocked content
-        if (response.promptFeedback?.blockReason) {
-          log.warn(`Gemini blocked the prompt: ${response.promptFeedback.blockReason}`);
-          return "I'm sorry, I cannot process that request due to my safety guidelines.";
-        }
+        let responseMessage = result.choices[0].message;
+        this.openAiMessages.push(responseMessage);
 
-        // Handle potential function calls
-        let calls = response.functionCalls();
-        if (calls && calls.length > 0) {
-          log.debug("Gemini requested tool calls:", calls);
-          const toolOutputs = await Promise.all(
-            calls.map(async (call) => {
-              const output = await this.handleFunctionCall(call);
-              return {
-                functionResponse: {
-                  name: call.name,
-                  response: { content: output },
-                },
-              };
-            })
-          );
+        if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
+          log.debug("OpenAI requested tool calls:", responseMessage.tool_calls);
+          
+          for (const call of responseMessage.tool_calls) {
+            const output = await this.handleFunctionCall(call.function);
+            this.openAiMessages.push({
+              tool_call_id: call.id,
+              role: "tool",
+              name: call.function.name,
+              content: output,
+            });
+          }
 
           // Send tool outputs back to model to get final response
-          result = await this.chat.sendMessage(toolOutputs as any);
-          response = result.response;
+          result = await this.openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: this.openAiMessages,
+            tools: this.openAiTools,
+          });
+          responseMessage = result.choices[0].message;
+          this.openAiMessages.push(responseMessage);
         }
 
-        // Final check for text content
-        try {
-          return response.text();
-        } catch (e) {
-          log.error("Failed to extract text from Gemini response:", e);
-          if (response.candidates && response.candidates[0]?.finishReason === "SAFETY") {
-            return "I'm sorry, my response was cut off due to safety filters.";
-          }
-          return "I'm sorry, I generated a response but couldn't format it as text.";
-        }
+        return responseMessage.content || "I'm sorry, I generated a response but couldn't format it as text.";
       } catch (error: any) {
-        const errorCode = error.status || error.response?.status;
-        const isRetryable = errorCode === 503 || errorCode === 429;
+        const isRetryable = error.status === 429 || error.status >= 500;
 
         if (isRetryable && retries < maxRetries) {
           retries++;
           const delay = Math.pow(2, retries) * 1000;
-          log.warn(`Gemini Pro error ${errorCode} (High Demand/Rate Limit). Retrying in ${delay}ms... (Attempt ${retries}/${maxRetries})`);
+          log.warn(`OpenAI error ${error.status}. Retrying in ${delay}ms... (Attempt ${retries}/${maxRetries})`);
           await this.wait(delay);
           continue;
         }
 
-        // Final Fallback to OpenAI if Pro is overloaded
+        // Final Fallback to Gemini if OpenAI is overloaded
         if (isRetryable && retries === maxRetries) {
-          log.info("Gemini Pro overloaded after all retries. Falling back to OpenAI model...");
+          log.info("OpenAI overloaded after all retries. Falling back to Gemini model...");
           try {
-            // To maintain context, we grab history from the primary chat
-            const history = await this.chat.getHistory();
-            const openAiMessages: any[] = [
-              { role: "system", content: this.systemInstructionText }
-            ];
-
-            for (const msg of history) {
-              const role = msg.role === "model" ? "assistant" : "user";
-              const content = msg.parts.map((p: any) => p.text || "").join("");
-              if (content.trim() !== "") {
-                openAiMessages.push({ role, content });
+            // Reconstruct Gemini history from OpenAI messages (ignore tool calls for simplicity)
+            const geminiHistory: any[] = [];
+            for (const msg of this.openAiMessages) {
+              if (msg.role === "user" && msg.content && typeof msg.content === "string") {
+                 geminiHistory.push({ role: "user", parts: [{ text: msg.content }] });
+              } else if (msg.role === "assistant" && msg.content && typeof msg.content === "string") {
+                 geminiHistory.push({ role: "model", parts: [{ text: msg.content }] });
               }
             }
-            openAiMessages.push({ role: "user", content: question });
+            // The last msg is the fallback question we want to ask
+            const lastUserMsg = geminiHistory.pop();
+            const fallbackQuestion = lastUserMsg ? lastUserMsg.parts[0].text : question;
 
-            const result = await this.openai.chat.completions.create({
-              model: "gpt-4o-mini",
-              messages: openAiMessages
-            });
-            return result.choices[0]?.message?.content || "I'm sorry, I generated a response but couldn't format it as text.";
+            const fallbackChat = this.proModel.startChat({ history: geminiHistory });
+            const fallbackResult = await fallbackChat.sendMessage(fallbackQuestion);
+            
+            return fallbackResult.response.text();
           } catch (fallbackError: any) {
-            log.error("OpenAI model fallback also failed:", fallbackError.message);
+            log.error("Gemini model fallback also failed:", fallbackError.message);
           }
         }
 
-        log.error("Error in Gemini ask method:", error);
-        if (error.response?.data) {
-          log.debug("Gemini API Error details:", JSON.stringify(error.response.data));
-        }
+        log.error("Error in OpenAI ask method:", error);
         return "Sorry, I encountered an error while processing your request.";
       }
     }
