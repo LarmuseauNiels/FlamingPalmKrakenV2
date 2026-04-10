@@ -148,8 +148,12 @@ async function fetchLastBackup(baseUrl: string, apiKey: string, id: string): Pro
       age:  formatRelativeTime(new Date(latest.completed_at)),
       size: formatBytes(latest.bytes),
     };
-  } catch (err) {
-    log.error(`Failed to fetch backups for ${id}:`, err);
+  } catch (err: any) {
+    if (err.response?.status === 409) {
+      log.warn(`Backups locked for ${id} (server busy/conflict).`);
+    } else {
+      log.error(`Failed to fetch backups for ${id}:`, err.message || err);
+    }
     return null;
   }
 }
@@ -358,8 +362,12 @@ module.exports = async function (client: FpgClient) {
             servers.map(async (server) => {
               try {
                 map.set(server.identifier, await fetchResources(baseUrl, apiKey, server.identifier));
-              } catch (err) {
-                log.error(`Failed to fetch resources for ${server.name}:`, err);
+              } catch (err: any) {
+                if (err.response?.status === 409) {
+                  log.warn(`Resources locked for ${server.name} (server busy/conflict).`);
+                } else {
+                  log.error(`Failed to fetch resources for ${server.name}:`, err.message || err);
+                }
               }
             })
           );
@@ -415,8 +423,8 @@ module.exports = async function (client: FpgClient) {
         const msg = await channel.send({ embeds: [embed], components: [row] });
         serverMessages.set(server.identifier, msg.id);
       }
-    } catch (err) {
-      log.error("Failed to update Pelican server status:", err);
+    } catch (err: any) {
+      log.error("Failed to update Pelican server status:", err.message || err);
     }
   }
 
