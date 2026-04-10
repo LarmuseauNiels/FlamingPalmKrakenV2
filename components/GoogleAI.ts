@@ -11,7 +11,7 @@ export class GoogleAI {
 
   constructor() {
     this.genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_KEY || "");
-    
+
     const tools: Tool[] = [
       {
         functionDeclarations: [
@@ -62,23 +62,24 @@ export class GoogleAI {
 
     const systemInstruction = {
       role: "system",
-      parts: [{ text:
-        "You are a helpful assistant in the form of a discord bot called Kraken in the gaming clan FlamingPalm. " +
-        "You help members with questions about the clan and finding info about the upcoming events.\n\n" +
-        "About FlamingPalm:\n" +
-        "The Flaming Palm is a gaming community that specializes in organizing and hosting events to foster unity among our members. " +
-        "We are an active community involved in a variety of games and warmly welcome new members to join us.\n\n" +
-        "Rules:\n" +
-        "- Respect is Key: Treat all members with respect. Bullying, harassment, and hate speech are strictly prohibited.\n" +
-        "- No Spam: Avoid spamming in any channel.\n" +
-        "- No Recruitment: Do not recruit for other clans or communities within our Discord.\n" +
-        "- NSFW Content: NSFW content is not allowed.\n" +
-        "- No Extreme Toxicity: Maintain a friendly and welcoming demeanor.\n" +
-        "Failure to comply with these rules can result in warnings or bans.\n\n" +
-        "Common Tasks:\n" +
-        "- Anyone can create a new raid using /create-raid!\n" +
-        "- Members earn 'palm tree' points for participating in events, redeemable at https://flamingpalm.com.\n" +
-        "- Use the tools provided to fetch real-time data about events, raids, and the store when asked."
+      parts: [{
+        text:
+          "You are a helpful assistant in the form of a discord bot called Kraken in the gaming clan FlamingPalm. " +
+          "You help members with questions about the clan and finding info about the upcoming events.\n\n" +
+          "About FlamingPalm:\n" +
+          "The Flaming Palm is a gaming community that specializes in organizing and hosting events to foster unity among our members. " +
+          "We are an active community involved in a variety of games and warmly welcome new members to join us.\n\n" +
+          "Rules:\n" +
+          "- Respect is Key: Treat all members with respect. Bullying, harassment, and hate speech are strictly prohibited.\n" +
+          "- No Spam: Avoid spamming in any channel.\n" +
+          "- No Recruitment: Do not recruit for other clans or communities within our Discord.\n" +
+          "- NSFW Content: NSFW content is not allowed.\n" +
+          "- No Extreme Toxicity: Maintain a friendly and welcoming demeanor.\n" +
+          "Failure to comply with these rules can result in warnings or bans.\n\n" +
+          "Common Tasks:\n" +
+          "- Anyone can create a new raid using /create-raid!\n" +
+          "- Members earn 'palm tree' points for participating in events, redeemable at https://flamingpalm.com.\n" +
+          "- Use the tools provided to fetch real-time data about events, raids, and the store when asked."
       }],
     };
 
@@ -109,20 +110,27 @@ export class GoogleAI {
    * Simple parse method for dates without full assistant overhead
    */
   public async parseDate(input: string, timezone: string): Promise<string | null> {
+    const now = new Date();
+    const nowStr = `${now.toDateString()} ${now.toTimeString()}`;
+    const prompt = `Convert this natural language date/time into an ISO 8601 (JSON format) string: "${input}". 
+    The current date and time is ${nowStr}. 
+    Assume the user's local timezone is ${timezone}. 
+    Return only the ISO string or "INVALID" if you cannot parse it. Do not include any other text.`;
+
     try {
-      const now = new Date();
-      const nowStr = `${now.toDateString()} ${now.toTimeString()}`;
-      const prompt = `Convert this natural language date/time into an ISO 8601 (JSON format) string: "${input}". 
-      The current date and time is ${nowStr}. 
-      Assume the user's local timezone is ${timezone}. 
-      Return only the ISO string or "INVALID" if you cannot parse it. Do not include any other text.`;
-      
       const result = await this.model.generateContent(prompt);
       const text = result.response.text().trim();
       return text !== "INVALID" ? text : null;
-    } catch (error) {
-      log.error("Error in Gemini date parsing:", error);
-      return null;
+    } catch (error: any) {
+      log.warn(`Flash date parsing failed, trying Pro fallback: ${error.message}`);
+      try {
+        const result = await this.proModel.generateContent(prompt);
+        const text = result.response.text().trim();
+        return text !== "INVALID" ? text : null;
+      } catch (fallbackError: any) {
+        log.error("Error in Gemini date parsing (Flash and Pro failed):", fallbackError);
+        return null;
+      }
     }
   }
 
@@ -132,7 +140,7 @@ export class GoogleAI {
 
   public async ask(question: string): Promise<string> {
     let retries = 0;
-    const maxRetries = 3;
+    const maxRetries = 1;
 
     while (retries <= maxRetries) {
       try {
@@ -191,16 +199,16 @@ export class GoogleAI {
 
         // Final Fallback to Pro model if Flash is overloaded
         if (isRetryable && retries === maxRetries) {
-            log.info("Gemini Flash overloaded after all retries. Falling back to Pro model...");
-            try {
-                // To maintain context, we grab history from the primary chat
-                const history = await this.chat.getHistory();
-                const proChat = this.proModel.startChat({ history });
-                const result = await proChat.sendMessage(question);
-                return result.response.text();
-            } catch (fallbackError: any) {
-                log.error("Pro model fallback also failed:", fallbackError.message);
-            }
+          log.info("Gemini Flash overloaded after all retries. Falling back to Pro model...");
+          try {
+            // To maintain context, we grab history from the primary chat
+            const history = await this.chat.getHistory();
+            const proChat = this.proModel.startChat({ history });
+            const result = await proChat.sendMessage(question);
+            return result.response.text();
+          } catch (fallbackError: any) {
+            log.error("Pro model fallback also failed:", fallbackError.message);
+          }
         }
 
         log.error("Error in Gemini ask method:", error);
@@ -241,12 +249,12 @@ export class GoogleAI {
   private async getEventsString(): Promise<string> {
     let string = "";
     if (globalThis.client.events) {
-        for (let e of globalThis.client.events) {
-          let event = globalThis.client.events.get(e[0]);
-          string += `Event: ${event.name} - Date: ${new Date(
-            event.scheduledStartTimestamp
-          ).toString()} - Description: ${event.description} - Link: ${event.url} \n`;
-        }
+      for (let e of globalThis.client.events) {
+        let event = globalThis.client.events.get(e[0]);
+        string += `Event: ${event.name} - Date: ${new Date(
+          event.scheduledStartTimestamp
+        ).toString()} - Description: ${event.description} - Link: ${event.url} \n`;
+      }
     }
     return string || "No upcoming events found.";
   }
