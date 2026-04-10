@@ -121,7 +121,12 @@ export class GoogleAI {
         // Primary attempt: Pro
         const result = await this.proModel.generateContent(prompt);
         const text = result.response.text().trim();
-        return text !== "INVALID" ? text : null;
+        if (text.includes("INVALID")) return null;
+        
+        const match = text.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})/);
+        if (match) return match[0];
+        
+        throw new Error("Failed to parse ISO string from response");
       } catch (error: any) {
         const errorCode = error.status || error.response?.status;
         const isRetryable = errorCode === 503 || errorCode === 429 || error.message?.includes("503") || error.message?.includes("429");
@@ -145,7 +150,12 @@ export class GoogleAI {
               messages: [{ role: "user", content: prompt }],
             });
             const text = result.choices[0]?.message?.content?.trim() || "INVALID";
-            return text !== "INVALID" ? text : null;
+            if (text.includes("INVALID")) return null;
+            
+            const match = text.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})/);
+            if (match) return match[0];
+            
+            throw new Error("Failed to parse ISO string from fallback response");
           } catch (fallbackError: any) {
             const fallbackIsRetryable = fallbackError.status === 503 || fallbackError.status === 429;
 
