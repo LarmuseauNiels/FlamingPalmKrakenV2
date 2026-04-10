@@ -92,7 +92,7 @@ export class GoogleAI {
     });
 
     this.proModel = this.genAI.getGenerativeModel({
-      model: "google/gemma-4-E2B-it",
+      model: "gemma-4-31b-it",
       systemInstruction,
       tools,
       safetySettings,
