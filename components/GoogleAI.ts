@@ -97,57 +97,77 @@ export class GoogleAI {
     }
   }
 
+  private async wait(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
   public async ask(question: string): Promise<string> {
-    try {
-      log.debug(`Sending question to Gemini: ${question}`);
-      let result = await this.chat.sendMessage(question);
-      let response = result.response;
-      
-      // Check for blocked content
-      if (response.promptFeedback?.blockReason) {
-        log.warn(`Gemini blocked the prompt: ${response.promptFeedback.blockReason}`);
-        return "I'm sorry, I cannot process that request due to my safety guidelines.";
-      }
+    let retries = 0;
+    const maxRetries = 3;
 
-      // Handle potential function calls
-      let calls = response.functionCalls();
-      if (calls && calls.length > 0) {
-        log.debug("Gemini requested tool calls:", calls);
-        const toolOutputs = await Promise.all(
-          calls.map(async (call) => {
-            const output = await this.handleFunctionCall(call);
-            return {
-              functionResponse: {
-                name: call.name,
-                response: { content: output },
-              },
-            };
-          })
-        );
-
-        // Send tool outputs back to model to get final response
-        result = await this.chat.sendMessage(toolOutputs as any);
-        response = result.response;
-      }
-
-      // Final check for text content
+    while (retries <= maxRetries) {
       try {
-        return response.text();
-      } catch (e) {
-        log.error("Failed to extract text from Gemini response:", e);
-        // Fallback for cases where text() throws (e.g. empty or safety blocked in candidates)
-        if (response.candidates && response.candidates[0]?.finishReason === "SAFETY") {
-            return "I'm sorry, my response was cut off due to safety filters.";
+        log.debug(`Sending question to Gemini: ${question}${retries > 0 ? ` (Retry ${retries})` : ""}`);
+        let result = await this.chat.sendMessage(question);
+        let response = result.response;
+
+        // Check for blocked content
+        if (response.promptFeedback?.blockReason) {
+          log.warn(`Gemini blocked the prompt: ${response.promptFeedback.blockReason}`);
+          return "I'm sorry, I cannot process that request due to my safety guidelines.";
         }
-        return "I'm sorry, I generated a response but couldn't format it as text.";
-      }
-    } catch (error: any) {
-      log.error("Error in Gemini ask method:", error);
-      if (error.response?.data) {
+
+        // Handle potential function calls
+        let calls = response.functionCalls();
+        if (calls && calls.length > 0) {
+          log.debug("Gemini requested tool calls:", calls);
+          const toolOutputs = await Promise.all(
+            calls.map(async (call) => {
+              const output = await this.handleFunctionCall(call);
+              return {
+                functionResponse: {
+                  name: call.name,
+                  response: { content: output },
+                },
+              };
+            })
+          );
+
+          // Send tool outputs back to model to get final response
+          result = await this.chat.sendMessage(toolOutputs as any);
+          response = result.response;
+        }
+
+        // Final check for text content
+        try {
+          return response.text();
+        } catch (e) {
+          log.error("Failed to extract text from Gemini response:", e);
+          if (response.candidates && response.candidates[0]?.finishReason === "SAFETY") {
+            return "I'm sorry, my response was cut off due to safety filters.";
+          }
+          return "I'm sorry, I generated a response but couldn't format it as text.";
+        }
+      } catch (error: any) {
+        const errorCode = error.status || error.response?.status;
+        const isRetryable = errorCode === 503 || errorCode === 429;
+
+        if (isRetryable && retries < maxRetries) {
+          retries++;
+          const delay = Math.pow(2, retries) * 1000;
+          log.warn(`Gemini error ${errorCode} (High Demand/Rate Limit). Retrying in ${delay}ms... (Attempt ${retries}/${maxRetries})`);
+          await this.wait(delay);
+          continue;
+        }
+
+        log.error("Error in Gemini ask method:", error);
+        if (error.response?.data) {
           log.debug("Gemini API Error details:", JSON.stringify(error.response.data));
+        }
+        return "Sorry, I encountered an error while processing your request.";
       }
-      return "Sorry, I encountered an error while processing your request.";
     }
+    return "Sorry, the AI service is currently overloaded. Please try again in a moment.";
   }
 
   private async handleFunctionCall(call: any): Promise<string> {
