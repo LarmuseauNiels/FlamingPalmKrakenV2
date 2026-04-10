@@ -26,6 +26,7 @@
     "jsonwebtoken": "^9.0.0",
     "moment-timezone": "^0.5.45",
     "node-cron": "^3.0.0",
+    "openai": "^6.34.0",
     "passport": "^0.7.0",
     "passport-discord-auth": "^1.2.0",
     "typescript": "^5.0.2"

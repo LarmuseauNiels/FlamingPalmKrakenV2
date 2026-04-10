@@ -1,16 +1,19 @@
 import { GoogleGenerativeAI, Tool, GenerativeModel, ChatSession, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
+import OpenAI from "openai";
 import { createLogger } from "../utils/logger";
 
 const log = createLogger("GoogleAI");
 
 export class GoogleAI {
   private genAI: GoogleGenerativeAI;
-  private model: GenerativeModel;
+  private openai: OpenAI;
   private proModel: GenerativeModel;
   private chat: ChatSession;
+  private systemInstructionText: string = "";
 
   constructor() {
     this.genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_KEY || "");
+    this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "" });
 
     const tools: Tool[] = [
       {
@@ -31,10 +34,7 @@ export class GoogleAI {
       },
     ];
 
-    this.model = this.genAI.getGenerativeModel(
-      { model: "gemini-2.5-pro" },
-      { apiVersion: "v1" }
-    );
+    // Removed this.model gemini-2.5-pro initialization
 
     this.proModel = this.genAI.getGenerativeModel(
       { model: "gemini-3-flash-preview" },
@@ -60,36 +60,32 @@ export class GoogleAI {
       },
     ];
 
+    this.systemInstructionText = 
+      "You are a helpful assistant in the form of a discord bot called Kraken in the gaming clan FlamingPalm. " +
+      "You help members with questions about the clan and finding info about the upcoming events.\n\n" +
+      "About FlamingPalm:\n" +
+      "The Flaming Palm is a gaming community that specializes in organizing and hosting events to foster unity among our members. " +
+      "We are an active community involved in a variety of games and warmly welcome new members to join us.\n\n" +
+      "Rules:\n" +
+      "- Respect is Key: Treat all members with respect. Bullying, harassment, and hate speech are strictly prohibited.\n" +
+      "- No Spam: Avoid spamming in any channel.\n" +
+      "- No Recruitment: Do not recruit for other clans or communities within our Discord.\n" +
+      "- NSFW Content: NSFW content is not allowed.\n" +
+      "- No Extreme Toxicity: Maintain a friendly and welcoming demeanor.\n" +
+      "Failure to comply with these rules can result in warnings or bans.\n\n" +
+      "Common Tasks:\n" +
+      "- Anyone can create a new raid using /create-raid!\n" +
+      "- Members earn 'palm tree' points for participating in events, redeemable at https://flamingpalm.com.\n" +
+      "- Use the tools provided to fetch real-time data about events, raids, and the store when asked.";
+
     const systemInstruction = {
       role: "system",
       parts: [{
-        text:
-          "You are a helpful assistant in the form of a discord bot called Kraken in the gaming clan FlamingPalm. " +
-          "You help members with questions about the clan and finding info about the upcoming events.\n\n" +
-          "About FlamingPalm:\n" +
-          "The Flaming Palm is a gaming community that specializes in organizing and hosting events to foster unity among our members. " +
-          "We are an active community involved in a variety of games and warmly welcome new members to join us.\n\n" +
-          "Rules:\n" +
-          "- Respect is Key: Treat all members with respect. Bullying, harassment, and hate speech are strictly prohibited.\n" +
-          "- No Spam: Avoid spamming in any channel.\n" +
-          "- No Recruitment: Do not recruit for other clans or communities within our Discord.\n" +
-          "- NSFW Content: NSFW content is not allowed.\n" +
-          "- No Extreme Toxicity: Maintain a friendly and welcoming demeanor.\n" +
-          "Failure to comply with these rules can result in warnings or bans.\n\n" +
-          "Common Tasks:\n" +
-          "- Anyone can create a new raid using /create-raid!\n" +
-          "- Members earn 'palm tree' points for participating in events, redeemable at https://flamingpalm.com.\n" +
-          "- Use the tools provided to fetch real-time data about events, raids, and the store when asked."
+        text: this.systemInstructionText
       }],
     };
 
-    // Re-initialize model with instructions and tools
-    this.model = this.genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-      systemInstruction,
-      tools,
-      safetySettings,
-    });
+    // Removed this.model gemini-2.5-flash re-initialization
 
     this.proModel = this.genAI.getGenerativeModel({
       model: "gemma-4-31b-it",
@@ -138,28 +134,30 @@ export class GoogleAI {
           continue;
         }
 
-        log.warn(`Pro date parsing failed, trying Flash fallback: ${error.message}`);
+        log.warn(`Pro date parsing failed, trying OpenAI fallback: ${error.message}`);
 
-        let flashRetries = 0;
-        while (flashRetries <= maxRetries) {
+        let openaiRetries = 0;
+        while (openaiRetries <= maxRetries) {
           try {
-            // Fallback: Flash
-            const result = await this.model.generateContent(prompt);
-            const text = result.response.text().trim();
+            // Fallback: OpenAI
+            const result = await this.openai.chat.completions.create({
+              model: "gpt-4o-mini",
+              messages: [{ role: "user", content: prompt }],
+            });
+            const text = result.choices[0]?.message?.content?.trim() || "INVALID";
             return text !== "INVALID" ? text : null;
           } catch (fallbackError: any) {
-            const fallbackErrorCode = fallbackError.status || fallbackError.response?.status;
-            const fallbackIsRetryable = fallbackErrorCode === 503 || fallbackErrorCode === 429 || fallbackError.message?.includes("503") || fallbackError.message?.includes("429");
+            const fallbackIsRetryable = fallbackError.status === 503 || fallbackError.status === 429;
 
-            if (fallbackIsRetryable && flashRetries < maxRetries) {
-              flashRetries++;
-              const delay = Math.pow(2, flashRetries) * 1000;
-              log.warn(`Flash date parsing failed, retrying in ${delay}ms... (Attempt ${flashRetries}/${maxRetries}): ${fallbackError.message}`);
+            if (fallbackIsRetryable && openaiRetries < maxRetries) {
+              openaiRetries++;
+              const delay = Math.pow(2, openaiRetries) * 1000;
+              log.warn(`OpenAI date parsing failed, retrying in ${delay}ms... (Attempt ${openaiRetries}/${maxRetries}): ${fallbackError.message}`);
               await this.wait(delay);
               continue;
             }
 
-            log.error("Error in Gemini date parsing (Pro and Flash failed):", fallbackError);
+            log.error("Error in AI date parsing (Pro and OpenAI failed):", fallbackError);
             return null;
           }
         }
@@ -232,17 +230,32 @@ export class GoogleAI {
           continue;
         }
 
-        // Final Fallback to Flash model if Pro is overloaded
+        // Final Fallback to OpenAI if Pro is overloaded
         if (isRetryable && retries === maxRetries) {
-          log.info("Gemini Pro overloaded after all retries. Falling back to Flash model...");
+          log.info("Gemini Pro overloaded after all retries. Falling back to OpenAI model...");
           try {
             // To maintain context, we grab history from the primary chat
             const history = await this.chat.getHistory();
-            const flashChat = this.model.startChat({ history });
-            const result = await flashChat.sendMessage(question);
-            return result.response.text();
+            const openAiMessages: any[] = [
+              { role: "system", content: this.systemInstructionText }
+            ];
+
+            for (const msg of history) {
+              const role = msg.role === "model" ? "assistant" : "user";
+              const content = msg.parts.map((p: any) => p.text || "").join("");
+              if (content.trim() !== "") {
+                openAiMessages.push({ role, content });
+              }
+            }
+            openAiMessages.push({ role: "user", content: question });
+
+            const result = await this.openai.chat.completions.create({
+              model: "gpt-4o-mini",
+              messages: openAiMessages
+            });
+            return result.choices[0]?.message?.content || "I'm sorry, I generated a response but couldn't format it as text.";
           } catch (fallbackError: any) {
-            log.error("Flash model fallback also failed:", fallbackError.message);
+            log.error("OpenAI model fallback also failed:", fallbackError.message);
           }
         }
 
