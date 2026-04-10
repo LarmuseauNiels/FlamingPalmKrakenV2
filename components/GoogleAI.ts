@@ -37,7 +37,7 @@ export class GoogleAI {
     );
 
     this.proModel = this.genAI.getGenerativeModel(
-      { model: "gemma-4-31b-it" },
+      { model: "gemini-3-flash-preview" },
       { apiVersion: "v1" }
     );
 
