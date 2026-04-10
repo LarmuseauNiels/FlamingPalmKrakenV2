@@ -11,7 +11,7 @@ AI assistant guide for the FlamingPalm Discord bot codebase.
 - Achievement and points system
 - Member profiles with custom image generation
 - Reward shop
-- OpenAI-powered community assistant
+- Google Gemini 1.5 Flash powered community assistant
 - Web API with Discord OAuth for a companion website
 - Game server monitoring (Vintage Story + Pelican-managed servers)
 
@@ -32,7 +32,7 @@ FlamingPalmKrakenV2/
 │   └── migrations/           # Prisma migration history
 ├── components/
 │   ├── FpgClient.ts          # Extended Discord.js Client — core hub class
-│   └── Assistant.ts          # OpenAI GPT-4o-mini wrapper with tool-calling
+│   └── GoogleAI.ts           # Google Gemini 1.5 Flash wrapper with tool-calling
 ├── events/                   # Discord.js event handlers (8 files)
 ├── interactionHandlers/
 │   ├── commands/             # 23 slash command handlers

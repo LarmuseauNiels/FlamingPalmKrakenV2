@@ -51,7 +51,7 @@ export abstract class RaidEmbeds {
     let embed = new EmbedBuilder()
       .setTitle("Scheduling for raid: " + raid.Title)
       .setDescription(
-        "Cast your votes for all your available time slots! \n The raid will be scheduled for the first time that suits everyone.\n Participants: \n" +
+        "Select all the time slots you are available for in the dropdown below! \n The raid will be scheduled for the first time that suits enough people.\n Participants: \n" +
           participants
       )
       .setFooter({
@@ -122,12 +122,48 @@ export abstract class RaidEmbeds {
     }
   }
 
-  static buildSchedulingActionRow() {
-    return new ActionRowBuilder().addComponents(
+  static buildSchedulingActionRow(raidId: number) {
+    return new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId("raidVotes")
         .setLabel("View Participants' Chosen Times")
-        .setStyle(ButtonStyle.Secondary)
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId(`raidSuggestTime_${raidId}`)
+        .setLabel("Suggest Custom Time")
+        .setStyle(ButtonStyle.Primary)
     );
+  }
+
+  static buildSchedulingSelectMenu(
+    raidId: number,
+    options: RaidSchedulingOption[],
+    userSelectedOptions: number[] = []
+  ) {
+    const select = new StringSelectMenuBuilder()
+      .setCustomId(`raidVote_${raidId}`)
+      .setPlaceholder("Select all time slots you are available for")
+      .setMinValues(0)
+      .setMaxValues(Math.min(options.length, 25));
+
+    options.forEach((option) => {
+      const unixTime = Math.floor(option.Timestamp.getTime() / 1000);
+      // We use a formatted string for the label because select menus don't support discord timestamps in labels
+      const dateString = option.Timestamp.toLocaleDateString("en-GB", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      select.addOptions({
+        label: `${option.Option}: ${dateString}`,
+        value: option.ID.toString(),
+        default: userSelectedOptions.includes(option.ID),
+      });
+    });
+
+    return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
   }
 }

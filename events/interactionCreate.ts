@@ -42,7 +42,7 @@ export default class interactionCreate implements IEvent {
 
   private async handleSelectMenu(interaction: any) {
     log.debug("Select menu interaction:", interaction.customId);
-    let selectID = interaction.customId;
+    let selectID = interaction.customId.split("_")[0];
     let select = global.client.selects.get(selectID);
     if (select) await select.execute(interaction);
   }

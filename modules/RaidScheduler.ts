@@ -115,7 +115,8 @@ export abstract class RaidScheduler {
       return;
     }
     let embed = RaidEmbeds.buildSchedulingMessage(raid);
-    let row = RaidEmbeds.buildSchedulingActionRow();
+    let row = RaidEmbeds.buildSchedulingActionRow(raid.ID);
+    let selectMenu = RaidEmbeds.buildSchedulingSelectMenu(raid.ID, raid.RaidSchedulingOption);
 
     raid.RaidAttendees.forEach((attendee) => {
       global.client.users
@@ -124,18 +125,8 @@ export abstract class RaidScheduler {
           user
             .send({
               embeds: [embed],
-              content: raid.ID.toString(),
-              components: [row],
+              components: [selectMenu, row],
             } as MessageCreateOptions)
-            .then((message) => {
-              raid.RaidSchedulingOption.forEach((option) => {
-                message
-                  .react(RaidEmbeds.getUniCodeEmoji(option.Option))
-                  .catch((err) =>
-                    log.error("Failed to react to scheduling message:", err)
-                  );
-              });
-            })
             .catch((err) => {
               global.client.log(
                 "Error sending scheduling message for raid " +
@@ -144,6 +135,9 @@ export abstract class RaidScheduler {
                   user.id +
                   ">"
               );
+              global.client.lfg.send({
+                content: `<@${user.id}>, I couldn't DM you the scheduling options for **${raid.Title}**! Please check your privacy settings and use \`/raid-resend raid:${raid.ID}\` to try again.`
+              }).catch(e => log.error("Failed to send DM failure notification to lfg:", e));
               log.error("Error sending scheduling message:", err);
             });
         })
@@ -181,23 +175,14 @@ export abstract class RaidScheduler {
       return "Raid not found";
     }
     let embed = RaidEmbeds.buildSchedulingMessage(raid);
-    let row = RaidEmbeds.buildSchedulingActionRow();
+    let row = RaidEmbeds.buildSchedulingActionRow(raid.ID);
+    let selectMenu = RaidEmbeds.buildSchedulingSelectMenu(raid.ID, raid.RaidSchedulingOption);
 
     user
       .send({
         embeds: [embed],
-        content: raid.ID.toString(),
-        components: [row],
+        components: [selectMenu, row],
       } as MessageCreateOptions)
-      .then((message) => {
-        raid.RaidSchedulingOption.forEach((option) => {
-          message
-            .react(RaidEmbeds.getUniCodeEmoji(option.Option))
-            .catch((err) =>
-              log.error("Failed to react to resent scheduling message:", err)
-            );
-        });
-      })
       .catch((err: any) => {
         log.error("Failed to resend scheduling message:", err);
         return err.toString();
@@ -270,41 +255,21 @@ export abstract class RaidScheduler {
     }
   ) {
     let votes = new Map<RaidSchedulingOption, string[]>();
-    raid.RaidSchedulingOption.forEach((option) => {
-      votes.set(option, []);
+    
+    // Fetch all availability for all options of this raid
+    const optionsWithAvailability = await global.client.prisma.raidSchedulingOption.findMany({
+      where: { RaidId: raid.ID },
+      include: { RaidAvailability: true }
     });
 
-    const attendeesPromises = raid.RaidAttendees.map(async (attendee) => {
-      const user = await global.client.users.fetch(attendee.MemberId);
-      if (!user.dmChannel) {
-        await user.createDM();
+    optionsWithAvailability.forEach(option => {
+      // Find the original option object to use as key
+      const originalOption = raid.RaidSchedulingOption.find(o => o.ID === option.ID);
+      if (originalOption) {
+        votes.set(originalOption, option.RaidAvailability.map(a => a.MemberId));
       }
-      const messages = await user.dmChannel.messages.fetch({ limit: 50 });
-      log.debug("DM messages fetched:", messages.size);
-      const message = messages.find((m) => m.content == raid.ID.toString());
-      if (!message) {
-        global.client.log(
-          "No scheduling message found for user <@" +
-            user.id +
-            "> for raid " +
-            raid.ID
-        );
-        return;
-      }
-      log.debug("Scheduling message found:", message?.id);
-      const optionVotesPromises = raid.RaidSchedulingOption.map(
-        async (option) => {
-          const reaction = message.reactions.resolve(RaidEmbeds.getUniCodeEmoji(option.Option));
-          if (!reaction) return;
-          const users = await reaction.users.fetch();
-          if (users.some((u) => u.id == attendee.MemberId)) {
-            votes.get(option).push(attendee.MemberId);
-          }
-        }
-      );
-      await Promise.all(optionVotesPromises);
     });
-    await Promise.all(attendeesPromises);
+
     return votes;
   }
 

@@ -1,7 +1,8 @@
 import { SlashCommandBuilder } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
 import { createLogger } from "../../utils/logger";
-import * as moment from "moment-timezone";
+import { TimeParser } from "../../utils/TimeParser";
+import moment from "moment-timezone";
 
 const log = createLogger("TimestampCommand");
 
@@ -13,32 +14,6 @@ const FORMAT_OPTIONS = [
   { name: "Short date/time (30 June 2021 9:41 PM)", value: "f" },
   { name: "Long date/time (Wednesday, 30 June 2021 9:41 PM)", value: "F" },
   { name: "Relative (2 hours ago)", value: "R" },
-];
-
-// DD/MM/YYYY is the only date convention used — no MM/DD/YYYY ambiguity.
-// AM/PM variants cover both uppercase (6:30PM) and lowercase (6:30pm),
-// with and without a separating space.
-// Year-less date prefixes default to the current year via moment.
-const TIME_SUFFIXES = ["HH:mm", "H:mm", "hh:mm A", "hh:mma", "h:mm A", "h:mma"];
-
-const PARSE_FORMATS: string[] = [
-  // Date+time with year
-  ...["YYYY-MM-DD", "DD/MM/YYYY", "MMMM D YYYY", "D MMMM YYYY"].flatMap((d) =>
-    TIME_SUFFIXES.map((t) => `${d} ${t}`)
-  ),
-  // Date-only with year
-  "YYYY-MM-DD",
-  "DD/MM/YYYY",
-  // Date+time without year (defaults to current year)
-  ...["DD/MM", "MMMM D", "D MMMM"].flatMap((d) =>
-    TIME_SUFFIXES.map((t) => `${d} ${t}`)
-  ),
-  // Date-only without year (defaults to current year)
-  "DD/MM",
-  "MMMM D",
-  "D MMMM",
-  // Time-only (defaults to today)
-  ...TIME_SUFFIXES,
 ];
 
 export default class TimestampCommand implements IHandler {
@@ -87,7 +62,7 @@ export default class TimestampCommand implements IHandler {
       log.error("Failed to fetch member timezone", error);
     }
 
-    const parsed = moment.tz(datetimeInput, PARSE_FORMATS, true, timezone);
+    const parsed = await TimeParser.parse(datetimeInput, timezone);
 
     if (!parsed.isValid()) {
       await interaction.editReply({

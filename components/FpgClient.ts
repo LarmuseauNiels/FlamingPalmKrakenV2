@@ -1,5 +1,5 @@
 import { Client, GatewayIntentBits, Partials, TextChannel } from "discord.js";
-import { Assistant } from "./Assistant";
+import { GoogleAI } from "./GoogleAI";
 import { PrismaClient } from "@prisma/client";
 import { AchievementsModule } from "../modules/AchievementsModule";
 import { WebApi } from "../modules/WebApi";
@@ -17,7 +17,7 @@ export class FpgClient extends Client {
   declare prisma: PrismaClient;
 
   declare achievementsModule: AchievementsModule;
-  declare assistant: Assistant;
+  declare googleAI: GoogleAI;
   declare webapi: WebApi;
   // cache of guild events for quick access for website (periodically updated in statistics loop)
   declare events: Collection<any, any>;
@@ -57,12 +57,13 @@ export class FpgClient extends Client {
     });
 
     this.prisma = new PrismaClient();
-    // AI assistant from OpenAI
-    this.assistant = new Assistant();
+    // AI assistant from Google
+    this.googleAI = new GoogleAI();
 
     this.logChannel;
     this.updateChannel;
     this.contextMenus = new Collection();
+    this.modals = new Collection();
     this.achievementsModule = new AchievementsModule();
     this.webapi = new WebApi();
     this.loadEvents();
@@ -82,6 +83,7 @@ export class FpgClient extends Client {
     this.commands = await this.loadInteractionActions("commands");
     this.buttons = await this.loadInteractionActions("buttons");
     this.selects = await this.loadInteractionActions("selects");
+    this.modals = await this.loadInteractionActions("modals");
     this.contextMenus = await this.loadInteractionActions("contextmenus");
   }
 

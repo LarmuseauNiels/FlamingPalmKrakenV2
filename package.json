@@ -13,6 +13,7 @@
   "dependencies": {
     "@bugsnag/js": "^7.20.2",
     "@bugsnag/plugin-express": "^7.19.0",
+    "@google/generative-ai": "^0.24.1",
     "@napi-rs/canvas": "^0.1.29",
     "@prisma/client": "^4.12.0",
     "@types/passport": "^1.0.12",
@@ -25,7 +26,6 @@
     "jsonwebtoken": "^9.0.0",
     "moment-timezone": "^0.5.45",
     "node-cron": "^3.0.0",
-    "openai": "^4.54.0",
     "passport": "^0.7.0",
     "passport-discord-auth": "^1.2.0",
     "typescript": "^5.0.2"

@@ -1,5 +1,5 @@
 import * as Canvas from "@napi-rs/canvas";
-import type { CanvasRenderingContext2D } from "@napi-rs/canvas";
+import { SKRSContext2D as CanvasRenderingContext2D } from "@napi-rs/canvas";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

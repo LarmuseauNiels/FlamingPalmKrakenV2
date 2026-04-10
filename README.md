@@ -8,7 +8,7 @@ A Discord bot for the FlamingPalm gaming community, providing raid scheduling, a
 - **Achievements & Points** — Track member achievements and point balances with a full audit trail
 - **Member Profiles** — Custom profile image generation using canvas
 - **Reward Shop** — Points-based reward redemption system
-- **AI Assistant** — OpenAI GPT-4o-mini powered community assistant with tool-calling
+- **AI Assistant** — Google Gemini 1.5 Flash powered community assistant with tool-calling
 - **Web API** — Express server with Discord OAuth for a companion website
 - **Game Server Status** — Vintage Story and Pelican-managed game server monitoring
 
@@ -105,7 +105,7 @@ FlamingPalmKrakenV2/
 │   └── migrations/           # Prisma migration history
 ├── components/
 │   ├── FpgClient.ts          # Extended Discord.js Client (core hub)
-│   └── Assistant.ts          # OpenAI wrapper with tool-calling
+│   └── GoogleAI.ts           # Google Gemini 1.5 Flash wrapper with tool-calling
 ├── events/                   # Discord.js event handlers
 ├── interactionHandlers/
 │   ├── commands/             # 23 slash command handlers
