@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, Tool, GenerativeModel, ChatSession } from "@google/generative-ai";
+import { GoogleGenerativeAI, Tool, GenerativeModel, ChatSession, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 import { createLogger } from "../utils/logger";
 
 const log = createLogger("GoogleAI");
@@ -31,7 +31,7 @@ export class GoogleAI {
     ];
 
     this.model = this.genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       systemInstruction: 
         "You are a helpful assistant in the form of a discord bot called Kraken in the gaming clan FlamingPalm. " +
         "You help members with questions about the clan and finding info about the upcoming events.\n\n" +
@@ -50,6 +50,24 @@ export class GoogleAI {
         "- Members earn 'palm tree' points for participating in events, redeemable at https://flamingpalm.com.\n" +
         "- Use the tools provided to fetch real-time data about events, raids, and the store when asked.",
       tools,
+      safetySettings: [
+        {
+          category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+      ],
     });
 
     this.chat = this.model.startChat({
@@ -81,11 +99,18 @@ export class GoogleAI {
 
   public async ask(question: string): Promise<string> {
     try {
+      log.debug(`Sending question to Gemini: ${question}`);
       let result = await this.chat.sendMessage(question);
       let response = result.response;
       
+      // Check for blocked content
+      if (response.promptFeedback?.blockReason) {
+        log.warn(`Gemini blocked the prompt: ${response.promptFeedback.blockReason}`);
+        return "I'm sorry, I cannot process that request due to my safety guidelines.";
+      }
+
       // Handle potential function calls
-      const calls = response.functionCalls();
+      let calls = response.functionCalls();
       if (calls && calls.length > 0) {
         log.debug("Gemini requested tool calls:", calls);
         const toolOutputs = await Promise.all(
@@ -105,9 +130,22 @@ export class GoogleAI {
         response = result.response;
       }
 
-      return response.text();
-    } catch (error) {
+      // Final check for text content
+      try {
+        return response.text();
+      } catch (e) {
+        log.error("Failed to extract text from Gemini response:", e);
+        // Fallback for cases where text() throws (e.g. empty or safety blocked in candidates)
+        if (response.candidates && response.candidates[0]?.finishReason === "SAFETY") {
+            return "I'm sorry, my response was cut off due to safety filters.";
+        }
+        return "I'm sorry, I generated a response but couldn't format it as text.";
+      }
+    } catch (error: any) {
       log.error("Error in Gemini ask method:", error);
+      if (error.response?.data) {
+          log.debug("Gemini API Error details:", JSON.stringify(error.response.data));
+      }
       return "Sorry, I encountered an error while processing your request.";
     }
   }
