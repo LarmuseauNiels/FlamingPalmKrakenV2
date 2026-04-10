@@ -67,7 +67,7 @@ export class GoogleAI {
       },
     ];
 
-    this.systemInstructionText = 
+    this.systemInstructionText =
       "You are a helpful assistant in the form of a discord bot called Kraken in the gaming clan FlamingPalm. " +
       "You help members with questions about the clan and finding info about the upcoming events.\n\n" +
       "About FlamingPalm:\n" +
@@ -126,11 +126,12 @@ export class GoogleAI {
           messages: [{ role: "user", content: prompt }],
         });
         const text = result.choices[0]?.message?.content?.trim() || "INVALID";
+        log.debug("OpenAI date parsing result:", text);
         if (text.includes("INVALID")) return null;
-        
+
         const match = text.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})/);
-        if (match) return match[0];
-        
+        if (match) return match[match.length - 1];
+
         throw new Error("Failed to parse ISO string from response");
       } catch (error: any) {
         const isRetryable = error.status === 503 || error.status === 429 || error.message?.includes("503");
@@ -150,12 +151,13 @@ export class GoogleAI {
           try {
             // Fallback: Gemini
             const result = await this.proModel.generateContent(prompt);
+            log.debug("Gemini date parsing result:", result);
             const text = result.response.text().trim();
             if (text.includes("INVALID")) return null;
-            
+
             const match = text.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})/);
-            if (match) return match[0];
-            
+            if (match) return match[match.length - 1];
+
             throw new Error("Failed to parse ISO string from fallback response");
           } catch (fallbackError: any) {
             const fallbackErrorCode = fallbackError.status || fallbackError.response?.status;
@@ -192,7 +194,7 @@ export class GoogleAI {
     while (retries <= maxRetries) {
       try {
         log.debug(`Sending question to OpenAI: ${question}${retries > 0 ? ` (Retry ${retries})` : ""}`);
-        
+
         let result = await this.openai.chat.completions.create({
           model: "gpt-4o-mini",
           messages: this.openAiMessages,
@@ -204,7 +206,7 @@ export class GoogleAI {
 
         if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
           log.debug("OpenAI requested tool calls:", responseMessage.tool_calls);
-          
+
           for (const call of responseMessage.tool_calls) {
             if (call.type === "function") {
               const output = await this.handleFunctionCall(call.function);
@@ -247,9 +249,9 @@ export class GoogleAI {
             const geminiHistory: any[] = [];
             for (const msg of this.openAiMessages) {
               if (msg.role === "user" && msg.content && typeof msg.content === "string") {
-                 geminiHistory.push({ role: "user", parts: [{ text: msg.content }] });
+                geminiHistory.push({ role: "user", parts: [{ text: msg.content }] });
               } else if (msg.role === "assistant" && msg.content && typeof msg.content === "string") {
-                 geminiHistory.push({ role: "model", parts: [{ text: msg.content }] });
+                geminiHistory.push({ role: "model", parts: [{ text: msg.content }] });
               }
             }
             // The last msg is the fallback question we want to ask
@@ -258,7 +260,7 @@ export class GoogleAI {
 
             const fallbackChat = this.proModel.startChat({ history: geminiHistory });
             const fallbackResult = await fallbackChat.sendMessage(fallbackQuestion);
-            
+
             return fallbackResult.response.text();
           } catch (fallbackError: any) {
             log.error("Gemini model fallback also failed:", fallbackError.message);
