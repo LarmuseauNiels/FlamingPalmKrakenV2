@@ -32,12 +32,12 @@ export class GoogleAI {
     ];
 
     this.model = this.genAI.getGenerativeModel(
-      { model: "gemini-2.5-flash" },
+      { model: "gemini-2.5-pro" },
       { apiVersion: "v1" }
     );
 
     this.proModel = this.genAI.getGenerativeModel(
-      { model: "gemma-4-26b-a4b-it" },
+      { model: "gemma-4-31b-it" },
       { apiVersion: "v1" }
     );
 
@@ -92,7 +92,7 @@ export class GoogleAI {
     });
 
     this.proModel = this.genAI.getGenerativeModel({
-      model: "gemma-4-E2B-it",
+      model: "google/gemma-4-E2B-it",
       systemInstruction,
       tools,
       safetySettings,
