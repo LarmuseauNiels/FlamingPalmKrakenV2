@@ -33,7 +33,7 @@
   },
   "overrides": {
     "fast-xml-parser": "^5.4.2",
-    "undici": "^6.23.0",
+    "undici": "^6.24.1",
     "formdata-node": "^6.0.3"
   },
   "devDependencies": {
