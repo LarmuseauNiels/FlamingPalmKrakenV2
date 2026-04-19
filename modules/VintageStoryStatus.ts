@@ -32,7 +32,19 @@ module.exports = function (client: FpgClient) {
           (s) => s.serverName === process.env.VS_SERVER_NAME
         );
         if (!server) {
-          throw new Error(`No server found for ${process.env.VS_SERVER_NAME}`);
+          log.warn(`No server found for ${process.env.VS_SERVER_NAME} — server may be offline`);
+          global.client.user.setActivity("flamingpalm.com", {
+            type: ActivityType.Watching,
+          });
+          client.channels
+            .fetch(VS_CHANNEL_ID)
+            .then((channel) => {
+              (channel as BaseGuildTextChannel).setName("🏕️┃vintage-story");
+            })
+            .catch((error) =>
+              log.error("Failed to reset VS channel name:", error)
+            );
+          return;
         }
         global.client.user.setActivity(
           "VintageStory " + server.players + "/8",
