@@ -41,7 +41,7 @@ export default class TimestampCommand implements IHandler {
     ) as SlashCommandBuilder;
 
   async execute(interaction: any): Promise<void> {
-    await interaction.deferReply({ ephemeral: false });
+    await interaction.deferReply({ ephemeral: true });
 
     const datetimeInput = interaction.options.getString("datetime");
     const format = interaction.options.getString("format") ?? "F";
