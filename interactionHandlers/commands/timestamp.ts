@@ -85,7 +85,7 @@ export default class TimestampCommand implements IHandler {
     await interaction.editReply({
       content: [
         `**Timestamp for** \`${datetimeInput}\` ${timezoneNote}`,
-        `${tag}`,
+        `${tag} Copy: \`${tag}\``,
       ].join("\n"),
     });
   }
