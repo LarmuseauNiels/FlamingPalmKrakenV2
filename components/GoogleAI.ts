@@ -109,11 +109,31 @@ export class GoogleAI {
    */
   public async parseDate(input: string, timezone: string): Promise<string | null> {
     const now = new Date();
-    const nowStr = `${now.toDateString()} ${now.toTimeString()}`;
-    const prompt = `Convert this natural language date/time into an ISO 8601 (JSON format) string: "${input}". 
-    The current date and time is ${nowStr}. 
-    Assume the user's local timezone is ${timezone}. 
-    Return only the ISO string or "INVALID" if you cannot parse it. Do not include any other text.`;
+    const nowIso = now.toISOString();
+
+    const systemPrompt =
+      `You are a precise date/time parser. Your sole task is to convert natural-language date/time expressions into ISO 8601 strings.\n\n` +
+      `Output rules:\n` +
+      `- Return ONLY a single ISO 8601 string in this exact format: YYYY-MM-DDTHH:mm:ss±HH:MM\n` +
+      `- Include the UTC offset that corresponds to the user's timezone, accounting for DST\n` +
+      `- Return exactly the word INVALID if the input cannot reasonably be interpreted as a date or time\n` +
+      `- Output nothing else — no explanation, no markdown, no surrounding text\n\n` +
+      `Parsing rules:\n` +
+      `- Time-only input (e.g. "18:30", "6pm") → use today's date\n` +
+      `- Date without year → use the current year; if that date has already passed, use next year\n` +
+      `- Relative expressions ("tomorrow", "next Monday", "in 2 hours") → resolve against the current date/time\n` +
+      `- When a date/time is ambiguous, prefer the nearest future occurrence`;
+
+    const userPrompt =
+      `Current UTC date/time: ${nowIso}\n` +
+      `User timezone: ${timezone}\n\n` +
+      `Examples (illustrative — "now" = 2026-05-25T20:00:00Z, timezone Europe/Brussels = UTC+2 in summer):\n` +
+      `  "18:30"           → 2026-05-25T18:30:00+02:00\n` +
+      `  "tomorrow 9am"    → 2026-05-26T09:00:00+02:00\n` +
+      `  "15/03 18:30"     → 2026-03-15T18:30:00+01:00\n` +
+      `  "next Friday 3pm" → 2026-05-29T15:00:00+02:00\n` +
+      `  "dog"             → INVALID\n\n` +
+      `Parse this input: "${input}"`;
 
     const maxRetries = 2; // For each model
 
@@ -123,7 +143,12 @@ export class GoogleAI {
         // Primary attempt: OpenAI
         const result = await this.openai.chat.completions.create({
           model: "gpt-4o-mini",
-          messages: [{ role: "user", content: prompt }],
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0,
+          max_tokens: 30,
         });
         const text = result.choices[0]?.message?.content?.trim() || "INVALID";
         log.debug("OpenAI date parsing result:", text);
@@ -150,7 +175,7 @@ export class GoogleAI {
         while (geminiRetries <= maxRetries) {
           try {
             // Fallback: Gemini
-            const result = await this.proModel.generateContent(prompt);
+            const result = await this.proModel.generateContent(`${systemPrompt}\n\n${userPrompt}`);
             log.debug("Gemini date parsing result:", result);
             const text = result.response.text().trim();
             if (text.includes("INVALID")) return null;
