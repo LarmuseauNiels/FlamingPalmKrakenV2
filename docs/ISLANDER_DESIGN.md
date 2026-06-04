@@ -247,8 +247,9 @@ a DB edit + cache refresh — no redeploy.
   levers.
 - A simple **power score** (used for leaderboard + matchmaking) =
   `w1·TClevel + w2·Σ(buildingLevels) + w3·armyValue`.
-- Seed numbers belong in a companion `ISLANDER_BALANCE.md` (follow-up), kept out
-  of this design doc so tuning churn doesn't pollute the spec.
+- Concrete seed numbers (production rates, costs, build times, unit stats, PvP
+  levers) live in the companion **[`ISLANDER_BALANCE.md`](./ISLANDER_BALANCE.md)**,
+  kept out of this design doc so tuning churn doesn't pollute the spec.
 
 ---
 
