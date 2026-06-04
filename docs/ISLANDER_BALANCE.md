@@ -75,35 +75,35 @@ Each line below lists Tier-1 base stats; higher tiers use the growth curve and
 the named tier swaps in at the level shown. `Function` / `FunctAttribute` columns
 show what the building's data row drives.
 
-### 3.1 Food — Farm → Farm Estate → (TBD)
+### 3.1 Food — Farm → Farm Estate → Plantation
 | Level | Name | Wood | Stone | Food/h | Time | TC req |
 |---|---|---|---|---|---|---|
 | 1 | Farm | 50 | 30 | 60 | 30 | 1 |
 | 5 | Farm | 470 | 280 | 200 | 760 | 5 |
 | 10 | Farm Estate | 4.3k | 2.6k | 900 | 21.6k | 10 |
-| 20 | Farm Estate | 80k | 48k | 12.5k | 86.4k | 20 |
+| 20 | Plantation | 80k | 48k | 12.5k | 86.4k | 20 |
 
 `Function = produce`, `FunctAttribute = Food/h`.
 
-### 3.2 Wood — Woodcutter → Logging Camp → (TBD)
+### 3.2 Wood — Woodcutter → Logging Camp → Sawmill
 | Level | Name | Wood | Stone | Wood/h | Time | TC req |
 |---|---|---|---|---|---|---|
 | 1 | Woodcutter | 40 | 20 | 55 | 30 | 1 |
 | 5 | Woodcutter | 370 | 185 | 185 | 760 | 5 |
 | 10 | Logging Camp | 3.5k | 1.7k | 830 | 21.6k | 10 |
-| 20 | Logging Camp | 65k | 32k | 11.5k | 86.4k | 20 |
+| 20 | Sawmill | 65k | 32k | 11.5k | 86.4k | 20 |
 
-### 3.3 Stone — Mine → Quarry → (TBD)
+### 3.3 Stone — Mine → Quarry → Stoneworks
 Same base as Wood (Mine produces Stone/h). Stone is slightly scarcer in demand
 (walls/repairs), so keep rates equal to Wood and let wall costs create the
 tension.
 
-### 3.4 Currency — Trader → Marketplace → (TBD)
+### 3.4 Currency — Trader → Marketplace → Grand Bazaar
 | Level | Name | Wood | Stone | Currency/h | Time | TC req |
 |---|---|---|---|---|---|---|
 | 1 | Trader | 120 | 100 | 20 | 600 | 8 |
 | 10 | Marketplace | 6k | 5k | 220 | 21.6k | 10 |
-| 20 | Marketplace | 95k | 80k | 2.8k | 86.4k | 20 |
+| 20 | Grand Bazaar | 95k | 80k | 2.8k | 86.4k | 20 |
 
 Currency is intentionally the **slowest** resource and the main raiding reward —
 this is the answer to the brainstorm's "not sure how currency is generated."
@@ -113,15 +113,15 @@ Marketplace also enables a **resource exchange** (see §7).
 
 ## 4. Storage & Housing
 
-### 4.1 Warehouse (storage cap)
+### 4.1 Warehouse — Warehouse → Storehouse → Grand Depot (storage cap)
 `Function = store`, `FunctAttribute = capacity added per resource`.
 
 | Level | Name | Wood | Stone | +Storage (all resources) | Time | TC req |
 |---|---|---|---|---|---|---|
 | 1 | Warehouse | 60 | 40 | +1,000 | 60 | 1 |
 | 5 | Warehouse | 560 | 370 | +5,500 | 1k | 5 |
-| 10 | Warehouse | 5k | 3.4k | +28k | 21.6k | 10 |
-| 20 | Warehouse | 95k | 64k | +400k | 86.4k | 20 |
+| 10 | Storehouse | 5k | 3.4k | +28k | 21.6k | 10 |
+| 20 | Grand Depot | 95k | 64k | +400k | 86.4k | 20 |
 
 **Total cap** = `BASE_STORAGE + 250·TClevel + Warehouse capacity`.
 **Idle window** = `cap / ratePerHour` — early game ≈ 8–12 h, late game tuned to
@@ -153,7 +153,7 @@ Caps total land units = `30 · level`. `Function = train`.
 | 10 | Barracks | 6k | 4k | 4.5k | 300 | 21.6k | 15 |
 | 20 | Army Base | 95k | 64k | 70k | 600 | 86.4k | 20 |
 
-### 5.2 Smithing — Smelter → Blacksmith → (TBD)
+### 5.2 Smithing — Smelter → Blacksmith → Foundry
 `Function = defend/attack multiplier`. Each level adds **+3% army attack & HP**
 (applies to both raiding and defending).
 
@@ -161,7 +161,7 @@ Caps total land units = `30 · level`. `Function = train`.
 |---|---|---|---|---|---|---|
 | 1 | Smelter | 150 | 200 | +3% | 600 | 5 |
 | 10 | Blacksmith | 5k | 7k | +30% | 21.6k | 15 |
-| 20 | Blacksmith | 80k | 110k | +60% | 86.4k | 20 |
+| 20 | Foundry | 80k | 110k | +60% | 86.4k | 20 |
 
 ### 5.3 Naval — Dock → Harbour → Port
 Builds ships (naval units) and **unlocks/extends raid range**. v1: Dock level ≥ 1
@@ -200,14 +200,16 @@ Damage reduction is capped at **45%** so walls never make an island unbeatable.
 
 Pre-battle kill is capped at **25%**.
 
-### 6.3 Castle/Keep — the Vault
+### 6.3 Keep line — Castle → Keep → Citadel (the Vault)
 `Function = vault`, `FunctAttribute = % of each resource protected from raids`.
+Late-unlock line (Castle requires a high TC).
 
 | Level | Name | Wood | Stone | Vault % protected | Vault flat floor | Time | TC req |
-|---|---|---|---|---|---|---|
+|---|---|---|---|---|---|---|---|
 | 1 | Castle | 2k | 3k | 15% | 1,000 | 7.2k | 15 |
 | 5 | Castle | 18k | 27k | 25% | 5,000 | 50k | 18 |
 | 10 | Keep | 60k | 90k | 40% | 20,000 | 86.4k | 25 |
+| 15 | Citadel | 160k | 240k | 55% | 50,000 | 86.4k | 30 |
 
 **Protected amount** per resource = `max(flatFloor, total · vault%)`, clamped to
 the current total. Loot can only ever touch the unprotected remainder.

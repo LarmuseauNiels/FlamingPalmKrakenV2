@@ -66,10 +66,18 @@ Five core resources (carried over from the brainstorm). Two "maybe" resources
 | **Currency** | 🪙 | Trade buildings + raiding | Trading, instant-finish, rush upgrades | Yes |
 | **Manpower / Population** | 👥 | Housing (food → pop) | Garrison, raiders, manning buildings | **No** (population isn't stolen; it can be *killed* in combat) |
 
-**Deferred:** `Research` (unlock ships/raider types), `Faith` (temple line). The
-schema reserves room for these without requiring them at launch.
+### 3.1 Deferred resources (later phases)
+Two "maybe" resources from the brainstorm are intentionally **out of v1** but the
+schema leaves room for them (add columns to `i_Island` + new `produce`/`boost`
+building rows — no structural change):
+- **Research** — accumulated at the **Knowledge** line; spent to unlock new
+  ship/raider unit types and special abilities. Turns Knowledge from a pure
+  build-time discount into a tech tree.
+- **Faith** — produced by a deferred **Temple** line; candidate uses include a
+  defensive blessing (temporary shield) or a production buff. Kept vague until a
+  phase actually needs it.
 
-### Production model
+### 3.2 Production model
 - Each production building has a `ratePerHour` at its current level.
 - Resources are **accrued lazily**: on any read/write we compute
   `gained = ratePerHour * hoursSince(lastTick)`, clamp to storage capacity, then
@@ -98,35 +106,67 @@ level of every other building (`TClevel` requirement, carried from the original
 
 ### 4.2 Building catalogue
 
-| Category | Function | Tier 1 | Tier 2 | Tier 3 |
-|---|---|---|---|---|
-| **Housing** | Converts Food → Population capacity | Tents | Houses | Villas |
-| **Food** | Food production | Farm | Farm Estate | *(TBD)* |
-| **Wood** | Wood production | Woodcutter | Logging Camp | *(TBD)* |
-| **Stone** | Stone production | Mine | Quarry | *(TBD)* |
-| **Smithing** | Boosts army attack / unlocks units | Smelter | Blacksmith | *(TBD)* |
-| **Army** | Trains & houses land units | Army Camp | Barracks | Army Base |
-| **Walls** | Defensive HP / damage reduction | Palisade Walls | Stone Walls | Reinforced Walls |
-| **Towers** | Auto-damage to attackers | Watch Tower | Guard Tower | Bombard Tower |
-| **Naval** | Builds ships; enables sea raids/range | Dock | Harbour | Port |
-| **Knowledge** | Speeds builds / unlocks (Research later) | Academy | University | *(TBD)* |
-| **Trade** | Generates Currency; resource exchange | Trader | Marketplace | *(TBD)* |
-| **Defense keep** | High-HP last-stand building, loot vault | Castle | Keep | *(TBD)* |
-| **Warehouse** | Increases storage capacity (idle window) | Warehouse | *(TBD)* | *(TBD)* |
+The catalogue is complete below: each line has three named forms (Tier 1 / 2 / 3)
+swapping in across the level bands. `Function` is the data hook in
+`i_BuildingLevel.Function`; `Effect` is what `FunctAttribute` scales. The
+brainstorm only named two forms for several lines (and just one for the
+Warehouse) — the **bold-italic** names are this design's additions to give every
+line a full three-tier progression. Per-level numbers live in
+[`ISLANDER_BALANCE.md`](./ISLANDER_BALANCE.md).
 
-> **Vault note (from brainstorm):** the Castle/Keep line doubles as a **vault**
-> that protects a limited amount of resources from being raided (see §6.4).
+| Category | Function | Effect (what scales) | Tier 1 | Tier 2 | Tier 3 |
+|---|---|---|---|---|---|
+| **Town Center** | `gate` | Caps all other buildings' level; +base storage | Campfire | Town Centre | Palace |
+| **Housing** | `store` | Population capacity (Food → pop) | Tents | Houses | Villas |
+| **Food** | `produce` | Food / hour | Farm | Farm Estate | ***Plantation*** |
+| **Wood** | `produce` | Wood / hour | Woodcutter | Logging Camp | ***Sawmill*** |
+| **Stone** | `produce` | Stone / hour | Mine | Quarry | ***Stoneworks*** |
+| **Trade** | `trade` | Currency / hour + exchange volume | Trader | Marketplace | ***Grand Bazaar*** |
+| **Warehouse** | `store` | Storage cap for all resources (idle window) | Warehouse | ***Storehouse*** | ***Grand Depot*** |
+| **Smithing** | `boost` | +% army Attack & HP; unlocks units | Smelter | Blacksmith | ***Foundry*** |
+| **Army** | `train` | Land-unit cap; training | Army Camp | Barracks | Army Base |
+| **Naval** | `train` | Ship cap; enables/extends raids; cooldown cut | Dock | Harbour | Port |
+| **Knowledge** | `boost` | −% build time; (Research unlocks later) | Academy | University | ***Grand Library*** |
+| **Walls** | `defend` | Wall HP + incoming damage reduction | Palisade Walls | Stone Walls | Reinforced Walls |
+| **Towers** | `defend` | Pre-battle % of attackers killed | Watch Tower | Guard Tower | Bombard Tower |
+| **Keep** | `vault` | % + flat resources protected from raids | Castle | Keep | ***Citadel*** |
+
+Notes on specific lines:
+- **Town Center** is the master gate (full detail in §4.1). No building may exceed
+  the TC's level.
+- **Trade** answers the brainstorm's open *"how is Currency generated?"* —
+  Currency is produced (slowly) here and is the main raiding reward. The
+  Marketplace+ tiers also enable a capped **resource exchange** (§4.5).
+- **Knowledge** reduces build times globally; it is also the future home of the
+  deferred **Research** resource (unlocking ship/raider types) — see §3.1.
+- **Keep** line is a **late-unlock** defensive line (Castle first appears at a
+  high TC, per balance) and doubles as the **vault** (§6.4). The brainstorm named
+  only Castle → Keep; *Citadel* is added as the Tier-3 form.
 
 ### 4.3 Upgrade mechanics
 - Each `(building, level)` defines: resource costs, build **Time**, the required
-  **TC level**, a `Function` hook (e.g. `produce`, `store`, `defend`, `train`)
-  and a `FunctAttribute` (the magnitude — rate, cap, HP, etc.). This mirrors the
+  **TC level**, a `Function` hook (`gate`, `produce`, `store`, `trade`, `boost`,
+  `train`, `defend`, `vault` — see the §4.2 catalogue) and a `FunctAttribute`
+  (the magnitude — rate, cap, HP, %, etc.). This mirrors the
   original `i_BuildingLevel` columns and keeps building behaviour **data-driven**
   rather than hard-coded.
 - Only **one upgrade in progress at a time** in v1 (the `upgrading` flag from the
   original `i_Building_Island`). The Knowledge line can reduce build times. A
   second build queue slot is a candidate upgrade later.
 - Players may **rush** a build with Currency (instant finish).
+
+### 4.4 Deferred buildings (later phases)
+These appear in the brainstorm with a `?` and are **not** part of v1, but the
+data-driven schema accommodates them with no structural change:
+- **Temple line** → produces the deferred **Faith** resource.
+- **Research building** → folded into the **Knowledge** line above (Academy/
+  University/Grand Library) when Research is enabled.
+
+### 4.5 Resource exchange (Trade line)
+Once a Marketplace (Trade Tier 2) is built, players may convert one resource into
+another at an unfavourable ratio, with a per-day volume cap that scales with the
+building level. This is a pressure valve for lopsided stockpiles — never a
+free-money pump. Exact ratio and cap live in the balance doc (§7 there).
 
 ---
 
@@ -145,10 +185,22 @@ level of every other building (`TClevel` requirement, carried from the original
   into the pool over time (re-recruitable), but the killed units themselves are
   gone.
 
-Launch unit set (small, expandable via data):
-- **Land:** Raider (cheap, low loot), Soldier (defender), Champion (TC-gated elite).
-- **Naval:** Longboat (enables raiding members flagged as "across the water" /
-  extends range), later tiers via Research.
+### Launch roster
+Small and data-driven; new units (and the Research gate) come later. Stats live
+in [`ISLANDER_BALANCE.md`](./ISLANDER_BALANCE.md) §8.
+
+| Unit | Type | Role | Trained at | Notes |
+|---|---|---|---|---|
+| **Raider** | Land | Glass-cannon looter — high loot, low HP | Army Camp | The offensive workhorse; dies fast on defense. |
+| **Soldier** | Land | Cheap HP wall — high HP, low loot | Army Camp | The backbone of a garrison. |
+| **Champion** | Land | Elite all-rounder | Barracks (Army Tier 2) | TC/Barracks-gated; strong attack *and* HP. |
+| **Longboat** | Naval | Loot hauler / raid enabler | Dock | Required to reach a target; carries the bulk of loot home. |
+| **War Galley** | Naval | Heavy naval power + huge loot | Harbour (Naval Tier 2) | Late-game loot capacity and ship combat. |
+
+Design intent: without ships even a *won* raid carries little loot back, so the
+Naval line gates meaningful raiding; Raiders maximise theft but bleed on defense,
+pushing players to keep a separate Soldier garrison. Future unit types
+(e.g. Research-gated specialists) slot in as new `i_Unit` rows.
 
 ---
 
@@ -321,7 +373,7 @@ model i_BuildingLevel {
   imagename      String  @default("") @db.VarChar(255)
   imagePosX      Int     @default(0) @db.MediumInt
   imagePosY      Int     @default(0) @db.MediumInt
-  Function       String? @default("none") @db.VarChar(25)  // produce|store|defend|train|trade
+  Function       String? @default("none") @db.VarChar(25)  // gate|produce|store|trade|boost|train|defend|vault
   FunctAttribute Int?    @default(0)                        // rate|cap|HP|...
   i_Building     i_Building @relation(fields: [BuildingID], references: [ID], onDelete: Cascade)
   Built          i_Building_Island[]
