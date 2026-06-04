@@ -1,5 +1,7 @@
 import { GoogleGenerativeAI, Tool, GenerativeModel, ChatSession, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
+import moment from "moment-timezone";
 import { createLogger } from "../utils/logger";
 
 const log = createLogger("GoogleAI");
@@ -7,6 +9,7 @@ const log = createLogger("GoogleAI");
 export class GoogleAI {
   private genAI: GoogleGenerativeAI;
   private openai: OpenAI;
+  private anthropic: Anthropic;
   private proModel: GenerativeModel;
   private openAiMessages: any[] = [];
   private openAiTools: any[] = [];
@@ -15,6 +18,7 @@ export class GoogleAI {
   constructor() {
     this.genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_KEY || "");
     this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "" });
+    this.anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || "" });
 
     const tools: Tool[] = [
       {
@@ -105,7 +109,8 @@ export class GoogleAI {
   }
 
   /**
-   * Simple parse method for dates without full assistant overhead
+   * Simple parse method for dates without full assistant overhead.
+   * Tries Claude Haiku first (with add_time_to_now tool), then OpenAI, then Gemini.
    */
   public async parseDate(input: string, timezone: string): Promise<string | null> {
     const now = new Date();
@@ -122,6 +127,7 @@ export class GoogleAI {
       `- Time-only input (e.g. "18:30", "6pm") → use today's date\n` +
       `- Date without year → use the current year; if that date has already passed, use next year\n` +
       `- Relative expressions ("tomorrow", "next Monday", "in 2 hours") → resolve against the current date/time\n` +
+      `- For relative durations like "in 2 hours" or "in 30 minutes", use the add_time_to_now tool\n` +
       `- When a date/time is ambiguous, prefer the nearest future occurrence`;
 
     const userPrompt =
@@ -132,15 +138,24 @@ export class GoogleAI {
       `  "tomorrow 9am"    → 2026-05-26T09:00:00+02:00\n` +
       `  "15/03 18:30"     → 2026-03-15T18:30:00+01:00\n` +
       `  "next Friday 3pm" → 2026-05-29T15:00:00+02:00\n` +
+      `  "in 2 hours"      → [use add_time_to_now tool with hours=2]\n` +
       `  "dog"             → INVALID\n\n` +
       `Parse this input: "${input}"`;
 
-    const maxRetries = 2; // For each model
+    // Primary: Claude Haiku with tool support
+    try {
+      const result = await this.parseDateWithClaude(systemPrompt, userPrompt, timezone);
+      if (result) return result;
+    } catch (error: any) {
+      log.warn(`Claude Haiku date parsing failed, trying OpenAI fallback: ${error.message}`);
+    }
 
+    const maxRetries = 2;
+
+    // Fallback: OpenAI
     let retries = 0;
     while (retries <= maxRetries) {
       try {
-        // Primary attempt: OpenAI
         const result = await this.openai.chat.completions.create({
           model: "gpt-4o-mini",
           messages: [
@@ -171,10 +186,10 @@ export class GoogleAI {
 
         log.warn(`OpenAI date parsing failed, trying Gemini fallback: ${error.message}`);
 
+        // Final fallback: Gemini
         let geminiRetries = 0;
         while (geminiRetries <= maxRetries) {
           try {
-            // Fallback: Gemini
             const result = await this.proModel.generateContent(`${systemPrompt}\n\n${userPrompt}`);
             log.debug("Gemini date parsing result:", result);
             const text = result.response.text().trim();
@@ -196,13 +211,82 @@ export class GoogleAI {
               continue;
             }
 
-            log.error("Error in AI date parsing (OpenAI and Gemini failed):", fallbackError);
+            log.error("Error in AI date parsing (all models failed):", fallbackError);
             return null;
           }
         }
         return null;
       }
     }
+    return null;
+  }
+
+  /**
+   * Uses Claude Haiku with an add_time_to_now tool to parse natural-language date/time strings.
+   * The tool gives the model arithmetic capability for relative expressions like "in 2 hours".
+   */
+  private async parseDateWithClaude(systemPrompt: string, userPrompt: string, timezone: string): Promise<string | null> {
+    const addTimeToNowTool: Anthropic.Tool = {
+      name: "add_time_to_now",
+      description:
+        "Adds a duration to the current time and returns the resulting ISO 8601 datetime string in the user's timezone. " +
+        "Use this for relative expressions like 'in 2 hours', 'in 30 minutes', 'in 3 days', 'in 2 weeks'.",
+      input_schema: {
+        type: "object",
+        properties: {
+          weeks: { type: "number", description: "Number of weeks to add (may be fractional or negative)" },
+          days: { type: "number", description: "Number of days to add (may be fractional or negative)" },
+          hours: { type: "number", description: "Number of hours to add (may be fractional or negative)" },
+          minutes: { type: "number", description: "Number of minutes to add (may be fractional or negative)" },
+        },
+        required: [],
+      },
+    };
+
+    const messages: Anthropic.MessageParam[] = [{ role: "user", content: userPrompt }];
+
+    for (let i = 0; i < 5; i++) {
+      const response = await this.anthropic.messages.create({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 100,
+        system: systemPrompt,
+        tools: [addTimeToNowTool],
+        messages,
+      });
+
+      if (response.stop_reason === "tool_use") {
+        const toolUse = response.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
+        if (toolUse && toolUse.name === "add_time_to_now") {
+          const inp = toolUse.input as { weeks?: number; days?: number; hours?: number; minutes?: number };
+          const resultDatetime = moment()
+            .tz(timezone)
+            .add(inp.weeks || 0, "weeks")
+            .add(inp.days || 0, "days")
+            .add(inp.hours || 0, "hours")
+            .add(inp.minutes || 0, "minutes")
+            .format("YYYY-MM-DDTHH:mm:ssZ");
+
+          log.debug("add_time_to_now tool result:", resultDatetime);
+          messages.push({ role: "assistant", content: response.content });
+          messages.push({
+            role: "user",
+            content: [{ type: "tool_result", tool_use_id: toolUse.id, content: resultDatetime }],
+          });
+          continue;
+        }
+      }
+
+      // end_turn — extract the text answer
+      const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === "text");
+      if (!textBlock) return null;
+      const text = textBlock.text.trim();
+      log.debug("Claude Haiku date parsing result:", text);
+      if (text.includes("INVALID")) return null;
+
+      const match = text.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})/);
+      return match ? match[0] : null;
+    }
+
     return null;
   }
 

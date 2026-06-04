@@ -136,6 +136,7 @@ const raids = await global.client.prisma.raids.findMany(...);
 | `CALLBACK_URL` | OAuth redirect URL |
 | `JWT_SECRET` | JWT signing secret |
 | `OPENAI_API_KEY` | OpenAI API key |
+| `ANTHROPIC_API_KEY` | Anthropic API key (Claude Haiku for timestamp parsing) |
 | `BUGSNAG_API_KEY` | Bugsnag error tracking key |
 | `LOG_LEVEL` | Logger level: DEBUG, INFO, WARN, ERROR |
 | `DISABLE` | Set to skip startup (optional) |
