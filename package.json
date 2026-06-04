@@ -4,8 +4,8 @@
   "description": "Discord bot for flamingpalm",
   "main": "index.ts",
   "scripts": {
-    "start": "npx prisma migrate deploy && node ./bin/index.js",
-    "migrate": "npx prisma migrate deploy",
+    "start": "node prisma/migrate-deploy.js && node ./bin/index.js",
+    "migrate": "node prisma/migrate-deploy.js",
     "build": "npx tsc",
     "deploy": "npx tsc && node bin/deploy-commands.js"
   },

@@ -156,12 +156,14 @@ npm run migrate  # Apply pending DB migrations only (prisma migrate deploy)
 npm run deploy   # Build + register slash commands with Discord
 ```
 
-> **Note:** `npm start` runs `prisma migrate deploy` before launching the bot, so
-> pending migrations are applied on every (re)start — including CapRover deploys,
-> whose `CMD` is `npm start`. `migrate deploy` is idempotent and needs no shadow
-> DB. If the DB predates Prisma's migration history, baseline it once with
-> `npx prisma migrate resolve --applied <migration_name>` so `deploy` doesn't try
-> to re-run already-applied migrations.
+> **Note:** `npm start` runs `prisma/migrate-deploy.js` before launching the bot,
+> so pending migrations are applied on every (re)start — including CapRover
+> deploys, whose `CMD` is `npm start`. The `discordstats` DB predates Prisma's
+> migration history (introspected, no `_prisma_migrations` table, legacy
+> `Timezone` column already present), so the script first **baselines** the
+> legacy migration(s) listed in `LEGACY_MIGRATIONS` as already-applied, then runs
+> `migrate deploy`. Both steps are idempotent. When you add a migration that is
+> already reflected in the live schema, append its name to `LEGACY_MIGRATIONS`.
 
 > **Note:** There is no test suite — tests were removed in a previous refactor. `tsconfig.test.json` is a leftover artifact.
 
