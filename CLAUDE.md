@@ -62,8 +62,14 @@ FlamingPalmKrakenV2/
 ├── interfaces/
 │   ├── IHandler.ts           # Interface for all interaction handlers
 │   └── IEvent.ts             # Interface for all event handlers
-├── islander/
-│   └── ChannelUpdates.ts     # Island game mechanics module
+├── islander/                 # "Islander" island-building game (see docs/ISLANDER_DESIGN.md)
+│   ├── IslanderModule.ts     # Core: island lifecycle + lazy resource accrual
+│   ├── IslanderSeed.ts       # Seeds i_Building/i_BuildingLevel/i_Unit from balance data
+│   ├── IslanderView.ts       # Builds the /island message payload (embed+image+buttons)
+│   ├── IslanderImage.ts      # @napi-rs/canvas island renderer
+│   ├── IslanderEmbeds.ts     # Island status embeds
+│   ├── ChannelUpdates.ts     # Generic update-channel helper (profile/raid messages)
+│   └── data/balance.ts       # Game balance constants (mirrors docs/ISLANDER_BALANCE.md)
 ├── utils/
 │   └── logger.ts             # Color-coded logger with Bugsnag integration
 ├── assets/                   # Images and badge files for profile generation

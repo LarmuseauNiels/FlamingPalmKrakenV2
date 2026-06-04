@@ -1,0 +1,133 @@
+-- CreateTable
+CREATE TABLE `i_Island` (
+    `ID` VARCHAR(25) NOT NULL,
+    `Wood` INTEGER UNSIGNED NOT NULL DEFAULT 0,
+    `Stone` INTEGER UNSIGNED NOT NULL DEFAULT 0,
+    `Currency` INTEGER UNSIGNED NOT NULL DEFAULT 0,
+    `Food` INTEGER UNSIGNED NOT NULL DEFAULT 0,
+    `Manpower` INTEGER UNSIGNED NOT NULL DEFAULT 0,
+    `Population` INTEGER UNSIGNED NOT NULL DEFAULT 0,
+    `LastTick` DATETIME(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+    `ShieldUntil` DATETIME(0) NULL,
+    `RaidCooldown` DATETIME(0) NULL,
+    `CreatedAt` DATETIME(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+
+    PRIMARY KEY (`ID`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `i_Building` (
+    `ID` INTEGER NOT NULL AUTO_INCREMENT,
+    `Name` VARCHAR(255) NULL,
+
+    PRIMARY KEY (`ID`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `i_BuildingLevel` (
+    `BuildingID` INTEGER NOT NULL,
+    `Level` TINYINT UNSIGNED NOT NULL,
+    `Name` VARCHAR(255) NOT NULL,
+    `Wood` MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
+    `Food` MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
+    `Stone` MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
+    `Currency` MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
+    `Time` MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
+    `TClevel` TINYINT UNSIGNED NULL DEFAULT 0,
+    `imagename` VARCHAR(255) NOT NULL DEFAULT '',
+    `imagePosX` MEDIUMINT NOT NULL DEFAULT 0,
+    `imagePosY` MEDIUMINT NOT NULL DEFAULT 0,
+    `Function` VARCHAR(25) NULL DEFAULT 'none',
+    `FunctAttribute` INTEGER NULL DEFAULT 0,
+
+    INDEX `i_BuildingLevel_BuildingID_index`(`BuildingID`),
+    PRIMARY KEY (`BuildingID`, `Level`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `i_Building_Island` (
+    `BuildingID` INTEGER NOT NULL,
+    `IslandID` VARCHAR(25) NOT NULL,
+    `level` TINYINT UNSIGNED NOT NULL DEFAULT 1,
+    `upgrading` INTEGER NULL,
+    `upgradeReady` DATETIME(0) NULL,
+    `wallHP` INTEGER NULL DEFAULT 0,
+
+    INDEX `IslandID`(`IslandID`),
+    INDEX `i_Building_Island_level_BuildingID_index`(`level`, `BuildingID`),
+    PRIMARY KEY (`BuildingID`, `IslandID`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `i_Unit` (
+    `ID` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+    `Name` VARCHAR(255) NOT NULL,
+    `Type` TINYINT UNSIGNED NOT NULL,
+    `Wood` MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
+    `Food` MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
+    `Currency` MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
+    `Pop` SMALLINT UNSIGNED NOT NULL DEFAULT 1,
+    `Attack` MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
+    `HP` MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
+    `Loot` MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
+    `TrainTime` MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
+
+    PRIMARY KEY (`ID`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `i_Unit_Island` (
+    `IslandID` VARCHAR(25) NOT NULL,
+    `UnitID` INTEGER UNSIGNED NOT NULL,
+    `count` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+
+    INDEX `UnitID`(`UnitID`),
+    PRIMARY KEY (`IslandID`, `UnitID`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `i_Raid` (
+    `ID` INTEGER NOT NULL AUTO_INCREMENT,
+    `AttackerID` VARCHAR(25) NOT NULL,
+    `DefenderID` VARCHAR(25) NOT NULL,
+    `TimeStamp` DATETIME(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+    `AttackerWon` BOOLEAN NOT NULL,
+    `LootWood` INTEGER UNSIGNED NOT NULL DEFAULT 0,
+    `LootStone` INTEGER UNSIGNED NOT NULL DEFAULT 0,
+    `LootFood` INTEGER UNSIGNED NOT NULL DEFAULT 0,
+    `LootCurrency` INTEGER UNSIGNED NOT NULL DEFAULT 0,
+    `Report` TEXT NOT NULL,
+
+    INDEX `i_Raid_AttackerID_index`(`AttackerID`),
+    INDEX `i_Raid_DefenderID_index`(`DefenderID`),
+    INDEX `i_Raid_TimeStamp_index`(`TimeStamp`),
+    PRIMARY KEY (`ID`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `i_Island` ADD CONSTRAINT `i_Island_ibfk_1` FOREIGN KEY (`ID`) REFERENCES `Members`(`ID`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `i_BuildingLevel` ADD CONSTRAINT `i_BuildingLevel_ibfk_1` FOREIGN KEY (`BuildingID`) REFERENCES `i_Building`(`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `i_Building_Island` ADD CONSTRAINT `i_Building_Island_level_BuildingID_fk` FOREIGN KEY (`level`, `BuildingID`) REFERENCES `i_BuildingLevel`(`Level`, `BuildingID`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `i_Building_Island` ADD CONSTRAINT `i_Building_Island_ibfk_2` FOREIGN KEY (`IslandID`) REFERENCES `i_Island`(`ID`) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `i_Building_Island` ADD CONSTRAINT `i_Building_Island_ibfk_3` FOREIGN KEY (`BuildingID`) REFERENCES `i_Building`(`ID`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `i_Unit_Island` ADD CONSTRAINT `i_Unit_Island_ibfk_1` FOREIGN KEY (`UnitID`) REFERENCES `i_Unit`(`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `i_Unit_Island` ADD CONSTRAINT `i_Unit_Island_ibfk_2` FOREIGN KEY (`IslandID`) REFERENCES `i_Island`(`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `i_Raid` ADD CONSTRAINT `i_Raid_ibfk_1` FOREIGN KEY (`AttackerID`) REFERENCES `i_Island`(`ID`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `i_Raid` ADD CONSTRAINT `i_Raid_ibfk_2` FOREIGN KEY (`DefenderID`) REFERENCES `i_Island`(`ID`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+

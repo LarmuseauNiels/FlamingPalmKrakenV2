@@ -431,6 +431,13 @@ model i_Raid {
 Add `i_Island i_Island?` back to the `Members` model (the exact relation removed
 in `88417ca`). Run `npx prisma generate` + a migration after applying.
 
+> **Implemented (Phase 0):** the live schema is in `prisma/schema.prisma` with
+> migration `prisma/migrations/20260604000000_add_islander_game`. It extends the
+> sketch above with a few practical columns: `i_Island.Population` / `CreatedAt`,
+> `i_BuildingLevel.Currency` (Currency build costs), `i_Building_Island.wallHP`,
+> and per-unit cost/stat columns on `i_Unit` (`Wood`/`Food`/`Currency`/`Pop`/
+> `Attack`/`HP`/`Loot`/`TrainTime`).
+
 ### 9.3 Caching
 - Building/Unit/Level definitions are static-ish → load once into an in-memory
   cache on `clientReady`, invalidated by an admin `/island-reload` command.
@@ -470,7 +477,7 @@ Each is additive and feature-flagged; none are required for v1.
 
 | Phase | Scope | Outcome |
 |---|---|---|
-| **0 — Foundations** | Schema + migration, building/unit seed data, `IslanderModule` with lazy resource ticks, `/island` (image + embed). | Players have an island and watch resources grow. |
+| **0 — Foundations** ✅ | Schema + migration, building/unit seed data (`islander/data/balance.ts` + `IslanderSeed`), `IslanderModule` with lazy resource ticks, `/island` (image + embed + Refresh button). | **Implemented.** Players have an island and watch resources grow. |
 | **1 — Build loop** | `/build`, `/upgrade`, Warehouse caps, TC gating, build timers, Currency rush, action buttons. | Full single-player progression. |
 | **2 — Army** | `/train`, unit data, Smithing/Naval effects, population/upkeep tension. | Players field an army. |
 | **3 — PvP** | `CombatModule`, `/raid`, `/scout`, `/repair`, shields, cooldowns, loot caps, vault, raid log, battle report image. | The competitive core loop is live. |
