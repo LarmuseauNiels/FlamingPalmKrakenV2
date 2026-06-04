@@ -151,9 +151,17 @@ const raids = await global.client.prisma.raids.findMany(...);
 ### Scripts
 ```bash
 npm run build    # Compile TypeScript → ./bin/
-npm start        # Run compiled bot (./bin/index.js)
+npm start        # Apply pending DB migrations (prisma migrate deploy) + run the bot
+npm run migrate  # Apply pending DB migrations only (prisma migrate deploy)
 npm run deploy   # Build + register slash commands with Discord
 ```
+
+> **Note:** `npm start` runs `prisma migrate deploy` before launching the bot, so
+> pending migrations are applied on every (re)start — including CapRover deploys,
+> whose `CMD` is `npm start`. `migrate deploy` is idempotent and needs no shadow
+> DB. If the DB predates Prisma's migration history, baseline it once with
+> `npx prisma migrate resolve --applied <migration_name>` so `deploy` doesn't try
+> to re-run already-applied migrations.
 
 > **Note:** There is no test suite — tests were removed in a previous refactor. `tsconfig.test.json` is a leftover artifact.
 
@@ -168,10 +176,13 @@ Always run `npx prisma generate` after editing `prisma/schema.prisma`.
 
 ### Deployment
 The project deploys via **CapRover** using the `captain-definition` file. The Docker image:
-1. Uses `node:21-alpine`
+1. Uses `node:24-alpine`
 2. Installs Manrope fonts
-3. Compiles TypeScript
-4. Exposes port 80 for the Express web API
+3. Runs `npx prisma generate`
+4. Compiles TypeScript
+5. Exposes port 80 for the Express web API
+6. Starts with `npm start`, which runs `prisma migrate deploy` (applying any
+   pending DB migrations against `DATABASE_URL`) before launching the bot
 
 ---
 
