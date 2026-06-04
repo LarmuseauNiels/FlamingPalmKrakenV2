@@ -11,6 +11,7 @@
   "author": "Niels Larmuseau",
   "license": "ISC",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
     "@bugsnag/js": "^7.20.2",
     "@bugsnag/plugin-express": "^7.19.0",
     "@google/generative-ai": "^0.24.1",
