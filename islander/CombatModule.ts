@@ -256,6 +256,9 @@ export abstract class CombatModule {
 
     log.info(`Raid ${attackerId} -> ${defenderId}: ${win ? "WIN" : "LOSS"}`);
 
+    // Community-economy milestone hook (no-op unless ISLANDER_AWARD_POINTS).
+    if (win) IslanderModule.checkRaidMilestones(attackerId).catch(() => {});
+
     // Notify the defender (respects their NotifyLevel opt-in).
     const lootTotal = loot.Wood + loot.Stone + loot.Food + loot.Currency;
     IslanderModule.notify(defenderId, {

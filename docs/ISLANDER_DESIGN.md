@@ -500,18 +500,26 @@ in `88417ca`). Run `npx prisma generate` + a migration after applying.
 
 ---
 
-## 10. Future Points / Economy Integration (designed, off at launch)
+## 10. Points / Economy Integration (Phase 5 — implemented, off by default)
 
-Hooks to add later **without schema churn**:
-1. **Achievement milestones:** award existing Achievements/Points (one-way) for
-   reaching TC tiers, winning N raids, etc. Uses `AchievementsModule`.
-2. **Points → Currency exchange:** a rate-limited, capped conversion so the
-   community economy can feed the game without unbalancing it. Gated behind a
-   config flag.
-3. **Shop crossover:** cosmetic island skins purchasable with Points via the
-   existing Reward shop.
+All integrations are **feature-flagged via env vars and disabled by default**, so
+the live Points/shop economy is untouched until an admin opts in. No schema churn
+— they reuse the existing `Points`/`PointHistory` models.
 
-Each is additive and feature-flagged; none are required for v1.
+1. **Milestone Point awards** ✅ (`ISLANDER_AWARD_POINTS=true`) — one-way community
+   Points for Islander achievements (TC 5/10/20, win 1/10/50 raids). Idempotent
+   via a `PointHistory` marker (`ISL:milestone:<key>`); amounts are modest to avoid
+   inflating the economy. TC milestones are checked when the owner views `/island`;
+   raid milestones after a winning raid.
+2. **Points → Currency exchange** ✅ (`ISLANDER_POINTS_EXCHANGE=true`) — an
+   **Exchange 🔁** button (own island) converts community Points into island
+   Currency at `POINTS_PER_CURRENCY` (10:1), with a per-day cap
+   (`EXCHANGE_DAILY_POINT_CAP`, 100 pts) recorded via `PointHistory`
+   (`ISL:exchange`). Spends Points (a sink), clamped to island storage.
+3. **Shop crossover** *(deferred)* — cosmetic island skins via the Reward shop.
+   Parked until Phase 6 lands real art (skins need sprites to swap).
+
+Tuning lives in `INTEGRATIONS`/`MILESTONES` in `islander/data/balance.ts`.
 
 ---
 
@@ -537,7 +545,7 @@ Each is additive and feature-flagged; none are required for v1.
 | **2 — Army** ✅ | Train button → unit select → quantity modal; unit unlock gates (Army/Naval level), land/naval caps, free-population cost, Smithing attack/HP bonus, Naval ship cap, Food-upkeep tension; army summary on the island embed. (Instant training; timed queue deferred.) | **Implemented.** Players field an army. |
 | **3 — PvP** ✅ | `CombatModule`; Raid/Scout buttons on others' islands + Repair button on your own; tower pre-kill, wall HP + damage, Castle/Keep vault, loot caps, new-player/post-raid shields, attacker cooldown (Naval-reduced), repeat-target + matchmaking-band guards, `i_Raid` log, battle-report embed. (Battle *image* deferred to Phase 6.) | **Implemented.** The competitive core loop is live. |
 | **4 — Polish & social** ✅ | Leaderboard button (power-score ranking), How-to-play tutorial button, raid + best-effort build-complete notifications (opt-in via `NotifyLevel`). Balance remains a data-only tuning activity in `ISLANDER_BALANCE.md`. | **Implemented.** Tuned, discoverable, retention features. |
-| **5 — Integrations (optional)** | Points/achievement hooks (§10), cosmetics. | Ties Islander into the wider community economy. |
+| **5 — Integrations (optional)** ✅ | Milestone Point awards + Points→Currency exchange (§10), both **feature-flagged off by default**. Shop/skins deferred to post-Phase-6. | **Implemented (opt-in).** Can tie Islander into the community economy when enabled. |
 | **6 — Visual art pass** | Replace the procedural placeholder with composited art from **Kenney.nl** CC0 kits — Hexagon Kit for the island/terrain/building tiles, Pirate & Nature kits for ships/decor (§7.4). Vendor assets under `assets/islander/`, add an `imagename`(+tier)→sprite resolver with marker fallback, a hex-grid layout, and an image cache; reuse the compositor for battle reports. | A real, attractive island image (and battle scenes) instead of labelled boxes. |
 
 ---

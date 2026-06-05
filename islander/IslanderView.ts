@@ -81,6 +81,15 @@ export abstract class IslanderView {
           .setStyle(ButtonStyle.Secondary)
           .setDisabled(!wallsDamaged)
       );
+      // Optional Points → Currency exchange (Phase 5, off unless enabled).
+      if (IslanderModule.pointsExchangeEnabled) {
+        row2.addComponents(
+          new ButtonBuilder()
+            .setCustomId(`islander_exchange_${targetId}`)
+            .setLabel("Exchange 🔁")
+            .setStyle(ButtonStyle.Secondary)
+        );
+      }
     } else {
       // Someone else's island: scout or raid it.
       row2.addComponents(

@@ -134,6 +134,30 @@ and **within ±5 TC** of each other.
 
 ---
 
+## Phase 5 — Economy integrations (opt-in, off by default)
+
+> These do nothing unless the env flags are set. First verify the **default-off**
+> behaviour, then enable and re-test.
+
+- [ ] **Default off:** with neither flag set, no milestone DMs/points are awarded,
+      and there is **no Exchange button** on your island.
+- [ ] Set `ISLANDER_AWARD_POINTS=true`, restart. View `/island` after reaching
+      **TC 5/10/20** → community Points awarded once each (check `/points` and the
+      `PointHistory` rows with `ISL:milestone:` comments). Re-viewing does **not**
+      re-award (idempotent).
+- [ ] Win raids and confirm **raid milestones** (1/10/50 wins) award once each.
+- [ ] Milestone DM arrives only for members opted into `NotifyLevel` bit `2`.
+- [ ] Set `ISLANDER_POINTS_EXCHANGE=true`, restart. An **Exchange 🔁** button shows
+      on your own island.
+- [ ] Exchange flow: button → modal → converts Points → Currency at 10:1; deducts
+      Points (negative `PointHistory` row `ISL:exchange`), adds Currency (clamped to
+      storage cap — excess reported as lost).
+- [ ] **Daily cap:** can't convert more than 100 points/day total; over-cap →
+      refused with remaining allowance.
+- [ ] Exchange with insufficient points → refused, no change.
+
+---
+
 ## Edge cases & things to watch
 
 - [ ] **Refresh** button always re-renders current state (resources ticked).

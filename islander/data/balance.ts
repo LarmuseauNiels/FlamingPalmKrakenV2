@@ -261,3 +261,30 @@ export function vaultFloor(level: number): number {
 export function navalCooldownReduction(level: number): number {
   return Math.min(0.4, 0.02 * level);
 }
+
+// ── Phase 5: community-economy integrations (off by default) ─────────────────
+// Enabled per-flag via env vars; see docs/ISLANDER_DESIGN.md §10.
+
+export const INTEGRATIONS = {
+  POINTS_PER_CURRENCY: 10, // 1 community Point → this much island Currency
+  EXCHANGE_DAILY_POINT_CAP: 100, // max Points a player may convert per day
+};
+
+export interface Milestone {
+  key: string;
+  type: "tc" | "raidwins";
+  threshold: number;
+  points: number; // one-way community Points award
+  label: string;
+}
+
+// One-way Point rewards for Islander achievements. Modest by design so they
+// don't inflate the community economy.
+export const MILESTONES: Milestone[] = [
+  { key: "tc5", type: "tc", threshold: 5, points: 25, label: "Reached Town Center level 5" },
+  { key: "tc10", type: "tc", threshold: 10, points: 75, label: "Reached Town Center level 10" },
+  { key: "tc20", type: "tc", threshold: 20, points: 200, label: "Reached Town Center level 20" },
+  { key: "raid1", type: "raidwins", threshold: 1, points: 40, label: "Won your first raid" },
+  { key: "raid10", type: "raidwins", threshold: 10, points: 150, label: "Won 10 raids" },
+  { key: "raid50", type: "raidwins", threshold: 50, points: 500, label: "Won 50 raids" },
+];

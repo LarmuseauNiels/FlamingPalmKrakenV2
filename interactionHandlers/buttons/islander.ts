@@ -2,6 +2,9 @@ import {
   ButtonInteraction,
   ActionRowBuilder,
   StringSelectMenuBuilder,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
 } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
 import { IslanderView } from "../../islander/IslanderView";
@@ -62,6 +65,7 @@ export default class IslanderButton implements IHandler {
       if (action === "build") return this.openBuildSelect(interaction, ownerId);
       if (action === "upgrade") return this.openUpgradeSelect(interaction, ownerId);
       if (action === "train") return this.openTrainSelect(interaction, ownerId);
+      if (action === "exchange") return this.openExchangeModal(interaction, ownerId);
       if (action === "repair") {
         const res = await IslanderModule.repairWalls(ownerId);
         if (!res.ok) {
@@ -216,6 +220,27 @@ export default class IslanderButton implements IHandler {
       return;
     }
     await interaction.editReply({ embeds: [IslanderEmbeds.battleReport(res.report)] });
+  }
+
+  private async openExchangeModal(interaction: ButtonInteraction, ownerId: string) {
+    if (!IslanderModule.pointsExchangeEnabled) {
+      await interaction.reply({ content: "Points exchange is disabled.", ephemeral: true });
+      return;
+    }
+    const modal = new ModalBuilder()
+      .setCustomId(`islander_exchangeqty_${ownerId}`)
+      .setTitle("Exchange Points → Currency")
+      .addComponents(
+        new ActionRowBuilder<TextInputBuilder>().addComponents(
+          new TextInputBuilder()
+            .setCustomId("qty")
+            .setLabel("How many points to convert?")
+            .setStyle(TextInputStyle.Short)
+            .setPlaceholder("e.g. 50")
+            .setRequired(true)
+        )
+      );
+    await interaction.showModal(modal);
   }
 
   private async showLeaderboard(interaction: ButtonInteraction) {

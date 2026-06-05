@@ -9,6 +9,9 @@ import {
   BUILDING_LINES,
   UNITS,
   PVP,
+  INTEGRATIONS,
+  MILESTONES,
+  Milestone,
   lineByKey,
   levelStats,
   tcRequirement,
@@ -315,6 +318,7 @@ export abstract class IslanderModule {
     };
   }> {
     const island = await this.prepare(userId);
+    await this.checkTcMilestones(userId, island); // no-op unless integrations enabled
     return {
       island,
       cap: this.storageCap(island),
@@ -715,6 +719,117 @@ export abstract class IslanderModule {
       }))
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);
+  }
+
+  // ── Phase 5: community-economy integrations (feature-flagged, off by default) ─
+
+  /** Award community Points for Islander milestones? (env ISLANDER_AWARD_POINTS) */
+  static get pointsAwardEnabled(): boolean {
+    return process.env.ISLANDER_AWARD_POINTS === "true";
+  }
+
+  /** Allow converting community Points → island Currency? (env ISLANDER_POINTS_EXCHANGE) */
+  static get pointsExchangeEnabled(): boolean {
+    return process.env.ISLANDER_POINTS_EXCHANGE === "true";
+  }
+
+  /** Award a milestone's Points once (idempotent via a PointHistory marker). */
+  static async awardMilestone(userId: string, m: Milestone): Promise<boolean> {
+    const prisma = global.client.prisma;
+    const marker = `ISL:milestone:${m.key}`;
+    const already = await prisma.pointHistory.findFirst({
+      where: { userid: userId, comment: { startsWith: marker } },
+    });
+    if (already) return false;
+
+    await prisma.points.upsert({
+      where: { userid: userId },
+      update: { TotalPoints: { increment: m.points }, lastComment: m.label },
+      create: { userid: userId, TotalPoints: m.points, lastComment: m.label },
+    });
+    await prisma.pointHistory.create({
+      data: { userid: userId, points: m.points, comment: `${marker} ${m.label}` },
+    });
+    this.notify(userId, {
+      content: `🏝️ **Islander milestone:** ${m.label} — +${m.points} :palm_tree: points!`,
+    }).catch(() => {});
+    return true;
+  }
+
+  /** Check Town-Center milestones for an island (no-op unless enabled). */
+  static async checkTcMilestones(userId: string, island: IslandWithDetail): Promise<void> {
+    if (!this.pointsAwardEnabled) return;
+    const tc = this.townCenterLevel(island);
+    for (const m of MILESTONES) {
+      if (m.type === "tc" && tc >= m.threshold) {
+        await this.awardMilestone(userId, m).catch((e) =>
+          log.error("milestone award failed:", e)
+        );
+      }
+    }
+  }
+
+  /** Check raid-win milestones (called after a winning raid; no-op unless enabled). */
+  static async checkRaidMilestones(userId: string): Promise<void> {
+    if (!this.pointsAwardEnabled) return;
+    const wins = await global.client.prisma.i_Raid.count({
+      where: { AttackerID: userId, AttackerWon: true },
+    });
+    for (const m of MILESTONES) {
+      if (m.type === "raidwins" && wins >= m.threshold) {
+        await this.awardMilestone(userId, m).catch((e) =>
+          log.error("milestone award failed:", e)
+        );
+      }
+    }
+  }
+
+  /** Convert community Points into island Currency (rate-limited, capped). */
+  static async exchangePoints(userId: string, points: number) {
+    if (!this.pointsExchangeEnabled)
+      return this.fail("Points exchange is currently disabled.");
+    if (!Number.isFinite(points) || points < 1)
+      return this.fail("Enter a whole number of points (1 or more).");
+    points = Math.floor(points);
+
+    const prisma = global.client.prisma;
+    const pts = await prisma.points.findUnique({ where: { userid: userId } });
+    const balance = pts?.TotalPoints ?? 0;
+    if (balance < points)
+      return this.fail(`You only have ${balance} :palm_tree: points.`);
+
+    // Daily cap across all conversions today.
+    const since = new Date();
+    since.setHours(0, 0, 0, 0);
+    const agg = await prisma.pointHistory.aggregate({
+      _sum: { points: true },
+      where: { userid: userId, TimeStamp: { gte: since }, comment: { startsWith: "ISL:exchange" } },
+    });
+    const spentToday = -(agg._sum.points ?? 0);
+    const remaining = INTEGRATIONS.EXCHANGE_DAILY_POINT_CAP - spentToday;
+    if (points > remaining)
+      return this.fail(`Daily exchange cap is ${INTEGRATIONS.EXCHANGE_DAILY_POINT_CAP} points — you can convert ${Math.max(0, remaining)} more today.`);
+
+    const island = await this.prepare(userId);
+    const gain = points * INTEGRATIONS.POINTS_PER_CURRENCY;
+    const cap = this.storageCap(island);
+    const newCurrency = Math.min(cap, island.Currency + gain);
+    const actuallyGained = newCurrency - island.Currency;
+
+    await prisma.points.update({
+      where: { userid: userId },
+      data: { TotalPoints: { decrement: points }, lastComment: "Islander currency exchange" },
+    });
+    await prisma.pointHistory.create({
+      data: { userid: userId, points: -points, comment: `ISL:exchange ${points} pts → ${gain} 🪙` },
+    });
+    await prisma.i_Island.update({ where: { ID: userId }, data: { Currency: newCurrency } });
+
+    const wasted = gain - actuallyGained;
+    return this.ok(
+      `🔁 Converted **${points}** :palm_tree: → **${actuallyGained}** 🪙` +
+        (wasted > 0 ? ` (${wasted} lost to your storage cap)` : "") + "."
+    );
   }
 
   // ── small helpers ──────────────────────────────────────────────────────────
