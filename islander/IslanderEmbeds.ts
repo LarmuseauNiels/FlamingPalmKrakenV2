@@ -182,7 +182,7 @@ export abstract class IslanderEmbeds {
         {
           name: "Getting started",
           value:
-            "`/island` opens your island. Resources (🪵🪨🍖🪙) accrue over time up to your storage cap — check back regularly. Your **Town Center** level gates everything else, so upgrade it first.",
+            "You begin with just a **Campfire** (Town Center Lv 1) and some starting resources. Use **Build** to put up your first Woodcutter, Farm, Mine, Tents and Warehouse — production buildings make resources accrue over time (up to your storage cap). Your **Town Center** level gates how high everything else can go, so upgrade it to unlock more.",
         },
         {
           name: "Build & upgrade",

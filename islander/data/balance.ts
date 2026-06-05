@@ -30,8 +30,10 @@ export const CONSTANTS = {
   POP_GROWTH_RATE: 0.02, // fraction of pop capacity gained per hour
   FOOD_UPKEEP_PER_POP: 0.5, // Food consumed per population per hour
   STARVATION_RATE: 0.05, // fraction of population lost per hour at 0 Food
-  // Buildings a brand-new island starts with (line keys), all at level 1.
-  STARTER_BUILDINGS: ["towncenter", "food", "wood", "stone", "housing", "warehouse"],
+  // A brand-new island starts with ONLY the Town Center (Campfire) at level 1.
+  // Everything else begins unbuilt — players spend their starting resources to
+  // construct their first Farm/Woodcutter/Mine/Tents/Warehouse from the Build menu.
+  STARTER_BUILDINGS: ["towncenter"],
 };
 
 export interface BuildingLine {

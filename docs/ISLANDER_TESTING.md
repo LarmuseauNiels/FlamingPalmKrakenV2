@@ -31,7 +31,10 @@
 
 - [ ] `/island` with no prior island → creates one; image + embed render.
 - [ ] Embed shows: Town Center level 1, resources with `/cap`, population `/cap`,
-      a starter building list (Campfire, Farm, Woodcutter, Mine, Tents, Warehouse).
+      and a buildings list of **just the Campfire** (everything else starts unbuilt).
+- [ ] **Cold start:** with only a Campfire and no producers, resources don't accrue
+      yet; the Build menu offers Farm/Woodcutter/Mine/Tents/Warehouse, all
+      affordable from starting resources. Building a producer starts accrual.
 - [ ] Image renders (placeholder art: sea, island, labelled building markers, header).
 - [ ] **Resource accrual:** note Wood/Stone/Food, wait a few minutes (or set
       `LastTick` back in the DB), `/island` again → resources increased by the
