@@ -18,9 +18,15 @@ export interface IslandMessage {
 }
 
 export abstract class IslanderView {
+  /**
+   * @param targetId whose island to render
+   * @param targetName display name for the owner
+   * @param isOwner   whether the viewer owns this island (enables build/upgrade)
+   */
   static async build(
     targetId: string,
-    targetName: string
+    targetName: string,
+    isOwner = true
   ): Promise<IslandMessage> {
     const view = await IslanderModule.getIslandView(targetId);
     const image = await IslanderImage.render(view.island, targetName);
@@ -29,35 +35,37 @@ export abstract class IslanderView {
       popCap: view.popCap,
       production: view.production,
       tcLevel: view.tcLevel,
+      currentBuild: view.currentBuild,
     });
 
-    // Phase 0: Refresh is live; the rest preview the roadmap (Phase 1-3) and are
-    // disabled until their handlers land.
+    const building = !!view.currentBuild;
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId(`islander_refresh_${targetId}`)
         .setLabel("Refresh")
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
-        .setCustomId("islander_build_disabled")
+        .setCustomId(`islander_build_${targetId}`)
         .setLabel("Build")
-        .setStyle(ButtonStyle.Secondary)
-        .setDisabled(true),
+        .setStyle(ButtonStyle.Success)
+        // Can't start a new build while one is in progress, or on others' islands.
+        .setDisabled(!isOwner || building),
       new ButtonBuilder()
-        .setCustomId("islander_upgrade_disabled")
+        .setCustomId(`islander_upgrade_${targetId}`)
         .setLabel("Upgrade")
         .setStyle(ButtonStyle.Secondary)
-        .setDisabled(true),
+        .setDisabled(!isOwner || building),
       new ButtonBuilder()
-        .setCustomId("islander_train_disabled")
-        .setLabel("Train")
+        .setCustomId(`islander_rush_${targetId}`)
+        .setLabel("Rush ⚡")
         .setStyle(ButtonStyle.Secondary)
-        .setDisabled(true),
+        // Only meaningful while a build is running on your own island.
+        .setDisabled(!isOwner || !building),
       new ButtonBuilder()
         .setCustomId("islander_raid_disabled")
         .setLabel("Raid")
         .setStyle(ButtonStyle.Danger)
-        .setDisabled(true)
+        .setDisabled(true) // Phase 3
     );
 
     return { embeds: [embed], files: [image], components: [row] };
