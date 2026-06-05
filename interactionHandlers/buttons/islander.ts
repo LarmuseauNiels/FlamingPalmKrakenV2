@@ -38,6 +38,13 @@ export default class IslanderButton implements IHandler {
         return;
       }
 
+      // Read-only / global actions — anyone may use them.
+      if (action === "leaderboard") return this.showLeaderboard(interaction);
+      if (action === "help") {
+        await interaction.reply({ embeds: [IslanderEmbeds.help()], ephemeral: true });
+        return;
+      }
+
       // Raid / scout act AGAINST ownerId (the target), so the attacker is the
       // clicker — these must run before the owner check below.
       if (action === "raid") return this.doRaid(interaction, ownerId);
@@ -209,6 +216,18 @@ export default class IslanderButton implements IHandler {
       return;
     }
     await interaction.editReply({ embeds: [IslanderEmbeds.battleReport(res.report)] });
+  }
+
+  private async showLeaderboard(interaction: ButtonInteraction) {
+    await interaction.deferReply({ ephemeral: true });
+    const top = await IslanderModule.leaderboard(10);
+    const entries = await Promise.all(
+      top.map(async (e) => {
+        const u = await global.client.users.fetch(e.id).catch(() => null);
+        return { name: u?.username ?? "Unknown", score: e.score, tc: e.tc };
+      })
+    );
+    await interaction.editReply({ embeds: [IslanderEmbeds.leaderboard(entries)] });
   }
 
   private async doScout(interaction: ButtonInteraction, defenderId: string) {

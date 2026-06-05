@@ -256,6 +256,14 @@ export abstract class CombatModule {
 
     log.info(`Raid ${attackerId} -> ${defenderId}: ${win ? "WIN" : "LOSS"}`);
 
+    // Notify the defender (respects their NotifyLevel opt-in).
+    const lootTotal = loot.Wood + loot.Stone + loot.Food + loot.Currency;
+    IslanderModule.notify(defenderId, {
+      content: win
+        ? `⚔️ Your island was **raided** by **${attackerName}** — they made off with loot (${lootTotal} resources) and damaged your walls. Open \`/island\` and \`Repair\`.`
+        : `🛡️ Your island was attacked by **${attackerName}**, but your defenders **held**! Open \`/island\` to check on your forces.`,
+    }).catch(() => {});
+
     return {
       ok: true,
       message: win ? "Raid successful!" : "Raid repelled!",

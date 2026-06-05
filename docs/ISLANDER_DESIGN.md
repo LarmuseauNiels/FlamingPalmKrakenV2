@@ -266,8 +266,8 @@ interactive image-with-buttons surface.
 | `/island [@member]` | Render your island (or view another's) — image + status embed + action buttons. **This is the single entry point**: building, upgrading, rushing and training are all done via its buttons/menus, not separate commands. |
 | Raid / Scout | **Buttons on another member's `/island`** — Raid ⚔️ launches a raid, Scout 🔭 pays Currency for a defense estimate. |
 | Repair | **Button on your own `/island`** (enabled when walls are damaged) — spend Stone to restore wall HP. |
-| `/island-leaderboard` | *(planned)* Top islands by a power score (TC level + buildings + army). |
-| `/island-help` | *(planned)* Tutorial / command reference. |
+| Leaderboard | **Button on `/island`** — top islands by power score (10·TC + 3·Σ building levels + army/10). |
+| How to play | **Button on `/island`** — in-client tutorial embed. |
 
 All long operations **`deferReply`** first (Discord's 3s rule, per `CLAUDE.md`).
 
@@ -283,9 +283,15 @@ All long operations **`deferReply`** first (Discord's 3s rule, per `CLAUDE.md`).
   Refresh. Button `customId`s are namespaced `islander:<action>:<arg>` and routed
   by the existing button-handler pattern (`name` === customId prefix).
 
-### 7.3 Notifications
-- Build-complete and "you were raided" pings respect the member's existing
-  `NotifyLevel` preference (`modules/NotificationLevels.ts`).
+### 7.3 Notifications ✅
+- **"You were raided" DM** fires at raid-resolution time (a real push) to the
+  defender, with a win/loss + loot summary.
+- **Build-complete DM** is best-effort via an in-memory timer scheduled when a
+  build starts (lost on bot restart; the build itself still completes lazily on
+  the next `/island` view regardless).
+- Both respect the member's `NotifyLevel` bitfield (`modules/NotificationLevels.ts`)
+  — they only DM members who have opted into the `EventNotification` flag, so
+  notifications are **opt-in**.
 - An optional dedicated island-updates channel can reuse
   `islander/ChannelUpdates.ts` (currently a generic helper — see §11).
 
@@ -530,7 +536,7 @@ Each is additive and feature-flagged; none are required for v1.
 | **1 — Build loop** ✅ | Build/Upgrade/Rush driven entirely by `/island` buttons + select menus (no standalone commands), Warehouse caps, TC gating, build timers, one-build-at-a-time, Currency rush, Knowledge build-time reduction. | **Implemented.** Full single-player progression. |
 | **2 — Army** ✅ | Train button → unit select → quantity modal; unit unlock gates (Army/Naval level), land/naval caps, free-population cost, Smithing attack/HP bonus, Naval ship cap, Food-upkeep tension; army summary on the island embed. (Instant training; timed queue deferred.) | **Implemented.** Players field an army. |
 | **3 — PvP** ✅ | `CombatModule`; Raid/Scout buttons on others' islands + Repair button on your own; tower pre-kill, wall HP + damage, Castle/Keep vault, loot caps, new-player/post-raid shields, attacker cooldown (Naval-reduced), repeat-target + matchmaking-band guards, `i_Raid` log, battle-report embed. (Battle *image* deferred to Phase 6.) | **Implemented.** The competitive core loop is live. |
-| **4 — Polish & social** | Leaderboard, notifications, tutorial, balance pass via `ISLANDER_BALANCE.md`. | Tuned, discoverable, retention features. |
+| **4 — Polish & social** ✅ | Leaderboard button (power-score ranking), How-to-play tutorial button, raid + best-effort build-complete notifications (opt-in via `NotifyLevel`). Balance remains a data-only tuning activity in `ISLANDER_BALANCE.md`. | **Implemented.** Tuned, discoverable, retention features. |
 | **5 — Integrations (optional)** | Points/achievement hooks (§10), cosmetics. | Ties Islander into the wider community economy. |
 | **6 — Visual art pass** | Replace the procedural placeholder with composited art from **Kenney.nl** CC0 kits — Hexagon Kit for the island/terrain/building tiles, Pirate & Nature kits for ships/decor (§7.4). Vendor assets under `assets/islander/`, add an `imagename`(+tier)→sprite resolver with marker fallback, a hex-grid layout, and an image cache; reuse the compositor for battle reports. | A real, attractive island image (and battle scenes) instead of labelled boxes. |
 

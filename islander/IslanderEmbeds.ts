@@ -149,6 +149,65 @@ export abstract class IslanderEmbeds {
       .setTimestamp();
   }
 
+  /** Top-islands leaderboard. */
+  static leaderboard(
+    entries: { name: string; score: number; tc: number }[]
+  ): EmbedBuilder {
+    const medals = ["🥇", "🥈", "🥉"];
+    const body = entries.length
+      ? entries
+          .map(
+            (e, i) =>
+              `${medals[i] ?? `\`#${i + 1}\``} **${e.name}** — ${e.score} pts (TC ${e.tc})`
+          )
+          .join("\n")
+      : "No islands yet — be the first with `/island`!";
+    return new EmbedBuilder()
+      .setColor("#FD8612")
+      .setTitle("🏆 Islander Leaderboard")
+      .setDescription(body)
+      .setFooter({ text: "Power = 10·TC + 3·Σ building levels + army/10" })
+      .setTimestamp();
+  }
+
+  /** How-to-play tutorial. */
+  static help(): EmbedBuilder {
+    return new EmbedBuilder()
+      .setColor("#FD8612")
+      .setTitle("🏝️ How to play Islander")
+      .setDescription(
+        "Build an island, gather resources, raise an army, and raid your rivals!"
+      )
+      .addFields(
+        {
+          name: "Getting started",
+          value:
+            "`/island` opens your island. Resources (🪵🪨🍖🪙) accrue over time up to your storage cap — check back regularly. Your **Town Center** level gates everything else, so upgrade it first.",
+        },
+        {
+          name: "Build & upgrade",
+          value:
+            "Use the **Build** and **Upgrade** buttons. Only one build runs at a time; **Rush ⚡** finishes it instantly for 🪙. Warehouses raise storage, Housing grows population, Farms feed it.",
+        },
+        {
+          name: "Army",
+          value:
+            "Build an Army Camp (and a Dock for ships), then **Train 🪖**. Units occupy population and eat Food. Smithing boosts attack; you need a ship to raid.",
+        },
+        {
+          name: "Raiding",
+          value:
+            "Open someone else's island (`/island @member`) and press **Raid ⚔️** (or **Scout 🔭** first). Win to steal resources; the Castle/Keep **vault** and **walls** protect you on defense — **Repair 🧱** them after a hit.",
+        },
+        {
+          name: "Protection",
+          value:
+            "New islands (TC < 5) are safe, you get an 8h shield after being raided, and you can only be matched against islands within ±5 Town Center levels.",
+        }
+      )
+      .setFooter({ text: "Islander · FPG kraken bot" });
+  }
+
   /** Intel report shown after scouting a target. */
   static scout(intel: {
     name: string;

@@ -95,6 +95,18 @@ export abstract class IslanderView {
       );
     }
 
-    return { embeds: [embed], files: [image], components: [row1, row2] };
+    // Always-available info actions.
+    const row3 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`islander_leaderboard_${targetId}`)
+        .setLabel("Leaderboard 🏆")
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId(`islander_help_${targetId}`)
+        .setLabel("How to play ❓")
+        .setStyle(ButtonStyle.Secondary)
+    );
+
+    return { embeds: [embed], files: [image], components: [row1, row2, row3] };
   }
 }

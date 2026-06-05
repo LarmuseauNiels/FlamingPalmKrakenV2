@@ -20,6 +20,7 @@ import {
   ResourceKey,
 } from "./data/balance";
 import { IslanderSeed } from "./IslanderSeed";
+import { EventNotification } from "../modules/NotificationLevels";
 import { createLogger } from "../utils/logger";
 
 const log = createLogger("IslanderModule");
@@ -419,6 +420,7 @@ export abstract class IslanderModule {
         wallHP: 0,
       },
     });
+    this.scheduleBuildComplete(userId, seconds * 1000, line.tierNames[0]);
     return this.ok(`🏗️ Building **${line.tierNames[0]}** — ready ${this.discordTime(ready)}.`);
   }
 
@@ -454,6 +456,7 @@ export abstract class IslanderModule {
       where: { BuildingID_IslandID: { BuildingID: b.BuildingID, IslandID: userId } },
       data: { upgrading: next, upgradeReady: ready },
     });
+    this.scheduleBuildComplete(userId, seconds * 1000, tierNameFor(line, next));
     return this.ok(
       `⏫ Upgrading **${tierNameFor(line, level)}** → **${tierNameFor(line, next)}** (Lv ${next}) — ready ${this.discordTime(ready)}.`
     );
@@ -652,6 +655,66 @@ export abstract class IslanderModule {
       data: { wallHP: max },
     });
     return this.ok(`🧱 Repaired walls to full (${max} HP) for ${cost} 🪨.`);
+  }
+
+  // ── Notifications ───────────────────────────────────────────────────────────
+
+  /** DM a member an Islander event, if they've opted into notifications. */
+  static async notify(userId: string, payload: any): Promise<void> {
+    try {
+      const m = await global.client.prisma.members.findUnique({
+        where: { ID: userId },
+        select: { NotifyLevel: true },
+      });
+      if (!m || ((m.NotifyLevel ?? 0) & EventNotification) === 0) return;
+      const user = await global.client.users.fetch(userId).catch(() => null);
+      await user?.send(payload).catch(() => {});
+    } catch (error) {
+      log.error("Failed to send islander notification:", error);
+    }
+  }
+
+  /** Best-effort DM when a build finishes (in-memory timer; lost on restart). */
+  static scheduleBuildComplete(userId: string, ms: number, label: string): void {
+    if (ms <= 0 || ms >= 2_147_483_647) return; // setTimeout 32-bit limit (~24.8d)
+    setTimeout(() => {
+      this.notify(userId, {
+        content: `🏝️ Your **${label}** has finished building! Open \`/island\` to see it.`,
+      }).catch(() => {});
+    }, ms);
+  }
+
+  // ── Leaderboard ─────────────────────────────────────────────────────────────
+
+  /** Power score for ranking (docs/ISLANDER_DESIGN.md §8 / §10). */
+  static powerScore(island: IslandWithDetail): number {
+    const tc = this.townCenterLevel(island);
+    let buildingSum = 0;
+    for (const b of island.Buildings ?? []) buildingSum += this.effectiveLevel(b);
+    const counts = this.unitCounts(island);
+    let armyVal = 0;
+    for (const u of UNITS) armyVal += (counts[u.key] ?? 0) * (u.attack + u.hp);
+    return Math.round(10 * tc + 3 * buildingSum + armyVal / 10);
+  }
+
+  /** Top islands by power score. */
+  static async leaderboard(
+    limit = 10
+  ): Promise<{ id: string; score: number; tc: number }[]> {
+    const islands = await global.client.prisma.i_Island.findMany({
+      include: {
+        Buildings: { include: { i_Building: true } },
+        Units: { include: { i_Unit: true } },
+      },
+    });
+    return islands
+      .map((i: any) => ({
+        id: i.ID,
+        score: this.powerScore(i),
+        tc: this.townCenterLevel(i),
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
   }
 
   // ── small helpers ──────────────────────────────────────────────────────────
