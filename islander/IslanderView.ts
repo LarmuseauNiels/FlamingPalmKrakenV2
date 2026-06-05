@@ -36,10 +36,11 @@ export abstract class IslanderView {
       production: view.production,
       tcLevel: view.tcLevel,
       currentBuild: view.currentBuild,
+      army: view.army,
     });
 
     const building = !!view.currentBuild;
-    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId(`islander_refresh_${targetId}`)
         .setLabel("Refresh")
@@ -60,7 +61,15 @@ export abstract class IslanderView {
         .setLabel("Rush ⚡")
         .setStyle(ButtonStyle.Secondary)
         // Only meaningful while a build is running on your own island.
-        .setDisabled(!isOwner || !building),
+        .setDisabled(!isOwner || !building)
+    );
+
+    const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`islander_train_${targetId}`)
+        .setLabel("Train 🪖")
+        .setStyle(ButtonStyle.Success)
+        .setDisabled(!isOwner),
       new ButtonBuilder()
         .setCustomId("islander_raid_disabled")
         .setLabel("Raid")
@@ -68,6 +77,6 @@ export abstract class IslanderView {
         .setDisabled(true) // Phase 3
     );
 
-    return { embeds: [embed], files: [image], components: [row] };
+    return { embeds: [embed], files: [image], components: [row1, row2] };
   }
 }

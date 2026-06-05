@@ -1,12 +1,19 @@
-import { StringSelectMenuInteraction } from "discord.js";
+import {
+  StringSelectMenuInteraction,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  ActionRowBuilder,
+} from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
 import { IslanderModule } from "../../islander/IslanderModule";
+import { unitByKey } from "../../islander/data/balance";
 import { createLogger } from "../../utils/logger";
 
 const log = createLogger("IslanderSelect");
 
-// Handles the build/upgrade select menus opened by the islander buttons.
-// customId: islander_<buildpick|upgradepick>_<ownerId>; value = building line key.
+// Handles the build/upgrade/train select menus opened by the islander buttons.
+// customId: islander_<buildpick|upgradepick|trainpick>_<ownerId>; value = key.
 export default class IslanderSelect implements IHandler {
   name = "islander";
 
@@ -17,6 +24,26 @@ export default class IslanderSelect implements IHandler {
     try {
       if (interaction.user.id !== ownerId) {
         await interaction.reply({ content: "That's not your island.", ephemeral: true });
+        return;
+      }
+
+      if (kind === "trainpick") {
+        // Ask for a quantity via a modal.
+        const def = unitByKey(choice);
+        const modal = new ModalBuilder()
+          .setCustomId(`islander_trainqty_${ownerId}_${choice}`)
+          .setTitle(`Train ${def?.name ?? "units"}`)
+          .addComponents(
+            new ActionRowBuilder<TextInputBuilder>().addComponents(
+              new TextInputBuilder()
+                .setCustomId("qty")
+                .setLabel("How many?")
+                .setStyle(TextInputStyle.Short)
+                .setPlaceholder("e.g. 5")
+                .setRequired(true)
+            )
+          );
+        await interaction.showModal(modal);
         return;
       }
 

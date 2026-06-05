@@ -185,6 +185,12 @@ free-money pump. Exact ratio and cap live in the balance doc (§7 there).
   into the pool over time (re-recruitable), but the killed units themselves are
   gone.
 
+> **v1 implementation note:** training is **instant** — gated by resources, free
+> population, and the Army/Naval building capacity, but not yet time-gated. The
+> per-unit `trainTime` in the balance doc is reserved for a future timed-training
+> queue. Trained units occupy population (they keep eating Food via upkeep), so a
+> bigger army needs more Housing + Farms — that's the upkeep tension.
+
 ### Launch roster
 Small and data-driven; new units (and the Research gate) come later. Stats live
 in [`ISLANDER_BALANCE.md`](./ISLANDER_BALANCE.md) §8.
@@ -254,8 +260,7 @@ interactive image-with-buttons surface.
 ### 7.1 Slash commands
 | Command | Description |
 |---|---|
-| `/island [@member]` | Render your island (or view another's) — image + status embed + action buttons. **This is the single entry point**: building, upgrading and rushing are done via its buttons/menus, not separate commands. |
-| `/train <unit> <count>` | Train army/naval units. |
+| `/island [@member]` | Render your island (or view another's) — image + status embed + action buttons. **This is the single entry point**: building, upgrading, rushing and training are all done via its buttons/menus, not separate commands. |
 | `/raid @member` | Launch a raid. |
 | `/scout @member` | Pay Currency to estimate a target's defenses. |
 | `/repair` | Spend Stone to repair walls after a raid. |
@@ -477,7 +482,7 @@ Each is additive and feature-flagged; none are required for v1.
 |---|---|---|
 | **0 — Foundations** ✅ | Schema + migration, building/unit seed data (`islander/data/balance.ts` + `IslanderSeed`), `IslanderModule` with lazy resource ticks, `/island` (image + embed + Refresh button). | **Implemented.** Players have an island and watch resources grow. |
 | **1 — Build loop** ✅ | Build/Upgrade/Rush driven entirely by `/island` buttons + select menus (no standalone commands), Warehouse caps, TC gating, build timers, one-build-at-a-time, Currency rush, Knowledge build-time reduction. | **Implemented.** Full single-player progression. |
-| **2 — Army** | `/train`, unit data, Smithing/Naval effects, population/upkeep tension. | Players field an army. |
+| **2 — Army** ✅ | Train button → unit select → quantity modal; unit unlock gates (Army/Naval level), land/naval caps, free-population cost, Smithing attack/HP bonus, Naval ship cap, Food-upkeep tension; army summary on the island embed. (Instant training; timed queue deferred.) | **Implemented.** Players field an army. |
 | **3 — PvP** | `CombatModule`, `/raid`, `/scout`, `/repair`, shields, cooldowns, loot caps, vault, raid log, battle report image. | The competitive core loop is live. |
 | **4 — Polish & social** | Leaderboard, notifications, tutorial, balance pass via `ISLANDER_BALANCE.md`. | Tuned, discoverable, retention features. |
 | **5 — Integrations (optional)** | Points/achievement hooks (§10), cosmetics. | Ties Islander into the wider community economy. |

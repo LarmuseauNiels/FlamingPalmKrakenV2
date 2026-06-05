@@ -7,11 +7,15 @@
 import {
   CONSTANTS,
   BUILDING_LINES,
+  UNITS,
   lineByKey,
   levelStats,
   tcRequirement,
   tierNameFor,
+  unitByKey,
+  unitByName,
   BuildingLine,
+  UnitDef,
   ResourceKey,
 } from "./data/balance";
 import { IslanderSeed } from "./IslanderSeed";
@@ -300,6 +304,13 @@ export abstract class IslanderModule {
     production: Record<ResourceKey, number>;
     tcLevel: number;
     currentBuild: any | null;
+    army: {
+      counts: Record<string, number>;
+      caps: { land: number; naval: number };
+      freePop: number;
+      attack: number;
+      smithing: number;
+    };
   }> {
     const island = await this.prepare(userId);
     return {
@@ -309,6 +320,13 @@ export abstract class IslanderModule {
       production: this.productionPerHour(island),
       tcLevel: this.townCenterLevel(island),
       currentBuild: this.currentBuild(island),
+      army: {
+        counts: this.unitCounts(island),
+        caps: this.unitCaps(island),
+        freePop: this.freePopulation(island),
+        attack: this.armyAttack(island),
+        smithing: this.smithingBonus(island),
+      },
     };
   }
 
@@ -466,6 +484,127 @@ export abstract class IslanderModule {
     cb.upgradeReady = new Date();
     await this.finalizeBuilds(island);
     return this.ok(`⚡ Rushed for ${cost} 🪙 — build complete!`);
+  }
+
+  // ── Army / training ────────────────────────────────────────────────────────
+
+  /** Effective level of a building line on this island (0 if not built/active). */
+  static lineLevel(island: IslandWithDetail, key: string): number {
+    const b = (island.Buildings ?? []).find((x: any) => x.i_Building?.Name === key);
+    return b ? this.effectiveLevel(b) : 0;
+  }
+
+  /** Land-unit cap (Army line) and ship cap (Naval line). */
+  static unitCaps(island: IslandWithDetail): { land: number; naval: number } {
+    const army = lineByKey("army");
+    const naval = lineByKey("naval");
+    const armyLvl = this.lineLevel(island, "army");
+    const navalLvl = this.lineLevel(island, "naval");
+    return {
+      land: army && armyLvl > 0 ? levelStats(army, armyLvl).attr : 0,
+      naval: naval && navalLvl > 0 ? levelStats(naval, navalLvl).attr : 0,
+    };
+  }
+
+  /** Current trained counts keyed by unit key. */
+  static unitCounts(island: IslandWithDetail): Record<string, number> {
+    const out: Record<string, number> = {};
+    for (const u of island.Units ?? []) {
+      const def = unitByName(u.i_Unit?.Name);
+      if (def) out[def.key] = (out[def.key] ?? 0) + u.count;
+    }
+    return out;
+  }
+
+  /** Population already occupied by trained units. */
+  static usedPopulation(island: IslandWithDetail): number {
+    let used = 0;
+    for (const u of island.Units ?? []) {
+      const def = unitByName(u.i_Unit?.Name);
+      if (def) used += def.pop * u.count;
+    }
+    return used;
+  }
+
+  /** Idle population available to be trained into new units. */
+  static freePopulation(island: IslandWithDetail): number {
+    return Math.max(0, island.Population - this.usedPopulation(island));
+  }
+
+  /** Smithing attack/HP multiplier, e.g. 0.30 = +30% (used in combat + display). */
+  static smithingBonus(island: IslandWithDetail): number {
+    const line = lineByKey("smithing");
+    const lvl = this.lineLevel(island, "smithing");
+    return line && lvl > 0 ? levelStats(line, lvl).attr / 100 : 0;
+  }
+
+  /** Total army attack with the Smithing bonus applied (display/combat preview). */
+  static armyAttack(island: IslandWithDetail): number {
+    const counts = this.unitCounts(island);
+    let base = 0;
+    for (const def of UNITS) base += (counts[def.key] ?? 0) * def.attack;
+    return Math.round(base * (1 + this.smithingBonus(island)));
+  }
+
+  /** Units the island can train now (their required building level is met). */
+  static trainableUnits(island: IslandWithDetail): UnitDef[] {
+    return UNITS.filter(
+      (u) => this.lineLevel(island, u.reqBuilding) >= u.reqLevel
+    );
+  }
+
+  /** Train `qty` of a unit. Validates unlock, caps, resources and free pop. */
+  static async trainUnit(userId: string, unitKey: string, qty: number) {
+    const island = await this.prepare(userId);
+    const def = unitByKey(unitKey);
+    if (!def) return this.fail("Unknown unit.");
+    if (!Number.isFinite(qty) || qty < 1) return this.fail("Enter a quantity of 1 or more.");
+    qty = Math.floor(qty);
+
+    if (this.lineLevel(island, def.reqBuilding) < def.reqLevel) {
+      const line = lineByKey(def.reqBuilding);
+      return this.fail(
+        `${def.name} requires ${line ? tierNameFor(line, def.reqLevel) : def.reqBuilding} (Lv ${def.reqLevel}).`
+      );
+    }
+
+    // Building capacity (land vs naval).
+    const caps = this.unitCaps(island);
+    const counts = this.unitCounts(island);
+    let typeCount = 0;
+    for (const u of UNITS) if (u.type === def.type) typeCount += counts[u.key] ?? 0;
+    const cap = def.type === 1 ? caps.naval : caps.land;
+    if (typeCount + qty > cap) {
+      const room = Math.max(0, cap - typeCount);
+      return this.fail(
+        `${def.type === 1 ? "Ship" : "Army"} capacity is ${cap} — you can train ${room} more (upgrade ${def.type === 1 ? "Naval" : "Army"}).`
+      );
+    }
+
+    // Free population.
+    const needPop = def.pop * qty;
+    const free = this.freePopulation(island);
+    if (needPop > free)
+      return this.fail(`Need ${needPop} free population — you have ${free} (grow it with Housing).`);
+
+    // Resources.
+    const cost = { wood: def.wood * qty, stone: 0, food: def.food * qty, currency: def.currency * qty };
+    const afford = this.canAfford(island, cost);
+    if (afford) return this.fail(afford);
+
+    await this.spend(island, cost);
+
+    // Upsert the unit count.
+    const prisma = global.client.prisma;
+    const unitRow = await prisma.i_Unit.findFirst({ where: { Name: def.name } });
+    if (!unitRow) return this.fail("Unit definition missing — try again shortly.");
+    await prisma.i_Unit_Island.upsert({
+      where: { IslandID_UnitID: { IslandID: userId, UnitID: unitRow.ID } },
+      create: { IslandID: userId, UnitID: unitRow.ID, count: qty },
+      update: { count: { increment: qty } },
+    });
+
+    return this.ok(`🪖 Trained **${qty}× ${def.name}**.`);
   }
 
   // ── small helpers ──────────────────────────────────────────────────────────

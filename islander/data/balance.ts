@@ -150,16 +150,25 @@ export interface UnitDef {
   hp: number;
   loot: number;
   trainTime: number;
+  reqBuilding: string; // building line key that must reach reqLevel to unlock
+  reqLevel: number;
 }
 
 // Roster (docs/ISLANDER_DESIGN.md §5, numbers in ISLANDER_BALANCE.md §8).
 export const UNITS: UnitDef[] = [
-  { key: "raider",   name: "Raider",    type: 0, wood: 15,  food: 20, currency: 0,  pop: 1, attack: 8,  hp: 20,  loot: 50,  trainTime: 60 },
-  { key: "soldier",  name: "Soldier",   type: 0, wood: 25,  food: 25, currency: 0,  pop: 1, attack: 12, hp: 45,  loot: 10,  trainTime: 90 },
-  { key: "champion", name: "Champion",  type: 0, wood: 60,  food: 50, currency: 20, pop: 2, attack: 35, hp: 110, loot: 40,  trainTime: 240 },
-  { key: "longboat", name: "Longboat",  type: 1, wood: 120, food: 30, currency: 10, pop: 3, attack: 25, hp: 150, loot: 300, trainTime: 300 },
-  { key: "galley",   name: "War Galley",type: 1, wood: 300, food: 60, currency: 40, pop: 5, attack: 70, hp: 400, loot: 800, trainTime: 600 },
+  { key: "raider",   name: "Raider",    type: 0, wood: 15,  food: 20, currency: 0,  pop: 1, attack: 8,  hp: 20,  loot: 50,  trainTime: 60,  reqBuilding: "army",  reqLevel: 1 },
+  { key: "soldier",  name: "Soldier",   type: 0, wood: 25,  food: 25, currency: 0,  pop: 1, attack: 12, hp: 45,  loot: 10,  trainTime: 90,  reqBuilding: "army",  reqLevel: 3 },
+  { key: "champion", name: "Champion",  type: 0, wood: 60,  food: 50, currency: 20, pop: 2, attack: 35, hp: 110, loot: 40,  trainTime: 240, reqBuilding: "army",  reqLevel: 10 },
+  { key: "longboat", name: "Longboat",  type: 1, wood: 120, food: 30, currency: 10, pop: 3, attack: 25, hp: 150, loot: 300, trainTime: 300, reqBuilding: "naval", reqLevel: 1 },
+  { key: "galley",   name: "War Galley",type: 1, wood: 300, food: 60, currency: 40, pop: 5, attack: 70, hp: 400, loot: 800, trainTime: 600, reqBuilding: "naval", reqLevel: 10 },
 ];
+
+export function unitByKey(key: string): UnitDef | undefined {
+  return UNITS.find((u) => u.key === key);
+}
+export function unitByName(name: string): UnitDef | undefined {
+  return UNITS.find((u) => u.name === name);
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 

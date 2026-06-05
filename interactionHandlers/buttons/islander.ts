@@ -47,6 +47,7 @@ export default class IslanderButton implements IHandler {
 
       if (action === "build") return this.openBuildSelect(interaction, ownerId);
       if (action === "upgrade") return this.openUpgradeSelect(interaction, ownerId);
+      if (action === "train") return this.openTrainSelect(interaction, ownerId);
       if (action === "rush") {
         const res = await IslanderModule.rush(ownerId);
         if (!res.ok) {
@@ -136,6 +137,36 @@ export default class IslanderButton implements IHandler {
 
     await interaction.reply({
       content: "⏫ **Upgrade a building:**",
+      components: [new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu)],
+      ephemeral: true,
+    });
+  }
+
+  private async openTrainSelect(interaction: ButtonInteraction, ownerId: string) {
+    const island = await IslanderModule.prepare(ownerId);
+    const caps = IslanderModule.unitCaps(island);
+    const free = IslanderModule.freePopulation(island);
+    const options = IslanderModule.trainableUnits(island).map((u) => ({
+      label: `${u.name} (${u.type === 1 ? "naval" : "land"})`,
+      value: u.key,
+      description: `🪵${u.wood}${u.food ? ` 🍖${u.food}` : ""}${u.currency ? ` 🪙${u.currency}` : ""} · ${u.pop} pop · atk ${u.attack}`,
+    }));
+
+    if (!options.length) {
+      await interaction.reply({
+        content: "No units available yet — build an Army Camp (or a Dock for ships) first.",
+        ephemeral: true,
+      });
+      return;
+    }
+
+    const menu = new StringSelectMenuBuilder()
+      .setCustomId(`islander_trainpick_${ownerId}`)
+      .setPlaceholder("Choose a unit to train")
+      .addOptions(options.slice(0, 25));
+
+    await interaction.reply({
+      content: `🪖 **Train units** — free population: ${free} · caps: 🪖${caps.land} land / ⛵${caps.naval} naval`,
       components: [new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu)],
       ephemeral: true,
     });
