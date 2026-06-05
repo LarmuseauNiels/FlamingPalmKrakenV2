@@ -14,6 +14,7 @@ export abstract class IslanderEmbeds {
       production: Record<ResourceKey, number>;
       tcLevel: number;
       currentBuild?: any | null;
+      nextUnlock?: { tc: number; names: string[] } | null;
       army?: {
         counts: Record<string, number>;
         caps: { land: number; naval: number };
@@ -23,7 +24,7 @@ export abstract class IslanderEmbeds {
       };
     }
   ): EmbedBuilder {
-    const { cap, popCap, production, tcLevel, currentBuild, army } = opts;
+    const { cap, popCap, production, tcLevel, currentBuild, nextUnlock, army } = opts;
 
     const resLine = (
       label: string,
@@ -80,6 +81,14 @@ export abstract class IslanderEmbeds {
           (roster || "No units yet") +
           `\nFree pop: **${army.freePop}** · Atk: **${army.attack}**${bonus}` +
           `\nCaps — 🪖 ${army.caps.land} land · ⛵ ${army.caps.naval} naval`,
+        inline: false,
+      });
+    }
+
+    if (nextUnlock) {
+      embed.addFields({
+        name: `🔒 Unlocks at Town Center ${nextUnlock.tc}`,
+        value: nextUnlock.names.join(", "),
         inline: false,
       });
     }
@@ -182,7 +191,7 @@ export abstract class IslanderEmbeds {
         {
           name: "Getting started",
           value:
-            "`/island` opens your island. Resources (🪵🪨🍖🪙) accrue over time up to your storage cap — check back regularly. Your **Town Center** level gates everything else, so upgrade it first.",
+            "You begin with just a **Campfire** (Town Center Lv 1) and some starting resources. Build a **Woodcutter** and **Farm** first — production buildings make resources accrue over time. Each **Town Center** upgrade unlocks the next buildings (Mine & Warehouse at TC2, Tents & Army at TC3, …), so keep upgrading it. The embed shows what unlocks next.",
         },
         {
           name: "Build & upgrade",

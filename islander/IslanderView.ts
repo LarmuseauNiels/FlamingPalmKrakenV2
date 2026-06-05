@@ -36,6 +36,7 @@ export abstract class IslanderView {
       production: view.production,
       tcLevel: view.tcLevel,
       currentBuild: view.currentBuild,
+      nextUnlock: view.nextUnlock,
       army: view.army,
     });
 

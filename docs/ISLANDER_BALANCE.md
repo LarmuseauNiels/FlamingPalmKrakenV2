@@ -22,6 +22,7 @@ amounts are integers. "h" = per hour.
 | Constant | Value | Notes |
 |---|---|---|
 | `BASE_STORAGE` | 500 | Per-resource cap from a level-1 Town Center, before Warehouse. |
+| `TC_STORAGE_PER_LEVEL` | 500 | Extra per-resource cap per Town Center level. |
 | `TICK_GRANULARITY` | 60 s | Resolution of lazy accrual (gains computed per-minute). |
 | `STARVATION_RATE` | 5 %/h | Population decay per hour when Food = 0. |
 | `RUSH_RATE` | 1 Currency per 6 s | Cost to instant-finish a build (`remainingSeconds / 6`). |
@@ -34,13 +35,22 @@ amounts are integers. "h" = per hour.
 Unless a table says otherwise, per-level scaling uses:
 
 ```
-cost(level)  = round( base * 1.55^(level-1) )
+cost(level)  = round( base * 1.35^(level-1) )
 time(level)  = round( baseTime * 1.50^(level-1) )   # capped at TIME_CAP
 rate(level)  = round( baseRate * 1.35^(level-1) )
 TIME_CAP     = 86400  # 24h — no single upgrade exceeds a day in v1
 ```
 
-`1.55` cost / `1.50` time / `1.35` production is the classic "production grows
+> **Rebalanced 2026-06-05:** cost growth was lowered from `1.55` to **`1.35`** so
+> it matches production/storage growth. With all three on the same exponent, the
+> storage cap (driven by the Warehouse) always exceeds the priciest single
+> upgrade, so **every tier is reachable**, and the time to bank each upgrade is
+> roughly constant per level instead of ballooning. The per-level tables below
+> were written against the old `1.55` curve and are now **illustrative only** —
+> the authoritative numbers are computed in `islander/data/balance.ts`
+> (`levelStats`). Re-seed with `/island-reload` after changing them.
+
+`1.35` cost / `1.50` time / `1.35` production was originally the "production grows
 slower than cost" curve that keeps later levels meaningful without infinite idle
 times.
 
@@ -53,9 +63,9 @@ level. Max level v1 = **30**.
 
 | TC Level | Name | Wood | Stone | Food | Time | Unlocks |
 |---|---|---|---|---|---|---|
-| 1 | Campfire | — | — | — | — | Start: Farm, Woodcutter, Mine, Tents, Warehouse |
-| 2 | Campfire | 200 | 150 | 100 | 120 | — |
-| 3 | Campfire | 400 | 300 | 200 | 300 | Army Camp, Palisade Walls |
+| 1 | Campfire | — | — | — | — | **Starting building** (the only one). Buildable now: **Farm, Woodcutter** |
+| 2 | Campfire | 200 | 150 | 100 | 120 | **Mine, Warehouse** |
+| 3 | Campfire | 400 | 300 | 200 | 300 | **Tents**, Army Camp, Palisade Walls |
 | 5 | Town Centre | 1.2k | 1k | 600 | 1.8k | Smelter, Dock, Watch Tower |
 | 8 | Town Centre | 4k | 3.5k | 2k | 7.2k | Trader, Academy |
 | 10 | Town Centre | 9k | 8k | 5k | 21.6k | Tier-2 buildings (Houses, Logging Camp, Quarry…) |
@@ -123,7 +133,9 @@ Marketplace also enables a **resource exchange** (see §7).
 | 10 | Storehouse | 5k | 3.4k | +28k | 21.6k | 10 |
 | 20 | Grand Depot | 95k | 64k | +400k | 86.4k | 20 |
 
-**Total cap** = `BASE_STORAGE + 250·TClevel + Warehouse capacity`.
+**Total cap** = `BASE_STORAGE + 500·TClevel + Warehouse capacity` (Warehouse base
+`+1500`/level, growing at `1.35` — chosen so the cap stays above any single
+upgrade cost at every level; tightest margin ≈ 1.8× at Castle/Keep L15).
 **Idle window** = `cap / ratePerHour` — early game ≈ 8–12 h, late game tuned to
 ≈ 12–18 h so a daily check-in never wastes much.
 
@@ -313,3 +325,4 @@ When adjusting these numbers post-launch:
 | Date | Change |
 |---|---|
 | 2026-06-04 | Initial v1 seed values. |
+| 2026-06-05 | Reachability rebalance: cost growth `1.55 → 1.35` (matches production/storage); `TC_STORAGE_PER_LEVEL 250 → 500`; Warehouse base storage `1000 → 1500`; Keep base cost `wood 2000→700, stone 3000→900`. Result: every tier affordable (0 unaffordable across all building levels; max single-upgrade cost ≈1.5M vs L30 cap ≈9M). Also widened `i_BuildingLevel` cost columns to `UNSIGNED INT`. Apply with `/island-reload`. |

@@ -31,7 +31,14 @@
 
 - [ ] `/island` with no prior island → creates one; image + embed render.
 - [ ] Embed shows: Town Center level 1, resources with `/cap`, population `/cap`,
-      a starter building list (Campfire, Farm, Woodcutter, Mine, Tents, Warehouse).
+      and a buildings list of **just the Campfire** (everything else starts unbuilt).
+- [ ] **Cold start:** with only a Campfire and no producers, resources don't accrue
+      yet; the Build menu offers **only Farm + Woodcutter** (TC1), all affordable
+      from starting resources. Building a producer starts accrual.
+- [ ] **Staged unlocks (tutorial ramp):** embed shows "🔒 Unlocks at Town Center N".
+      Upgrading TC → 2 unlocks **Mine + Warehouse**; TC → 3 unlocks **Tents** (+ Army
+      Camp, Palisade Walls). No soft-lock: you can always reach TC2 (for the Mine)
+      with starting Stone.
 - [ ] Image renders (placeholder art: sea, island, labelled building markers, header).
 - [ ] **Resource accrual:** note Wood/Stone/Food, wait a few minutes (or set
       `LastTick` back in the DB), `/island` again → resources increased by the
@@ -181,5 +188,5 @@ and **within ±5 TC** of each other.
 - **Build-complete DMs are best-effort** (in-memory timer; not restart-durable).
 - **Island art is a placeholder** (procedural). Real Kenney.nl art is **Phase 6**.
 - **No battle image yet** — raids report via embed; battle image is **Phase 6**.
-- **Balance numbers are seeded once** from `ISLANDER_BALANCE.md`; re-tuning means
-  editing the data and re-seeding (a `/island-reload` admin command is a follow-up).
+- **Balance numbers are seeded** from `islander/data/balance.ts`; after editing
+  them, re-seed with the admin **`/island-reload`** command (idempotent upsert).
