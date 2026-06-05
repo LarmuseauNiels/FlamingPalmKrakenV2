@@ -19,9 +19,12 @@ export type BuildingFunc =
 
 export const CONSTANTS = {
   BASE_STORAGE: 500, // base per-resource cap from a level-1 Town Center
-  TC_STORAGE_PER_LEVEL: 250, // extra cap per TC level
+  TC_STORAGE_PER_LEVEL: 500, // extra cap per TC level
   START: { Wood: 300, Stone: 300, Food: 300, Currency: 50, Population: 5 },
-  GROWTH: { COST: 1.55, TIME: 1.5, RATE: 1.35 },
+  // COST matches RATE so costs scale with production/storage — every tier stays
+  // affordable and build-up time per level is roughly constant (see §8 / the
+  // balance changelog). TIME is independent and capped at TIME_CAP.
+  GROWTH: { COST: 1.35, TIME: 1.5, RATE: 1.35 },
   TIME_CAP: 86400, // 24h — no single build longer than a day in v1
   RUSH_SECONDS_PER_CURRENCY: 6, // /6s of remaining build = 1 Currency to finish
   POP_GROWTH_RATE: 0.02, // fraction of pop capacity gained per hour
@@ -92,7 +95,7 @@ export const BUILDING_LINES: BuildingLine[] = [
     key: "warehouse", func: "store", resource: "all",
     tierNames: ["Warehouse", "Storehouse", "Grand Depot"], maxLevel: 30, unlockTC: 1,
     image: "warehouse", posX: 210, posY: 180,
-    base: { wood: 60, stone: 40, time: 60, attr: 1000 },
+    base: { wood: 60, stone: 40, time: 60, attr: 1500 }, // storage headroom > any single upgrade cost
   },
   {
     key: "smithing", func: "boost",
@@ -134,7 +137,7 @@ export const BUILDING_LINES: BuildingLine[] = [
     key: "keep", func: "vault",
     tierNames: ["Castle", "Keep", "Citadel"], maxLevel: 15, unlockTC: 15,
     image: "castle", posX: 300, posY: 230,
-    base: { wood: 2000, stone: 3000, time: 7200, attr: 15 }, // vault % protected
+    base: { wood: 700, stone: 900, time: 7200, attr: 15 }, // vault % protected; base kept under warehouse headroom
   },
 ];
 

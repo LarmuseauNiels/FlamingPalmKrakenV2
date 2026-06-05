@@ -181,5 +181,5 @@ and **within ±5 TC** of each other.
 - **Build-complete DMs are best-effort** (in-memory timer; not restart-durable).
 - **Island art is a placeholder** (procedural). Real Kenney.nl art is **Phase 6**.
 - **No battle image yet** — raids report via embed; battle image is **Phase 6**.
-- **Balance numbers are seeded once** from `ISLANDER_BALANCE.md`; re-tuning means
-  editing the data and re-seeding (a `/island-reload` admin command is a follow-up).
+- **Balance numbers are seeded** from `islander/data/balance.ts`; after editing
+  them, re-seed with the admin **`/island-reload`** command (idempotent upsert).
