@@ -77,37 +77,51 @@ export abstract class IslanderModule {
     let island = await this.fetch(userId);
     if (island) return island;
 
-    // Ensure a Members row exists (FK target) without clobbering existing data.
-    await prisma.members.upsert({
-      where: { ID: userId },
-      update: {},
-      create: { ID: userId, DisplayName: global.client.idToName(userId) ?? userId },
-    });
-
-    await prisma.i_Island.create({
-      data: {
-        ID: userId,
-        Wood: CONSTANTS.START.Wood,
-        Stone: CONSTANTS.START.Stone,
-        Food: CONSTANTS.START.Food,
-        Currency: CONSTANTS.START.Currency,
-        Population: CONSTANTS.START.Population,
-        LastTick: new Date(),
-      },
-    });
-
-    // Place the starter buildings at level 1.
-    for (const key of CONSTANTS.STARTER_BUILDINGS) {
-      const buildingId = ids.get(key);
-      if (!buildingId) continue;
-      const line = lineByKey(key);
-      const wallHP = line?.func === "defend" ? levelStats(line, 1).attr : 0;
-      await prisma.i_Building_Island.create({
-        data: { BuildingID: buildingId, IslandID: userId, level: 1, wallHP },
+    try {
+      // Ensure a Members row exists (FK target) without clobbering existing data.
+      await prisma.members.upsert({
+        where: { ID: userId },
+        update: {},
+        create: { ID: userId, DisplayName: global.client.idToName(userId) ?? userId },
       });
+
+      // Idempotent: a concurrent /island invocation may have created this island
+      // between our fetch above and now, so don't blow up on a duplicate.
+      await prisma.i_Island.upsert({
+        where: { ID: userId },
+        update: {},
+        create: {
+          ID: userId,
+          Wood: CONSTANTS.START.Wood,
+          Stone: CONSTANTS.START.Stone,
+          Food: CONSTANTS.START.Food,
+          Currency: CONSTANTS.START.Currency,
+          Population: CONSTANTS.START.Population,
+          LastTick: new Date(),
+        },
+      });
+
+      // Place the starter buildings at level 1 (idempotent — skip if already there).
+      for (const key of CONSTANTS.STARTER_BUILDINGS) {
+        const buildingId = ids.get(key);
+        if (!buildingId) continue;
+        const line = lineByKey(key);
+        const wallHP = line?.func === "defend" ? levelStats(line, 1).attr : 0;
+        await prisma.i_Building_Island.upsert({
+          where: { BuildingID_IslandID: { BuildingID: buildingId, IslandID: userId } },
+          update: {},
+          create: { BuildingID: buildingId, IslandID: userId, level: 1, wallHP },
+        });
+      }
+
+      log.info(`Created new island for ${userId}`);
+    } catch (error: any) {
+      // A racing invocation may have created the island first; re-fetch and use
+      // it rather than failing the render. Re-throw anything we can't recover.
+      if (error?.code !== "P2002") throw error;
+      log.warn(`Concurrent island creation for ${userId}; using existing row`);
     }
 
-    log.info(`Created new island for ${userId}`);
     return this.fetch(userId);
   }
 
