@@ -14,7 +14,7 @@ export default class IslanderModal implements IHandler {
     const [, kind, ownerId, unitKey] = interaction.customId.split("_");
 
     try {
-      if (kind !== "trainqty") return;
+      if (kind !== "trainqty" && kind !== "exchangeqty") return;
       if (interaction.user.id !== ownerId) {
         await interaction.reply({ content: "That's not your island.", ephemeral: true });
         return;
@@ -27,7 +27,10 @@ export default class IslanderModal implements IHandler {
         return;
       }
 
-      const res = await IslanderModule.trainUnit(ownerId, unitKey, qty);
+      const res =
+        kind === "exchangeqty"
+          ? await IslanderModule.exchangePoints(ownerId, qty)
+          : await IslanderModule.trainUnit(ownerId, unitKey, qty);
       await interaction.reply({ content: res.message, ephemeral: true });
     } catch (error) {
       log.error("Failed to handle islander train modal:", error);

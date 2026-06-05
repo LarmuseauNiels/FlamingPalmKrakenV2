@@ -64,19 +64,58 @@ export abstract class IslanderView {
         .setDisabled(!isOwner || !building)
     );
 
-    const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    const row2 = new ActionRowBuilder<ButtonBuilder>();
+    if (isOwner) {
+      // Own island: train units and repair damaged walls.
+      const wallsDamaged =
+        IslanderModule.wallHPCurrent(view.island) <
+        IslanderModule.wallHPMax(view.island);
+      row2.addComponents(
+        new ButtonBuilder()
+          .setCustomId(`islander_train_${targetId}`)
+          .setLabel("Train 🪖")
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId(`islander_repair_${targetId}`)
+          .setLabel("Repair 🧱")
+          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(!wallsDamaged)
+      );
+      // Optional Points → Currency exchange (Phase 5, off unless enabled).
+      if (IslanderModule.pointsExchangeEnabled) {
+        row2.addComponents(
+          new ButtonBuilder()
+            .setCustomId(`islander_exchange_${targetId}`)
+            .setLabel("Exchange 🔁")
+            .setStyle(ButtonStyle.Secondary)
+        );
+      }
+    } else {
+      // Someone else's island: scout or raid it.
+      row2.addComponents(
+        new ButtonBuilder()
+          .setCustomId(`islander_scout_${targetId}`)
+          .setLabel("Scout 🔭")
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId(`islander_raid_${targetId}`)
+          .setLabel("Raid ⚔️")
+          .setStyle(ButtonStyle.Danger)
+      );
+    }
+
+    // Always-available info actions.
+    const row3 = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
-        .setCustomId(`islander_train_${targetId}`)
-        .setLabel("Train 🪖")
-        .setStyle(ButtonStyle.Success)
-        .setDisabled(!isOwner),
+        .setCustomId(`islander_leaderboard_${targetId}`)
+        .setLabel("Leaderboard 🏆")
+        .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
-        .setCustomId("islander_raid_disabled")
-        .setLabel("Raid")
-        .setStyle(ButtonStyle.Danger)
-        .setDisabled(true) // Phase 3
+        .setCustomId(`islander_help_${targetId}`)
+        .setLabel("How to play ❓")
+        .setStyle(ButtonStyle.Secondary)
     );
 
-    return { embeds: [embed], files: [image], components: [row1, row2] };
+    return { embeds: [embed], files: [image], components: [row1, row2, row3] };
   }
 }

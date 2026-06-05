@@ -8,6 +8,10 @@ import {
   CONSTANTS,
   BUILDING_LINES,
   UNITS,
+  PVP,
+  INTEGRATIONS,
+  MILESTONES,
+  Milestone,
   lineByKey,
   levelStats,
   tcRequirement,
@@ -19,6 +23,7 @@ import {
   ResourceKey,
 } from "./data/balance";
 import { IslanderSeed } from "./IslanderSeed";
+import { EventNotification } from "../modules/NotificationLevels";
 import { createLogger } from "../utils/logger";
 
 const log = createLogger("IslanderModule");
@@ -313,6 +318,7 @@ export abstract class IslanderModule {
     };
   }> {
     const island = await this.prepare(userId);
+    await this.checkTcMilestones(userId, island); // no-op unless integrations enabled
     return {
       island,
       cap: this.storageCap(island),
@@ -418,6 +424,7 @@ export abstract class IslanderModule {
         wallHP: 0,
       },
     });
+    this.scheduleBuildComplete(userId, seconds * 1000, line.tierNames[0]);
     return this.ok(`🏗️ Building **${line.tierNames[0]}** — ready ${this.discordTime(ready)}.`);
   }
 
@@ -453,6 +460,7 @@ export abstract class IslanderModule {
       where: { BuildingID_IslandID: { BuildingID: b.BuildingID, IslandID: userId } },
       data: { upgrading: next, upgradeReady: ready },
     });
+    this.scheduleBuildComplete(userId, seconds * 1000, tierNameFor(line, next));
     return this.ok(
       `⏫ Upgrading **${tierNameFor(line, level)}** → **${tierNameFor(line, next)}** (Lv ${next}) — ready ${this.discordTime(ready)}.`
     );
@@ -605,6 +613,223 @@ export abstract class IslanderModule {
     });
 
     return this.ok(`🪖 Trained **${qty}× ${def.name}**.`);
+  }
+
+  // ── Walls / defense ─────────────────────────────────────────────────────────
+
+  /** The walls building row (holds current wallHP), or null. */
+  static wallsRow(island: IslandWithDetail): any | null {
+    return (island.Buildings ?? []).find(
+      (b: any) => b.i_Building?.Name === "walls"
+    ) ?? null;
+  }
+
+  /** Maximum wall HP at the walls building's current level (0 if none). */
+  static wallHPMax(island: IslandWithDetail): number {
+    const line = lineByKey("walls");
+    const lvl = this.lineLevel(island, "walls");
+    return line && lvl > 0 ? levelStats(line, lvl).attr : 0;
+  }
+
+  /** Current standing wall HP (depleted by raids, restored by /repair). */
+  static wallHPCurrent(island: IslandWithDetail): number {
+    const row = this.wallsRow(island);
+    return row?.wallHP ?? 0;
+  }
+
+  /** Restore walls to full HP, paying Stone (1 Stone per 4 HP). */
+  static async repairWalls(userId: string) {
+    const island = await this.prepare(userId);
+    const row = this.wallsRow(island);
+    if (!row) return this.fail("You have no walls to repair.");
+    const max = this.wallHPMax(island);
+    const missing = Math.max(0, max - (row.wallHP ?? 0));
+    if (missing <= 0) return this.fail("Your walls are already at full strength.");
+
+    const cost = Math.ceil(missing * PVP.STONE_PER_WALL_HP);
+    if (island.Stone < cost)
+      return this.fail(`Repairing ${missing} wall HP costs ${cost} 🪨 — you have ${island.Stone}.`);
+
+    await global.client.prisma.i_Island.update({
+      where: { ID: userId },
+      data: { Stone: island.Stone - cost },
+    });
+    await global.client.prisma.i_Building_Island.update({
+      where: { BuildingID_IslandID: { BuildingID: row.BuildingID, IslandID: userId } },
+      data: { wallHP: max },
+    });
+    return this.ok(`🧱 Repaired walls to full (${max} HP) for ${cost} 🪨.`);
+  }
+
+  // ── Notifications ───────────────────────────────────────────────────────────
+
+  /** DM a member an Islander event, if they've opted into notifications. */
+  static async notify(userId: string, payload: any): Promise<void> {
+    try {
+      const m = await global.client.prisma.members.findUnique({
+        where: { ID: userId },
+        select: { NotifyLevel: true },
+      });
+      if (!m || ((m.NotifyLevel ?? 0) & EventNotification) === 0) return;
+      const user = await global.client.users.fetch(userId).catch(() => null);
+      await user?.send(payload).catch(() => {});
+    } catch (error) {
+      log.error("Failed to send islander notification:", error);
+    }
+  }
+
+  /** Best-effort DM when a build finishes (in-memory timer; lost on restart). */
+  static scheduleBuildComplete(userId: string, ms: number, label: string): void {
+    if (ms <= 0 || ms >= 2_147_483_647) return; // setTimeout 32-bit limit (~24.8d)
+    setTimeout(() => {
+      this.notify(userId, {
+        content: `🏝️ Your **${label}** has finished building! Open \`/island\` to see it.`,
+      }).catch(() => {});
+    }, ms);
+  }
+
+  // ── Leaderboard ─────────────────────────────────────────────────────────────
+
+  /** Power score for ranking (docs/ISLANDER_DESIGN.md §8 / §10). */
+  static powerScore(island: IslandWithDetail): number {
+    const tc = this.townCenterLevel(island);
+    let buildingSum = 0;
+    for (const b of island.Buildings ?? []) buildingSum += this.effectiveLevel(b);
+    const counts = this.unitCounts(island);
+    let armyVal = 0;
+    for (const u of UNITS) armyVal += (counts[u.key] ?? 0) * (u.attack + u.hp);
+    return Math.round(10 * tc + 3 * buildingSum + armyVal / 10);
+  }
+
+  /** Top islands by power score. */
+  static async leaderboard(
+    limit = 10
+  ): Promise<{ id: string; score: number; tc: number }[]> {
+    const islands = await global.client.prisma.i_Island.findMany({
+      include: {
+        Buildings: { include: { i_Building: true } },
+        Units: { include: { i_Unit: true } },
+      },
+    });
+    return islands
+      .map((i: any) => ({
+        id: i.ID,
+        score: this.powerScore(i),
+        tc: this.townCenterLevel(i),
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
+  }
+
+  // ── Phase 5: community-economy integrations (feature-flagged, off by default) ─
+
+  /** Award community Points for Islander milestones? (env ISLANDER_AWARD_POINTS) */
+  static get pointsAwardEnabled(): boolean {
+    return process.env.ISLANDER_AWARD_POINTS === "true";
+  }
+
+  /** Allow converting community Points → island Currency? (env ISLANDER_POINTS_EXCHANGE) */
+  static get pointsExchangeEnabled(): boolean {
+    return process.env.ISLANDER_POINTS_EXCHANGE === "true";
+  }
+
+  /** Award a milestone's Points once (idempotent via a PointHistory marker). */
+  static async awardMilestone(userId: string, m: Milestone): Promise<boolean> {
+    const prisma = global.client.prisma;
+    const marker = `ISL:milestone:${m.key}`;
+    const already = await prisma.pointHistory.findFirst({
+      where: { userid: userId, comment: { startsWith: marker } },
+    });
+    if (already) return false;
+
+    await prisma.points.upsert({
+      where: { userid: userId },
+      update: { TotalPoints: { increment: m.points }, lastComment: m.label },
+      create: { userid: userId, TotalPoints: m.points, lastComment: m.label },
+    });
+    await prisma.pointHistory.create({
+      data: { userid: userId, points: m.points, comment: `${marker} ${m.label}` },
+    });
+    this.notify(userId, {
+      content: `🏝️ **Islander milestone:** ${m.label} — +${m.points} :palm_tree: points!`,
+    }).catch(() => {});
+    return true;
+  }
+
+  /** Check Town-Center milestones for an island (no-op unless enabled). */
+  static async checkTcMilestones(userId: string, island: IslandWithDetail): Promise<void> {
+    if (!this.pointsAwardEnabled) return;
+    const tc = this.townCenterLevel(island);
+    for (const m of MILESTONES) {
+      if (m.type === "tc" && tc >= m.threshold) {
+        await this.awardMilestone(userId, m).catch((e) =>
+          log.error("milestone award failed:", e)
+        );
+      }
+    }
+  }
+
+  /** Check raid-win milestones (called after a winning raid; no-op unless enabled). */
+  static async checkRaidMilestones(userId: string): Promise<void> {
+    if (!this.pointsAwardEnabled) return;
+    const wins = await global.client.prisma.i_Raid.count({
+      where: { AttackerID: userId, AttackerWon: true },
+    });
+    for (const m of MILESTONES) {
+      if (m.type === "raidwins" && wins >= m.threshold) {
+        await this.awardMilestone(userId, m).catch((e) =>
+          log.error("milestone award failed:", e)
+        );
+      }
+    }
+  }
+
+  /** Convert community Points into island Currency (rate-limited, capped). */
+  static async exchangePoints(userId: string, points: number) {
+    if (!this.pointsExchangeEnabled)
+      return this.fail("Points exchange is currently disabled.");
+    if (!Number.isFinite(points) || points < 1)
+      return this.fail("Enter a whole number of points (1 or more).");
+    points = Math.floor(points);
+
+    const prisma = global.client.prisma;
+    const pts = await prisma.points.findUnique({ where: { userid: userId } });
+    const balance = pts?.TotalPoints ?? 0;
+    if (balance < points)
+      return this.fail(`You only have ${balance} :palm_tree: points.`);
+
+    // Daily cap across all conversions today.
+    const since = new Date();
+    since.setHours(0, 0, 0, 0);
+    const agg = await prisma.pointHistory.aggregate({
+      _sum: { points: true },
+      where: { userid: userId, TimeStamp: { gte: since }, comment: { startsWith: "ISL:exchange" } },
+    });
+    const spentToday = -(agg._sum.points ?? 0);
+    const remaining = INTEGRATIONS.EXCHANGE_DAILY_POINT_CAP - spentToday;
+    if (points > remaining)
+      return this.fail(`Daily exchange cap is ${INTEGRATIONS.EXCHANGE_DAILY_POINT_CAP} points — you can convert ${Math.max(0, remaining)} more today.`);
+
+    const island = await this.prepare(userId);
+    const gain = points * INTEGRATIONS.POINTS_PER_CURRENCY;
+    const cap = this.storageCap(island);
+    const newCurrency = Math.min(cap, island.Currency + gain);
+    const actuallyGained = newCurrency - island.Currency;
+
+    await prisma.points.update({
+      where: { userid: userId },
+      data: { TotalPoints: { decrement: points }, lastComment: "Islander currency exchange" },
+    });
+    await prisma.pointHistory.create({
+      data: { userid: userId, points: -points, comment: `ISL:exchange ${points} pts → ${gain} 🪙` },
+    });
+    await prisma.i_Island.update({ where: { ID: userId }, data: { Currency: newCurrency } });
+
+    const wasted = gain - actuallyGained;
+    return this.ok(
+      `🔁 Converted **${points}** :palm_tree: → **${actuallyGained}** 🪙` +
+        (wasted > 0 ? ` (${wasted} lost to your storage cap)` : "") + "."
+    );
   }
 
   // ── small helpers ──────────────────────────────────────────────────────────

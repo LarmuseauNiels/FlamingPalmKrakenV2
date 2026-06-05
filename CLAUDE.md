@@ -63,7 +63,8 @@ FlamingPalmKrakenV2/
 │   ├── IHandler.ts           # Interface for all interaction handlers
 │   └── IEvent.ts             # Interface for all event handlers
 ├── islander/                 # "Islander" island-building game (see docs/ISLANDER_DESIGN.md)
-│   ├── IslanderModule.ts     # Core: island lifecycle + lazy resource accrual
+│   ├── IslanderModule.ts     # Core: island lifecycle, lazy accrual, build/upgrade/train
+│   ├── CombatModule.ts       # PvP raid resolution + scouting
 │   ├── IslanderSeed.ts       # Seeds i_Building/i_BuildingLevel/i_Unit from balance data
 │   ├── IslanderView.ts       # Builds the /island message payload (embed+image+buttons)
 │   ├── IslanderImage.ts      # @napi-rs/canvas island renderer
@@ -146,6 +147,8 @@ const raids = await global.client.prisma.raids.findMany(...);
 | `BUGSNAG_API_KEY` | Bugsnag error tracking key |
 | `LOG_LEVEL` | Logger level: DEBUG, INFO, WARN, ERROR |
 | `DISABLE` | Set to skip startup (optional) |
+| `ISLANDER_AWARD_POINTS` | `true` to award community Points for Islander milestones (optional, default off) |
+| `ISLANDER_POINTS_EXCHANGE` | `true` to enable the Points→island-Currency exchange button (optional, default off) |
 | `CAPROVER_GIT_COMMIT_SHA` | Version tracking (optional) |
 
 ### Scripts

@@ -225,3 +225,66 @@ export function levelStats(line: BuildingLine, level: number): LevelStats {
 export function lineByKey(key: string): BuildingLine | undefined {
   return BUILDING_LINES.find((l) => l.key === key);
 }
+
+// ── PvP raiding (docs/ISLANDER_DESIGN.md §6, ISLANDER_BALANCE.md §9) ──────────
+
+export const PVP = {
+  LOOT_PERCENT: 0.2, // max % of a resource's *unprotected* amount a raid takes
+  NEW_PLAYER_SHIELD_TC: 5, // islands below this Town Center level can't be raided
+  POST_RAID_SHIELD_HOURS: 8, // protection after being successfully raided
+  RAID_COOLDOWN_HOURS: 4, // base attacker cooldown (reduced by Naval)
+  REPEAT_TARGET_HOURS: 24, // can't re-raid the same victim within this window
+  MATCHMAKING_BAND: 5, // target TC must be within ±this of the attacker's
+  SCOUT_COST: 50, // Currency to scout a target's defenses
+  TOWER_KILL_CAP: 0.25, // max fraction of attackers towers kill pre-battle
+  WALL_DR_CAP: 0.45, // (reference) max wall damage reduction
+  JITTER: 0.1, // ±10% randomness on the power ratio
+  STONE_PER_WALL_HP: 0.25, // /repair cost: 1 Stone restores 4 HP
+};
+
+/** Fraction of attacking units killed before the clash by defender towers. */
+export function towerKillPct(level: number): number {
+  return level > 0 ? Math.min(PVP.TOWER_KILL_CAP, 0.02 * level) : 0;
+}
+
+/** Fraction of each resource the Castle/Keep vault protects from raids. */
+export function vaultPct(level: number): number {
+  return level > 0 ? Math.min(0.55, 0.15 + 0.0285 * (level - 1)) : 0;
+}
+
+/** Flat per-resource amount the vault protects regardless of percentage. */
+export function vaultFloor(level: number): number {
+  return level > 0 ? level * 2000 : 0;
+}
+
+/** Attacker raid-cooldown reduction from the Naval line (max 40%). */
+export function navalCooldownReduction(level: number): number {
+  return Math.min(0.4, 0.02 * level);
+}
+
+// ── Phase 5: community-economy integrations (off by default) ─────────────────
+// Enabled per-flag via env vars; see docs/ISLANDER_DESIGN.md §10.
+
+export const INTEGRATIONS = {
+  POINTS_PER_CURRENCY: 10, // 1 community Point → this much island Currency
+  EXCHANGE_DAILY_POINT_CAP: 100, // max Points a player may convert per day
+};
+
+export interface Milestone {
+  key: string;
+  type: "tc" | "raidwins";
+  threshold: number;
+  points: number; // one-way community Points award
+  label: string;
+}
+
+// One-way Point rewards for Islander achievements. Modest by design so they
+// don't inflate the community economy.
+export const MILESTONES: Milestone[] = [
+  { key: "tc5", type: "tc", threshold: 5, points: 25, label: "Reached Town Center level 5" },
+  { key: "tc10", type: "tc", threshold: 10, points: 75, label: "Reached Town Center level 10" },
+  { key: "tc20", type: "tc", threshold: 20, points: 200, label: "Reached Town Center level 20" },
+  { key: "raid1", type: "raidwins", threshold: 1, points: 40, label: "Won your first raid" },
+  { key: "raid10", type: "raidwins", threshold: 10, points: 150, label: "Won 10 raids" },
+  { key: "raid50", type: "raidwins", threshold: 50, points: 500, label: "Won 50 raids" },
+];
