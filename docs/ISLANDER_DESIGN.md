@@ -185,6 +185,12 @@ free-money pump. Exact ratio and cap live in the balance doc (§7 there).
   into the pool over time (re-recruitable), but the killed units themselves are
   gone.
 
+> **v1 implementation note:** training is **instant** — gated by resources, free
+> population, and the Army/Naval building capacity, but not yet time-gated. The
+> per-unit `trainTime` in the balance doc is reserved for a future timed-training
+> queue. Trained units occupy population (they keep eating Food via upkeep), so a
+> bigger army needs more Housing + Farms — that's the upkeep tension.
+
 ### Launch roster
 Small and data-driven; new units (and the Research gate) come later. Stats live
 in [`ISLANDER_BALANCE.md`](./ISLANDER_BALANCE.md) §8.
@@ -254,10 +260,7 @@ interactive image-with-buttons surface.
 ### 7.1 Slash commands
 | Command | Description |
 |---|---|
-| `/island [@member]` | Render your island (or view another's) — image + status embed + action buttons. |
-| `/build <building>` | Start constructing a new building. |
-| `/upgrade <building>` | Upgrade an existing building (or via button). |
-| `/train <unit> <count>` | Train army/naval units. |
+| `/island [@member]` | Render your island (or view another's) — image + status embed + action buttons. **This is the single entry point**: building, upgrading, rushing and training are all done via its buttons/menus, not separate commands. |
 | `/raid @member` | Launch a raid. |
 | `/scout @member` | Pay Currency to estimate a target's defenses. |
 | `/repair` | Spend Stone to repair walls after a raid. |
@@ -284,6 +287,51 @@ All long operations **`deferReply`** first (Discord's 3s rule, per `CLAUDE.md`).
   `NotifyLevel` preference (`modules/NotificationLevels.ts`).
 - An optional dedicated island-updates channel can reuse
   `islander/ChannelUpdates.ts` (currently a generic helper — see §11).
+
+### 7.4 Island rendering & art assets
+**Current state (Phase 0–2):** `islander/IslanderImage.ts` renders a fully
+**procedural placeholder** — a gradient sea, two ellipses for the landmass, and a
+labelled box per building positioned at its catalogue `posX/posY`. No external
+image files are loaded; `i_BuildingLevel.imagename` is stored but unused.
+
+**Target (see Phase 6):** replace the placeholder with a proper composited
+island built from **[Kenney.nl](https://kenney.nl) assets**, which are **CC0
+(public domain)** — free for commercial use, no attribution required (we'll
+credit Kenney anyway). The data layer already supports this: each building line
+carries an `imagename` and `posX/posY`, so the switch is mostly an asset drop +
+`Canvas.loadImage` calls, with a graceful fallback to the current markers when a
+sprite is missing.
+
+**Primary kit — Kenney "Hexagon Kit":** pre-rendered isometric hex tiles
+(grass, sand, water, stone, dirt, plus building/decoration pieces). The island
+becomes a small **hex grid** instead of arbitrary x/y points:
+- Lay a base map of water → beach → grass hex tiles for the island shape.
+- Each building occupies a hex; its tile/sprite is chosen by `imagename`
+  (and ideally by tier, e.g. `farm`, `farm_estate`, `plantation`).
+- `posX/posY` (or new axial `q/r` hex coords) place each building on the grid;
+  isometric draw order is back-to-front so tiles overlap correctly.
+
+**Supporting kits (also CC0):**
+- **Pirate Kit / Pirate Pack** — ships for the Naval line (Dock/Harbour/Port)
+  and raid/battle imagery, palm trees, barrels, flags.
+- **Nature Kit / Foliage** — trees, rocks for the Wood/Stone lines and ambient
+  decoration.
+- **Tower Defense (top-down)** or **Medieval RTS** — towers, walls, and military
+  buildings if the hex building pieces aren't enough.
+
+**Implementation notes:**
+- Vendor the chosen PNGs under `assets/islander/` (kit + version recorded in a
+  `CREDITS`/README there), and load them through a small cache (`Canvas.loadImage`
+  results memoised once, like the definition cache) so we don't re-read files per
+  render.
+- Add an `imagename → file` (and tier → file) resolver; unknown names fall back
+  to the labelled-box marker so a half-arted catalogue still renders.
+- Keep the renderer output at a fixed size and draw a header/resource banner over
+  the composed scene (as today). Battle reports (Phase 3) can reuse the same
+  compositor for an attacker-vs-defender image.
+- Hex math: store a per-building hex coordinate in the catalogue (replacing the
+  flat `posX/posY`) and convert to pixel space with the standard isometric hex
+  projection; precompute the island's tile layout from a simple shape template.
 
 ---
 
@@ -478,11 +526,12 @@ Each is additive and feature-flagged; none are required for v1.
 | Phase | Scope | Outcome |
 |---|---|---|
 | **0 — Foundations** ✅ | Schema + migration, building/unit seed data (`islander/data/balance.ts` + `IslanderSeed`), `IslanderModule` with lazy resource ticks, `/island` (image + embed + Refresh button). | **Implemented.** Players have an island and watch resources grow. |
-| **1 — Build loop** | `/build`, `/upgrade`, Warehouse caps, TC gating, build timers, Currency rush, action buttons. | Full single-player progression. |
-| **2 — Army** | `/train`, unit data, Smithing/Naval effects, population/upkeep tension. | Players field an army. |
+| **1 — Build loop** ✅ | Build/Upgrade/Rush driven entirely by `/island` buttons + select menus (no standalone commands), Warehouse caps, TC gating, build timers, one-build-at-a-time, Currency rush, Knowledge build-time reduction. | **Implemented.** Full single-player progression. |
+| **2 — Army** ✅ | Train button → unit select → quantity modal; unit unlock gates (Army/Naval level), land/naval caps, free-population cost, Smithing attack/HP bonus, Naval ship cap, Food-upkeep tension; army summary on the island embed. (Instant training; timed queue deferred.) | **Implemented.** Players field an army. |
 | **3 — PvP** | `CombatModule`, `/raid`, `/scout`, `/repair`, shields, cooldowns, loot caps, vault, raid log, battle report image. | The competitive core loop is live. |
 | **4 — Polish & social** | Leaderboard, notifications, tutorial, balance pass via `ISLANDER_BALANCE.md`. | Tuned, discoverable, retention features. |
 | **5 — Integrations (optional)** | Points/achievement hooks (§10), cosmetics. | Ties Islander into the wider community economy. |
+| **6 — Visual art pass** | Replace the procedural placeholder with composited art from **Kenney.nl** CC0 kits — Hexagon Kit for the island/terrain/building tiles, Pirate & Nature kits for ships/decor (§7.4). Vendor assets under `assets/islander/`, add an `imagename`(+tier)→sprite resolver with marker fallback, a hex-grid layout, and an image cache; reuse the compositor for battle reports. | A real, attractive island image (and battle scenes) instead of labelled boxes. |
 
 ---
 

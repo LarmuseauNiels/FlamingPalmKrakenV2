@@ -1,8 +1,11 @@
 // Renders an island to a PNG via @napi-rs/canvas. This is a procedural
 // placeholder: it draws water, the island, and each built building as a labelled
-// marker at its catalogue position (imagePosX/Y). Once sprite assets exist they
-// can be drawn with Canvas.loadImage in place of the markers, keyed by
-// i_BuildingLevel.imagename. See docs/ISLANDER_DESIGN.md §7.2.
+// marker at its catalogue position (imagePosX/Y).
+//
+// Phase 6 (docs/ISLANDER_DESIGN.md §7.4) replaces this with composited art from
+// Kenney.nl CC0 kits (Hexagon Kit terrain/building tiles + Pirate/Nature decor),
+// loaded via Canvas.loadImage keyed by i_BuildingLevel.imagename, with this
+// marker rendering kept as the fallback when a sprite is missing.
 
 import * as Canvas from "@napi-rs/canvas";
 import { AttachmentBuilder } from "discord.js";

@@ -1,7 +1,7 @@
 // Discord embed builders for Islander. See docs/ISLANDER_DESIGN.md §7.2.
 
 import { EmbedBuilder } from "discord.js";
-import { lineByKey, tierNameFor, ResourceKey } from "./data/balance";
+import { lineByKey, tierNameFor, UNITS, ResourceKey } from "./data/balance";
 import { IslandWithDetail, IslanderModule } from "./IslanderModule";
 
 export abstract class IslanderEmbeds {
@@ -13,9 +13,17 @@ export abstract class IslanderEmbeds {
       popCap: number;
       production: Record<ResourceKey, number>;
       tcLevel: number;
+      currentBuild?: any | null;
+      army?: {
+        counts: Record<string, number>;
+        caps: { land: number; naval: number };
+        freePop: number;
+        attack: number;
+        smithing: number;
+      };
     }
   ): EmbedBuilder {
-    const { cap, popCap, production, tcLevel } = opts;
+    const { cap, popCap, production, tcLevel, currentBuild, army } = opts;
 
     const resLine = (
       label: string,
@@ -59,7 +67,39 @@ export abstract class IslanderEmbeds {
           value: buildings.length ? buildings.join("\n") : "None yet",
           inline: false,
         }
-      )
+      );
+
+    if (army) {
+      const roster = UNITS.filter((u) => (army.counts[u.key] ?? 0) > 0)
+        .map((u) => `${u.name} ×${army.counts[u.key]}`)
+        .join("\n");
+      const bonus = army.smithing ? ` · ⚔️+${Math.round(army.smithing * 100)}%` : "";
+      embed.addFields({
+        name: "Army",
+        value:
+          (roster || "No units yet") +
+          `\nFree pop: **${army.freePop}** · Atk: **${army.attack}**${bonus}` +
+          `\nCaps — 🪖 ${army.caps.land} land · ⛵ ${army.caps.naval} naval`,
+        inline: false,
+      });
+    }
+
+    if (currentBuild) {
+      const line = lineByKey(currentBuild.i_Building?.Name);
+      const targetLevel =
+        currentBuild.upgrading === 0 ? 1 : currentBuild.upgrading;
+      const label = line ? tierNameFor(line, targetLevel) : "Building";
+      const ready = Math.floor(
+        new Date(currentBuild.upgradeReady).getTime() / 1000
+      );
+      embed.addFields({
+        name: "🏗️ Under construction",
+        value: `**${label}** (Lv ${targetLevel}) — ready <t:${ready}:R>`,
+        inline: false,
+      });
+    }
+
+    embed
       .setImage("attachment://island.png")
       .setFooter({
         text: "Islander · FPG kraken bot",
