@@ -294,10 +294,10 @@ model i_BuildingLevel {
   BuildingID     Int
   Level          Int                 @db.UnsignedTinyInt
   Name           String              @db.VarChar(255)
-  Wood           Int                 @default(0) @db.UnsignedMediumInt
-  Food           Int                 @default(0) @db.UnsignedMediumInt
-  Stone          Int                 @default(0) @db.UnsignedMediumInt
-  Currency       Int                 @default(0) @db.UnsignedMediumInt
+  Wood           Int                 @default(0) @db.UnsignedInt
+  Food           Int                 @default(0) @db.UnsignedInt
+  Stone          Int                 @default(0) @db.UnsignedInt
+  Currency       Int                 @default(0) @db.UnsignedInt
   Time           Int                 @default(0) @db.UnsignedMediumInt
   TClevel        Int?                @default(0) @db.UnsignedTinyInt
   imagename      String              @default("") @db.VarChar(255)

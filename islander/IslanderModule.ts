@@ -40,9 +40,18 @@ export abstract class IslanderModule {
     if (this.buildingIdByKey) return this.buildingIdByKey;
     const prisma = global.client.prisma;
 
-    const count = await prisma.i_Building.count();
-    if (count === 0) {
-      log.info("No Islander definitions found — seeding from balance data");
+    // Seed if definitions are missing OR incomplete (e.g. a previous seed was
+    // interrupted), since the seed is idempotent (upsert) and cheap to re-run.
+    const expectedBuildings = BUILDING_LINES.length;
+    const expectedLevels = BUILDING_LINES.reduce((s, l) => s + l.maxLevel, 0);
+    const [buildingCount, levelCount] = await Promise.all([
+      prisma.i_Building.count(),
+      prisma.i_BuildingLevel.count(),
+    ]);
+    if (buildingCount < expectedBuildings || levelCount < expectedLevels) {
+      log.info(
+        `Seeding Islander definitions (have ${buildingCount}/${expectedBuildings} buildings, ${levelCount}/${expectedLevels} levels)`
+      );
       await IslanderSeed.upsertAll();
     }
 
