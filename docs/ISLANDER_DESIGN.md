@@ -213,12 +213,15 @@ pushing players to keep a separate Soldier garrison. Future unit types
 ## 6. PvP Raiding (core competitive loop)
 
 ### 6.1 Initiating a raid
-`/raid @member` (or via the target's island image button). Validations:
-- Attacker has idle (not-defending, not-traveling) units.
-- Target is **not under a protection shield** (§6.3).
-- Attacker is **not on raid cooldown**.
-- Optional **matchmaking guardrail:** target's TC level must be within a band of
-  the attacker's (e.g. ±N) to prevent stomping newbies. `/scout` reveals an
+Open the target's island with `/island @member` and press **Raid ⚔️**. The
+raider commits their **entire army** (all land + naval units). Validations:
+- Attacker has units **and at least one ship** (Naval ≥ 1) to reach the island.
+- Target is **not under a protection shield** (§6.3) and not a new player
+  (TC ≥ 5).
+- Attacker is **not on raid cooldown**, and hasn't raided this target in the
+  last 24h (repeat-target guard).
+- **Matchmaking guardrail:** target's TC level must be within ±5 of the
+  attacker's. **Scout 🔭** reveals an
   estimate of a target's defenses for a small Currency cost.
 
 ### 6.2 Combat resolution (instant, server-side)
@@ -261,12 +264,10 @@ interactive image-with-buttons surface.
 | Command | Description |
 |---|---|
 | `/island [@member]` | Render your island (or view another's) — image + status embed + action buttons. **This is the single entry point**: building, upgrading, rushing and training are all done via its buttons/menus, not separate commands. |
-| `/raid @member` | Launch a raid. |
-| `/scout @member` | Pay Currency to estimate a target's defenses. |
-| `/repair` | Spend Stone to repair walls after a raid. |
-| `/collect` | Force a resource tick / claim (mostly cosmetic, since accrual is lazy). |
-| `/island-leaderboard` | Top islands by a power score (TC level + buildings + army). |
-| `/island-help` | Tutorial / command reference. |
+| Raid / Scout | **Buttons on another member's `/island`** — Raid ⚔️ launches a raid, Scout 🔭 pays Currency for a defense estimate. |
+| Repair | **Button on your own `/island`** (enabled when walls are damaged) — spend Stone to restore wall HP. |
+| `/island-leaderboard` | *(planned)* Top islands by a power score (TC level + buildings + army). |
+| `/island-help` | *(planned)* Tutorial / command reference. |
 
 All long operations **`deferReply`** first (Discord's 3s rule, per `CLAUDE.md`).
 
@@ -528,7 +529,7 @@ Each is additive and feature-flagged; none are required for v1.
 | **0 — Foundations** ✅ | Schema + migration, building/unit seed data (`islander/data/balance.ts` + `IslanderSeed`), `IslanderModule` with lazy resource ticks, `/island` (image + embed + Refresh button). | **Implemented.** Players have an island and watch resources grow. |
 | **1 — Build loop** ✅ | Build/Upgrade/Rush driven entirely by `/island` buttons + select menus (no standalone commands), Warehouse caps, TC gating, build timers, one-build-at-a-time, Currency rush, Knowledge build-time reduction. | **Implemented.** Full single-player progression. |
 | **2 — Army** ✅ | Train button → unit select → quantity modal; unit unlock gates (Army/Naval level), land/naval caps, free-population cost, Smithing attack/HP bonus, Naval ship cap, Food-upkeep tension; army summary on the island embed. (Instant training; timed queue deferred.) | **Implemented.** Players field an army. |
-| **3 — PvP** | `CombatModule`, `/raid`, `/scout`, `/repair`, shields, cooldowns, loot caps, vault, raid log, battle report image. | The competitive core loop is live. |
+| **3 — PvP** ✅ | `CombatModule`; Raid/Scout buttons on others' islands + Repair button on your own; tower pre-kill, wall HP + damage, Castle/Keep vault, loot caps, new-player/post-raid shields, attacker cooldown (Naval-reduced), repeat-target + matchmaking-band guards, `i_Raid` log, battle-report embed. (Battle *image* deferred to Phase 6.) | **Implemented.** The competitive core loop is live. |
 | **4 — Polish & social** | Leaderboard, notifications, tutorial, balance pass via `ISLANDER_BALANCE.md`. | Tuned, discoverable, retention features. |
 | **5 — Integrations (optional)** | Points/achievement hooks (§10), cosmetics. | Ties Islander into the wider community economy. |
 | **6 — Visual art pass** | Replace the procedural placeholder with composited art from **Kenney.nl** CC0 kits — Hexagon Kit for the island/terrain/building tiles, Pirate & Nature kits for ships/decor (§7.4). Vendor assets under `assets/islander/`, add an `imagename`(+tier)→sprite resolver with marker fallback, a hex-grid layout, and an image cache; reuse the compositor for battle reports. | A real, attractive island image (and battle scenes) instead of labelled boxes. |

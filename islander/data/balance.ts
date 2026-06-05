@@ -225,3 +225,39 @@ export function levelStats(line: BuildingLine, level: number): LevelStats {
 export function lineByKey(key: string): BuildingLine | undefined {
   return BUILDING_LINES.find((l) => l.key === key);
 }
+
+// ── PvP raiding (docs/ISLANDER_DESIGN.md §6, ISLANDER_BALANCE.md §9) ──────────
+
+export const PVP = {
+  LOOT_PERCENT: 0.2, // max % of a resource's *unprotected* amount a raid takes
+  NEW_PLAYER_SHIELD_TC: 5, // islands below this Town Center level can't be raided
+  POST_RAID_SHIELD_HOURS: 8, // protection after being successfully raided
+  RAID_COOLDOWN_HOURS: 4, // base attacker cooldown (reduced by Naval)
+  REPEAT_TARGET_HOURS: 24, // can't re-raid the same victim within this window
+  MATCHMAKING_BAND: 5, // target TC must be within ±this of the attacker's
+  SCOUT_COST: 50, // Currency to scout a target's defenses
+  TOWER_KILL_CAP: 0.25, // max fraction of attackers towers kill pre-battle
+  WALL_DR_CAP: 0.45, // (reference) max wall damage reduction
+  JITTER: 0.1, // ±10% randomness on the power ratio
+  STONE_PER_WALL_HP: 0.25, // /repair cost: 1 Stone restores 4 HP
+};
+
+/** Fraction of attacking units killed before the clash by defender towers. */
+export function towerKillPct(level: number): number {
+  return level > 0 ? Math.min(PVP.TOWER_KILL_CAP, 0.02 * level) : 0;
+}
+
+/** Fraction of each resource the Castle/Keep vault protects from raids. */
+export function vaultPct(level: number): number {
+  return level > 0 ? Math.min(0.55, 0.15 + 0.0285 * (level - 1)) : 0;
+}
+
+/** Flat per-resource amount the vault protects regardless of percentage. */
+export function vaultFloor(level: number): number {
+  return level > 0 ? level * 2000 : 0;
+}
+
+/** Attacker raid-cooldown reduction from the Naval line (max 40%). */
+export function navalCooldownReduction(level: number): number {
+  return Math.min(0.4, 0.02 * level);
+}

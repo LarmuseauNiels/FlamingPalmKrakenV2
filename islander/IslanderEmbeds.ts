@@ -109,4 +109,65 @@ export abstract class IslanderEmbeds {
 
     return embed;
   }
+
+  /** Post-battle report shown after a raid resolves. */
+  static battleReport(report: {
+    attackerName: string;
+    defenderName: string;
+    win: boolean;
+    attackerLosses: Record<string, number>;
+    defenderLosses: Record<string, number>;
+    loot: Record<string, number>;
+    wallDamage: number;
+  }): EmbedBuilder {
+    const fmtLosses = (l: Record<string, number>) => {
+      const e = Object.entries(l).filter(([, n]) => n > 0);
+      return e.length ? e.map(([n, c]) => `${n} ×${c}`).join(", ") : "none";
+    };
+    const lootLine = (["Wood", "Stone", "Food", "Currency"] as const)
+      .filter((r) => report.loot[r] > 0)
+      .map((r) => `${{ Wood: "🪵", Stone: "🪨", Food: "🍖", Currency: "🪙" }[r]} ${report.loot[r]}`)
+      .join("  ");
+
+    return new EmbedBuilder()
+      .setColor(report.win ? "#3ba55d" : "#ed4245")
+      .setTitle(report.win ? "⚔️ Raid successful!" : "🛡️ Raid repelled!")
+      .setDescription(
+        `**${report.attackerName}** raided **${report.defenderName}**.`
+      )
+      .addFields(
+        {
+          name: report.win ? "💰 Plunder" : "💰 Plunder",
+          value: report.win ? lootLine || "Nothing could be carried off." : "The defenders held — no loot.",
+          inline: false,
+        },
+        { name: `${report.attackerName} lost`, value: fmtLosses(report.attackerLosses), inline: true },
+        { name: `${report.defenderName} lost`, value: fmtLosses(report.defenderLosses), inline: true },
+        { name: "🧱 Wall damage", value: `${report.wallDamage}`, inline: true }
+      )
+      .setFooter({ text: "Islander · FPG kraken bot" })
+      .setTimestamp();
+  }
+
+  /** Intel report shown after scouting a target. */
+  static scout(intel: {
+    name: string;
+    tcLevel: number;
+    estArmy: number;
+    estAttack: number;
+    wallHP: number;
+    towerLevel: number;
+  }): EmbedBuilder {
+    return new EmbedBuilder()
+      .setColor("#5865f2")
+      .setTitle(`🔭 Scouting report — ${intel.name}`)
+      .setDescription("Estimates only — actual strength may vary.")
+      .addFields(
+        { name: "Town Center", value: `Lv ${intel.tcLevel}`, inline: true },
+        { name: "Army (est.)", value: `~${intel.estArmy} units · atk ~${intel.estAttack}`, inline: true },
+        { name: "Defenses", value: `🧱 ${intel.wallHP} wall HP · 🗼 towers Lv ${intel.towerLevel}`, inline: false }
+      )
+      .setFooter({ text: "Islander · FPG kraken bot" })
+      .setTimestamp();
+  }
 }

@@ -64,18 +64,36 @@ export abstract class IslanderView {
         .setDisabled(!isOwner || !building)
     );
 
-    const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`islander_train_${targetId}`)
-        .setLabel("Train 🪖")
-        .setStyle(ButtonStyle.Success)
-        .setDisabled(!isOwner),
-      new ButtonBuilder()
-        .setCustomId("islander_raid_disabled")
-        .setLabel("Raid")
-        .setStyle(ButtonStyle.Danger)
-        .setDisabled(true) // Phase 3
-    );
+    const row2 = new ActionRowBuilder<ButtonBuilder>();
+    if (isOwner) {
+      // Own island: train units and repair damaged walls.
+      const wallsDamaged =
+        IslanderModule.wallHPCurrent(view.island) <
+        IslanderModule.wallHPMax(view.island);
+      row2.addComponents(
+        new ButtonBuilder()
+          .setCustomId(`islander_train_${targetId}`)
+          .setLabel("Train 🪖")
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId(`islander_repair_${targetId}`)
+          .setLabel("Repair 🧱")
+          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(!wallsDamaged)
+      );
+    } else {
+      // Someone else's island: scout or raid it.
+      row2.addComponents(
+        new ButtonBuilder()
+          .setCustomId(`islander_scout_${targetId}`)
+          .setLabel("Scout 🔭")
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId(`islander_raid_${targetId}`)
+          .setLabel("Raid ⚔️")
+          .setStyle(ButtonStyle.Danger)
+      );
+    }
 
     return { embeds: [embed], files: [image], components: [row1, row2] };
   }

@@ -6,6 +6,8 @@ import {
 import { IHandler } from "../../interfaces/IHandler";
 import { IslanderView } from "../../islander/IslanderView";
 import { IslanderModule } from "../../islander/IslanderModule";
+import { CombatModule } from "../../islander/CombatModule";
+import { IslanderEmbeds } from "../../islander/IslanderEmbeds";
 import { levelStats, tierNameFor } from "../../islander/data/balance";
 import { createLogger } from "../../utils/logger";
 
@@ -36,7 +38,12 @@ export default class IslanderButton implements IHandler {
         return;
       }
 
-      // Everything below mutates an island — only its owner may do so.
+      // Raid / scout act AGAINST ownerId (the target), so the attacker is the
+      // clicker — these must run before the owner check below.
+      if (action === "raid") return this.doRaid(interaction, ownerId);
+      if (action === "scout") return this.doScout(interaction, ownerId);
+
+      // Everything below mutates the clicker's OWN island.
       if (interaction.user.id !== ownerId) {
         await interaction.reply({
           content: "That's not your island.",
@@ -48,6 +55,19 @@ export default class IslanderButton implements IHandler {
       if (action === "build") return this.openBuildSelect(interaction, ownerId);
       if (action === "upgrade") return this.openUpgradeSelect(interaction, ownerId);
       if (action === "train") return this.openTrainSelect(interaction, ownerId);
+      if (action === "repair") {
+        const res = await IslanderModule.repairWalls(ownerId);
+        if (!res.ok) {
+          await interaction.reply({ content: res.message, ephemeral: true });
+          return;
+        }
+        await interaction.deferUpdate();
+        const target = await global.client.users.fetch(ownerId).catch(() => null);
+        await interaction.editReply(
+          await IslanderView.build(ownerId, target?.username ?? "Island", true)
+        );
+        return;
+      }
       if (action === "rush") {
         const res = await IslanderModule.rush(ownerId);
         if (!res.ok) {
@@ -170,5 +190,42 @@ export default class IslanderButton implements IHandler {
       components: [new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu)],
       ephemeral: true,
     });
+  }
+
+  private async doRaid(interaction: ButtonInteraction, defenderId: string) {
+    await interaction.deferReply(); // public battle report
+    const [attacker, defender] = await Promise.all([
+      global.client.users.fetch(interaction.user.id).catch(() => null),
+      global.client.users.fetch(defenderId).catch(() => null),
+    ]);
+    const res = await CombatModule.resolveRaid(
+      interaction.user.id,
+      defenderId,
+      attacker?.username ?? "Raider",
+      defender?.username ?? "Island"
+    );
+    if (!res.ok || !res.report) {
+      await interaction.editReply({ content: res.message });
+      return;
+    }
+    await interaction.editReply({ embeds: [IslanderEmbeds.battleReport(res.report)] });
+  }
+
+  private async doScout(interaction: ButtonInteraction, defenderId: string) {
+    const [attacker, defender] = await Promise.all([
+      global.client.users.fetch(interaction.user.id).catch(() => null),
+      global.client.users.fetch(defenderId).catch(() => null),
+    ]);
+    const res = await CombatModule.scout(
+      interaction.user.id,
+      defenderId,
+      attacker?.username ?? "Scout",
+      defender?.username ?? "Island"
+    );
+    if (!res.ok || !res.intel) {
+      await interaction.reply({ content: res.message, ephemeral: true });
+      return;
+    }
+    await interaction.reply({ embeds: [IslanderEmbeds.scout(res.intel)], ephemeral: true });
   }
 }

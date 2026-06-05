@@ -8,6 +8,7 @@ import {
   CONSTANTS,
   BUILDING_LINES,
   UNITS,
+  PVP,
   lineByKey,
   levelStats,
   tcRequirement,
@@ -605,6 +606,52 @@ export abstract class IslanderModule {
     });
 
     return this.ok(`🪖 Trained **${qty}× ${def.name}**.`);
+  }
+
+  // ── Walls / defense ─────────────────────────────────────────────────────────
+
+  /** The walls building row (holds current wallHP), or null. */
+  static wallsRow(island: IslandWithDetail): any | null {
+    return (island.Buildings ?? []).find(
+      (b: any) => b.i_Building?.Name === "walls"
+    ) ?? null;
+  }
+
+  /** Maximum wall HP at the walls building's current level (0 if none). */
+  static wallHPMax(island: IslandWithDetail): number {
+    const line = lineByKey("walls");
+    const lvl = this.lineLevel(island, "walls");
+    return line && lvl > 0 ? levelStats(line, lvl).attr : 0;
+  }
+
+  /** Current standing wall HP (depleted by raids, restored by /repair). */
+  static wallHPCurrent(island: IslandWithDetail): number {
+    const row = this.wallsRow(island);
+    return row?.wallHP ?? 0;
+  }
+
+  /** Restore walls to full HP, paying Stone (1 Stone per 4 HP). */
+  static async repairWalls(userId: string) {
+    const island = await this.prepare(userId);
+    const row = this.wallsRow(island);
+    if (!row) return this.fail("You have no walls to repair.");
+    const max = this.wallHPMax(island);
+    const missing = Math.max(0, max - (row.wallHP ?? 0));
+    if (missing <= 0) return this.fail("Your walls are already at full strength.");
+
+    const cost = Math.ceil(missing * PVP.STONE_PER_WALL_HP);
+    if (island.Stone < cost)
+      return this.fail(`Repairing ${missing} wall HP costs ${cost} 🪨 — you have ${island.Stone}.`);
+
+    await global.client.prisma.i_Island.update({
+      where: { ID: userId },
+      data: { Stone: island.Stone - cost },
+    });
+    await global.client.prisma.i_Building_Island.update({
+      where: { BuildingID_IslandID: { BuildingID: row.BuildingID, IslandID: userId } },
+      data: { wallHP: max },
+    });
+    return this.ok(`🧱 Repaired walls to full (${max} HP) for ${cost} 🪨.`);
   }
 
   // ── small helpers ──────────────────────────────────────────────────────────
