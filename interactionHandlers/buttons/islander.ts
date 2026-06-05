@@ -122,9 +122,15 @@ export default class IslanderButton implements IHandler {
       };
     });
 
+    const next = IslanderModule.nextUnlock(island);
+    const hint = next
+      ? `\n🔒 Town Center **${next.tc}** unlocks: ${next.names.join(", ")}.`
+      : "";
+
     if (!options.length) {
       await interaction.reply({
-        content: "Nothing new to build right now — raise your Town Center to unlock more.",
+        content:
+          "Nothing new to build right now — upgrade your **Town Center** to unlock more." + hint,
         ephemeral: true,
       });
       return;
@@ -136,7 +142,7 @@ export default class IslanderButton implements IHandler {
       .addOptions(options.slice(0, 25));
 
     await interaction.reply({
-      content: "🏗️ **Build a new building:**",
+      content: "🏗️ **Build a new building:**" + hint,
       components: [new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu)],
       ephemeral: true,
     });

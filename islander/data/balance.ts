@@ -65,7 +65,7 @@ export const BUILDING_LINES: BuildingLine[] = [
   },
   {
     key: "housing", func: "store", resource: "Population",
-    tierNames: ["Tents", "Houses", "Villas"], maxLevel: 30, unlockTC: 1,
+    tierNames: ["Tents", "Houses", "Villas"], maxLevel: 30, unlockTC: 3,
     image: "housing", posX: 150, posY: 250,
     base: { wood: 40, stone: 20, time: 45, attr: 10 },
   },
@@ -83,7 +83,7 @@ export const BUILDING_LINES: BuildingLine[] = [
   },
   {
     key: "stone", func: "produce", resource: "Stone",
-    tierNames: ["Mine", "Quarry", "Stoneworks"], maxLevel: 30, unlockTC: 1,
+    tierNames: ["Mine", "Quarry", "Stoneworks"], maxLevel: 30, unlockTC: 2,
     image: "mine", posX: 470, posY: 240,
     base: { wood: 40, stone: 20, time: 30, attr: 55 },
   },
@@ -95,7 +95,7 @@ export const BUILDING_LINES: BuildingLine[] = [
   },
   {
     key: "warehouse", func: "store", resource: "all",
-    tierNames: ["Warehouse", "Storehouse", "Grand Depot"], maxLevel: 30, unlockTC: 1,
+    tierNames: ["Warehouse", "Storehouse", "Grand Depot"], maxLevel: 30, unlockTC: 2,
     image: "warehouse", posX: 210, posY: 180,
     base: { wood: 60, stone: 40, time: 60, attr: 1500 }, // storage headroom > any single upgrade cost
   },

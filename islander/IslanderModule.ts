@@ -318,6 +318,7 @@ export abstract class IslanderModule {
     production: Record<ResourceKey, number>;
     tcLevel: number;
     currentBuild: any | null;
+    nextUnlock: { tc: number; names: string[] } | null;
     army: {
       counts: Record<string, number>;
       caps: { land: number; naval: number };
@@ -335,6 +336,7 @@ export abstract class IslanderModule {
       production: this.productionPerHour(island),
       tcLevel: this.townCenterLevel(island),
       currentBuild: this.currentBuild(island),
+      nextUnlock: this.nextUnlock(island),
       army: {
         counts: this.unitCounts(island),
         caps: this.unitCaps(island),
@@ -356,6 +358,25 @@ export abstract class IslanderModule {
     return BUILDING_LINES.filter(
       (l) => l.func !== "gate" && !built.has(l.key) && tc >= l.unlockTC
     );
+  }
+
+  /** The next batch of buildings that unlock, and at which TC level (or null). */
+  static nextUnlock(
+    island: IslandWithDetail
+  ): { tc: number; names: string[] } | null {
+    const tc = this.townCenterLevel(island);
+    const built = new Set(
+      (island.Buildings ?? []).map((b: any) => b.i_Building?.Name)
+    );
+    const locked = BUILDING_LINES.filter(
+      (l) => l.func !== "gate" && !built.has(l.key) && l.unlockTC > tc
+    );
+    if (!locked.length) return null;
+    const nextTc = Math.min(...locked.map((l) => l.unlockTC));
+    const names = locked
+      .filter((l) => l.unlockTC === nextTc)
+      .map((l) => l.tierNames[0]);
+    return { tc: nextTc, names };
   }
 
   /** Built lines that can still be upgraded (below max + TC allows next level). */

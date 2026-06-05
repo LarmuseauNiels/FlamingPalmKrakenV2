@@ -63,9 +63,9 @@ level. Max level v1 = **30**.
 
 | TC Level | Name | Wood | Stone | Food | Time | Unlocks |
 |---|---|---|---|---|---|---|
-| 1 | Campfire | — | — | — | — | **Starting building** (only one). Unlocks (buildable): Farm, Woodcutter, Mine, Tents, Warehouse |
-| 2 | Campfire | 200 | 150 | 100 | 120 | — |
-| 3 | Campfire | 400 | 300 | 200 | 300 | Army Camp, Palisade Walls |
+| 1 | Campfire | — | — | — | — | **Starting building** (the only one). Buildable now: **Farm, Woodcutter** |
+| 2 | Campfire | 200 | 150 | 100 | 120 | **Mine, Warehouse** |
+| 3 | Campfire | 400 | 300 | 200 | 300 | **Tents**, Army Camp, Palisade Walls |
 | 5 | Town Centre | 1.2k | 1k | 600 | 1.8k | Smelter, Dock, Watch Tower |
 | 8 | Town Centre | 4k | 3.5k | 2k | 7.2k | Trader, Academy |
 | 10 | Town Centre | 9k | 8k | 5k | 21.6k | Tier-2 buildings (Houses, Logging Camp, Quarry…) |

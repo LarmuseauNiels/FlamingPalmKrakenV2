@@ -33,8 +33,12 @@
 - [ ] Embed shows: Town Center level 1, resources with `/cap`, population `/cap`,
       and a buildings list of **just the Campfire** (everything else starts unbuilt).
 - [ ] **Cold start:** with only a Campfire and no producers, resources don't accrue
-      yet; the Build menu offers Farm/Woodcutter/Mine/Tents/Warehouse, all
-      affordable from starting resources. Building a producer starts accrual.
+      yet; the Build menu offers **only Farm + Woodcutter** (TC1), all affordable
+      from starting resources. Building a producer starts accrual.
+- [ ] **Staged unlocks (tutorial ramp):** embed shows "🔒 Unlocks at Town Center N".
+      Upgrading TC → 2 unlocks **Mine + Warehouse**; TC → 3 unlocks **Tents** (+ Army
+      Camp, Palisade Walls). No soft-lock: you can always reach TC2 (for the Mine)
+      with starting Stone.
 - [ ] Image renders (placeholder art: sea, island, labelled building markers, header).
 - [ ] **Resource accrual:** note Wood/Stone/Food, wait a few minutes (or set
       `LastTick` back in the DB), `/island` again → resources increased by the

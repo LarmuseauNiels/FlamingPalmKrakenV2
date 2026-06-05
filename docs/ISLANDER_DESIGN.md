@@ -131,6 +131,12 @@ line a full three-tier progression. Per-level numbers live in
 | **Towers** | `defend` | Pre-battle % of attackers killed | Watch Tower | Guard Tower | Bombard Tower |
 | **Keep** | `vault` | % + flat resources protected from raids | Castle | Keep | ***Citadel*** |
 
+**Onboarding ramp:** a new island starts with **only the Town Center (Campfire)**;
+the basic buildings unlock progressively over the first few TC levels so new
+players meet one mechanic at a time — TC1: Woodcutter + Farm; TC2: Mine +
+Warehouse; TC3: Tents (+ Army Camp, Walls). The `/island` embed surfaces a
+"🔒 Unlocks at Town Center N" hint. (`unlockTC` per line in `balance.ts`.)
+
 Notes on specific lines:
 - **Town Center** is the master gate (full detail in §4.1). No building may exceed
   the TC's level.
