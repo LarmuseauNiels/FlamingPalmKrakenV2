@@ -254,10 +254,7 @@ interactive image-with-buttons surface.
 ### 7.1 Slash commands
 | Command | Description |
 |---|---|
-| `/island [@member]` | Render your island (or view another's) — image + status embed + action buttons. |
-| `/build <building>` | Start constructing a new building. |
-| `/upgrade <building>` | Upgrade an existing building (or via button). |
-| `/rush` | Spend Currency to instantly finish the in-progress build. |
+| `/island [@member]` | Render your island (or view another's) — image + status embed + action buttons. **This is the single entry point**: building, upgrading and rushing are done via its buttons/menus, not separate commands. |
 | `/train <unit> <count>` | Train army/naval units. |
 | `/raid @member` | Launch a raid. |
 | `/scout @member` | Pay Currency to estimate a target's defenses. |
@@ -479,7 +476,7 @@ Each is additive and feature-flagged; none are required for v1.
 | Phase | Scope | Outcome |
 |---|---|---|
 | **0 — Foundations** ✅ | Schema + migration, building/unit seed data (`islander/data/balance.ts` + `IslanderSeed`), `IslanderModule` with lazy resource ticks, `/island` (image + embed + Refresh button). | **Implemented.** Players have an island and watch resources grow. |
-| **1 — Build loop** ✅ | `/build`, `/upgrade`, `/rush` (+ interactive Build/Upgrade/Rush buttons & select menus), Warehouse caps, TC gating, build timers, one-build-at-a-time, Currency rush, Knowledge build-time reduction. | **Implemented.** Full single-player progression. |
+| **1 — Build loop** ✅ | Build/Upgrade/Rush driven entirely by `/island` buttons + select menus (no standalone commands), Warehouse caps, TC gating, build timers, one-build-at-a-time, Currency rush, Knowledge build-time reduction. | **Implemented.** Full single-player progression. |
 | **2 — Army** | `/train`, unit data, Smithing/Naval effects, population/upkeep tension. | Players field an army. |
 | **3 — PvP** | `CombatModule`, `/raid`, `/scout`, `/repair`, shields, cooldowns, loot caps, vault, raid log, battle report image. | The competitive core loop is live. |
 | **4 — Polish & social** | Leaderboard, notifications, tutorial, balance pass via `ISLANDER_BALANCE.md`. | Tuned, discoverable, retention features. |

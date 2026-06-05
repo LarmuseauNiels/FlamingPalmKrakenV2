@@ -49,7 +49,19 @@ export default class IslanderButton implements IHandler {
       if (action === "upgrade") return this.openUpgradeSelect(interaction, ownerId);
       if (action === "rush") {
         const res = await IslanderModule.rush(ownerId);
-        await this.replyAndRefresh(interaction, ownerId, res.message);
+        if (!res.ok) {
+          await interaction.reply({ content: res.message, ephemeral: true });
+          return;
+        }
+        // Rush succeeded — re-render the island message in place.
+        await interaction.deferUpdate();
+        const target = await global.client.users.fetch(ownerId).catch(() => null);
+        const message = await IslanderView.build(
+          ownerId,
+          target?.username ?? "Island",
+          true
+        );
+        await interaction.editReply(message);
         return;
       }
 
@@ -127,14 +139,5 @@ export default class IslanderButton implements IHandler {
       components: [new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu)],
       ephemeral: true,
     });
-  }
-
-  /** Acknowledge the action ephemerally; the user can hit Refresh to update. */
-  private async replyAndRefresh(
-    interaction: ButtonInteraction,
-    ownerId: string,
-    message: string
-  ) {
-    await interaction.reply({ content: message, ephemeral: true });
   }
 }
