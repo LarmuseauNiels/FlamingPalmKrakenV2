@@ -216,15 +216,24 @@ Pre-battle kill is capped at **25%**.
 `Function = vault`, `FunctAttribute = % of each resource protected from raids`.
 Late-unlock line (Castle requires a high TC).
 
-| Level | Name | Wood | Stone | Vault % protected | Vault flat floor | Time | TC req |
-|---|---|---|---|---|---|---|---|
-| 1 | Castle | 2k | 3k | 15% | 1,000 | 7.2k | 15 |
-| 5 | Castle | 18k | 27k | 25% | 5,000 | 50k | 18 |
-| 10 | Keep | 60k | 90k | 40% | 20,000 | 86.4k | 25 |
-| 15 | Citadel | 160k | 240k | 55% | 50,000 | 86.4k | 30 |
+| Level | Name | Vault % protected | Vault flat floor | TC req |
+|---|---|---|---|---|
+| 1 | Castle | 15% | 2,000 | 15 |
+| 5 | Castle | 26% | 10,000 | 18 |
+| 10 | Keep | 41% | 20,000 | 25 |
+| 15 | Citadel | 55% | 30,000 | 30 |
 
-**Protected amount** per resource = `max(flatFloor, total · vault%)`, clamped to
-the current total. Loot can only ever touch the unprotected remainder.
+**Vault flat floor** = `level · PVP.VAULT_FLOOR_PER_LEVEL` (2,000/level — the
+authoritative lever lives in `islander/data/balance.ts`; this table is
+illustrative). **Protected amount** per resource =
+`max(flatFloor, total · vault%)`, clamped to the current total. Loot can only
+ever touch the unprotected remainder. Costs/time follow the standard growth
+curve (`levelStats`).
+
+> **Note (tier names):** the Keep line's `maxLevel` is **15**, so in the live
+> seed it only ever spans **Castle (1–9) → Keep (10–15)**; the third tier name
+> *Citadel* (which `tierNameFor` swaps in at level 20+) is currently
+> unreachable. Tracked as **F19** in `ISLANDER_IMPROVEMENTS.md`.
 
 ---
 
@@ -272,7 +281,8 @@ later); the unit instances themselves are lost.
 | `NEW_PLAYER_SHIELD_TC` | TC < 5 | Islands below this TC are unraidable. |
 | `POST_RAID_SHIELD` | 8 h | Protection window after being successfully raided. |
 | `RAID_COOLDOWN` | 4 h | Base attacker cooldown (reduced by Naval, §5.3). |
-| `REPEAT_TARGET_COOLDOWN` | 24 h | Can't re-raid the same victim within this window. |
+| `REPEAT_TARGET_HOURS` | 24 h | Can't re-raid the same victim within this window **after a win**. |
+| `REPEAT_TARGET_LOSS_HOURS` | 6 h | Shorter re-raid window after a **failed** raid, so a beaten attacker isn't locked out as long (F15). |
 | `MATCHMAKING_BAND` | ±5 TC | `/raid` target's TC must be within ±5 of attacker's. |
 | `SCOUT_COST` | 50 Currency | Cost of `/scout` for an estimated defense readout. |
 | `WALL_DR_CAP` | 45% | Max wall damage reduction. |
@@ -294,6 +304,13 @@ defPower = Σ(garrison.HP-weighted defense) · (1 + smithingBonus)
 ```
 The `±10%` jitter and casualty-on-both-sides rule mean a slightly weaker attacker
 *can* win but bleeds for it — discouraging risk-free farming.
+
+> **Tower pre-kill (step 1) is implemented as a floor on the attacker's loss
+> fraction, not a separate unit-removal pass.** Towers thin `atkPower` in the
+> power calc (survivors = `count · (1 − killPct)`), and `attackerLossFrac` is then
+> `max(killPct, …)`, so the tower kill % also surfaces as casualties. Net effect
+> matches the formula above without double-counting. (See `ISLANDER_IMPROVEMENTS.md`
+> F18.)
 
 ---
 
@@ -326,3 +343,4 @@ When adjusting these numbers post-launch:
 |---|---|
 | 2026-06-04 | Initial v1 seed values. |
 | 2026-06-05 | Reachability rebalance: cost growth `1.55 → 1.35` (matches production/storage); `TC_STORAGE_PER_LEVEL 250 → 500`; Warehouse base storage `1000 → 1500`; Keep base cost `wood 2000→700, stone 3000→900`. Result: every tier affordable (0 unaffordable across all building levels; max single-upgrade cost ≈1.5M vs L30 cap ≈9M). Also widened `i_BuildingLevel` cost columns to `UNSIGNED INT`. Apply with `/island-reload`. |
+| 2026-06-06 | Phase A correctness pass (`ISLANDER_IMPROVEMENTS.md`): **Currency is now uncapped** (no longer clamped to storage on accrual/exchange/loot); **vault flat floor** reconciled to the data-driven `PVP.VAULT_FLOOR_PER_LEVEL` (2,000/level — §6.3 table updated to match, the previous doc's 1k/5k/50k figures were never in code). Starvation, casualty-rounding and concurrency changes are logic-only (no balance numbers). |

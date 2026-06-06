@@ -35,7 +35,8 @@ export default class IslanderButton implements IHandler {
         const message = await IslanderView.build(
           ownerId,
           target?.username ?? "Island",
-          interaction.user.id === ownerId
+          interaction.user.id === ownerId,
+          interaction.user.id
         );
         await interaction.editReply(message);
         return;
@@ -65,6 +66,7 @@ export default class IslanderButton implements IHandler {
       if (action === "build") return this.openBuildSelect(interaction, ownerId);
       if (action === "upgrade") return this.openUpgradeSelect(interaction, ownerId);
       if (action === "train") return this.openTrainSelect(interaction, ownerId);
+      if (action === "find") return this.doFindTarget(interaction, ownerId);
       if (action === "exchange") return this.openExchangeModal(interaction, ownerId);
       if (action === "repair") {
         const res = await IslanderModule.repairWalls(ownerId);
@@ -75,7 +77,7 @@ export default class IslanderButton implements IHandler {
         await interaction.deferUpdate();
         const target = await global.client.users.fetch(ownerId).catch(() => null);
         await interaction.editReply(
-          await IslanderView.build(ownerId, target?.username ?? "Island", true)
+          await IslanderView.build(ownerId, target?.username ?? "Island", true, interaction.user.id)
         );
         return;
       }
@@ -91,7 +93,8 @@ export default class IslanderButton implements IHandler {
         const message = await IslanderView.build(
           ownerId,
           target?.username ?? "Island",
-          true
+          true,
+          interaction.user.id
         );
         await interaction.editReply(message);
         return;
@@ -251,14 +254,40 @@ export default class IslanderButton implements IHandler {
 
   private async showLeaderboard(interaction: ButtonInteraction) {
     await interaction.deferReply({ ephemeral: true });
-    const top = await IslanderModule.leaderboard(10);
+    const { top, viewer } = await IslanderModule.leaderboard(10, interaction.user.id);
     const entries = await Promise.all(
       top.map(async (e) => {
         const u = await global.client.users.fetch(e.id).catch(() => null);
         return { name: u?.username ?? "Unknown", score: e.score, tc: e.tc };
       })
     );
-    await interaction.editReply({ embeds: [IslanderEmbeds.leaderboard(entries)] });
+    // Only resolve/append the viewer's own line when they're outside the top slice.
+    let viewerEntry;
+    if (viewer && viewer.rank > entries.length) {
+      const u = await global.client.users.fetch(interaction.user.id).catch(() => null);
+      viewerEntry = { name: u?.username ?? "You", ...viewer };
+    }
+    await interaction.editReply({ embeds: [IslanderEmbeds.leaderboard(entries, viewerEntry)] });
+  }
+
+  private async doFindTarget(interaction: ButtonInteraction, ownerId: string) {
+    await interaction.deferReply({ ephemeral: true });
+    const target = await IslanderModule.findRaidTarget(ownerId);
+    if (!target) {
+      await interaction.editReply({
+        content:
+          "🔭 No raidable islands in range right now — targets must be within ±5 Town Center levels, not shielded, and not recently raided by you. Try again later (or grow your Town Center to widen the pool).",
+      });
+      return;
+    }
+    const targetUser = await global.client.users.fetch(target.id).catch(() => null);
+    const message = await IslanderView.build(
+      target.id,
+      targetUser?.username ?? "Island",
+      false,
+      ownerId
+    );
+    await interaction.editReply(message);
   }
 
   private async doScout(interaction: ButtonInteraction, defenderId: string) {

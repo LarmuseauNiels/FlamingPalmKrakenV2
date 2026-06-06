@@ -125,15 +125,25 @@ export abstract class CombatModule {
     if (Math.abs(attackerTC - defenderTC) > PVP.MATCHMAKING_BAND)
       return { ok: false, message: `Target is out of range — Town Center must be within ±${PVP.MATCHMAKING_BAND} of yours (you ${attackerTC}, them ${defenderTC}).` };
 
-    const recent = await prisma.i_Raid.findFirst({
-      where: {
-        AttackerID: attackerId,
-        DefenderID: defenderId,
-        TimeStamp: { gt: new Date(now - PVP.REPEAT_TARGET_HOURS * 3_600_000) },
-      },
+    // Repeat-target guard: a successful raid locks the target for the full
+    // window, but a *failed* raid only locks it for the shorter loss window so a
+    // beaten attacker isn't punished as if they'd farmed it (F15). Basis is the
+    // most recent raid against this defender.
+    const lastRaid = await prisma.i_Raid.findFirst({
+      where: { AttackerID: attackerId, DefenderID: defenderId },
+      orderBy: { TimeStamp: "desc" },
     });
-    if (recent)
-      return { ok: false, message: `You've raided ${defenderName} recently — wait ${PVP.REPEAT_TARGET_HOURS}h between raids on the same island.` };
+    if (lastRaid) {
+      const windowH = lastRaid.AttackerWon
+        ? PVP.REPEAT_TARGET_HOURS
+        : PVP.REPEAT_TARGET_LOSS_HOURS;
+      const readyAt = new Date(lastRaid.TimeStamp).getTime() + windowH * 3_600_000;
+      if (readyAt > now)
+        return {
+          ok: false,
+          message: `You've raided ${defenderName} recently — raidable again ${IslanderModule.discordTime(new Date(readyAt))}.`,
+        };
+    }
 
     // ── Combat resolution (ISLANDER_BALANCE.md §9) ──
     const atkSmith = 1 + IslanderModule.smithingBonus(attacker);
@@ -163,6 +173,10 @@ export abstract class CombatModule {
     const win = ratio > 0.5;
 
     // Closer fights are bloodier; the loser takes the heavier toll.
+    // Tower pre-kill (`killPct`) is folded into the attacker loss fraction as a
+    // floor rather than removing units in a separate pass — towers already thin
+    // `atkPower` above, so this just guarantees their kill % shows up as
+    // casualties too (ISLANDER_IMPROVEMENTS.md F18).
     const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
     const attackerLossFrac = Math.max(killPct, clamp(0.15 + (1 - ratio) * 0.7, 0.1, 0.9));
     const defenderLossFrac = clamp(0.1 + ratio * 0.7, 0.05, 0.85);
@@ -207,7 +221,8 @@ export abstract class CombatModule {
         Wood: Math.min(attackerCap, attacker.Wood + loot.Wood),
         Stone: Math.min(attackerCap, attacker.Stone + loot.Stone),
         Food: Math.min(attackerCap, attacker.Food + loot.Food),
-        Currency: Math.min(attackerCap, attacker.Currency + loot.Currency),
+        // Currency is uncapped (F4) — looted coin always lands in full.
+        Currency: attacker.Currency + loot.Currency,
         RaidCooldown: new Date(
           now +
             PVP.RAID_COOLDOWN_HOURS *
@@ -286,7 +301,9 @@ export abstract class CombatModule {
     const losses: Record<string, number> = {};
     for (const row of island.Units ?? []) {
       const name = row.i_Unit?.Name;
-      const killed = Math.floor(row.count * frac);
+      // Round (not floor) so small stacks can still take losses — a 1–6 unit
+      // garrison was previously unkillable (ISLANDER_IMPROVEMENTS.md F6).
+      const killed = Math.min(row.count, Math.round(row.count * frac));
       if (killed <= 0) continue;
       const remaining = row.count - killed;
       losses[name] = killed;

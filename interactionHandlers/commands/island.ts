@@ -33,7 +33,8 @@ export default class IslandCommand implements IHandler {
       const message = await IslanderView.build(
         target.id,
         target.username,
-        target.id === interaction.user.id
+        target.id === interaction.user.id,
+        interaction.user.id
       );
       await interaction.editReply(message);
     } catch (error) {

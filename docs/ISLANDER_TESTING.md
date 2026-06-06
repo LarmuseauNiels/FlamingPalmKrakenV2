@@ -165,6 +165,60 @@ and **within ±5 TC** of each other.
 
 ---
 
+## Phase A — Correctness & safety pass (`ISLANDER_IMPROVEMENTS.md` F1–F6, F16)
+
+- [ ] **Compounding starvation (F1):** with population > 0 and Food at 0, set
+      `LastTick` far back (e.g. 24h). `/island` → population drops *gradually*
+      (≈ `pop·(1−0.05)^hours`), **not** to 0 in one tick.
+- [ ] **Famine culls units (F2):** with trained units and a long 0-Food gap big
+      enough to drop population below the army's pop need, `/island` removes the
+      **weakest units first** and shows a "⚠️ Famine — N unit(s) starved" field.
+      `usedPopulation` never exceeds `Population` afterwards.
+- [ ] **No double-spend (F3):** rapidly double-click **Rush**, **Build**,
+      **Train**, **Repair** (and Exchange if enabled). Resources/Points never go
+      negative; the second click either no-ops or fails with "… changed — try
+      again". Watch the DB for negative `i_Island` columns.
+- [ ] **Currency uncapped (F4):** accrue/loot/exchange Currency past the storage
+      cap → it keeps rising (no silent clamp); Wood/Stone/Food still clamp at cap.
+- [ ] **Vault floor (F5):** a defender's protected floor matches
+      `level · 2000` (Balance §6.3); loot never touches it.
+- [ ] **Small-stack casualties (F6):** a raid against a 1–6 unit garrison can now
+      inflict losses (previously floored to 0).
+- [ ] **Min rush cost (F16):** rushing a build with <6s remaining still costs
+      **≥ 1** 🪙 (never free).
+
+## Phase B — Visibility & UX (`ISLANDER_IMPROVEMENTS.md` F10, F12, F18)
+
+- [ ] **Status field (F10):** `/island` shows a **Status** block. On your own
+      island it shows your shield state **and** raid cooldown ("🚣 Raiders ready"
+      or "⏳ resting — ready `<t>`"). On another's island it shows only their
+      shield/raidable state (no cooldown line).
+- [ ] **Shield reflected:** a freshly-raided (beaten) defender shows "🛡️ Shielded
+      — raidable again `<t>`"; a TC < 5 island shows "🛡️ New-player protection".
+- [ ] **Raid button disabled (F10):** viewing a shielded / new-player island
+      disables **Raid ⚔️** (Scout still enabled). Viewing any island while *you*
+      are on raid cooldown also disables Raid. An eligible target keeps Raid live.
+- [ ] **Own rank (F12):** open **Leaderboard 🏆** as someone outside the top 10 →
+      a `#N … you, of T` line is appended below the top list. A top-10 player sees
+      no duplicate line.
+- [ ] **F18:** no behavioural change — towers still inflict heavier attacker
+      losses; this item is documentation only.
+
+## Phase C — PvP discovery (`ISLANDER_IMPROVEMENTS.md` F9, F15)
+
+- [ ] **Find Target (F9):** press **Find Target 🎯** on your own island → opens a
+      random eligible rival's island (ephemeral) with Scout/Raid available.
+- [ ] **Eligibility:** the offered target is always within ±5 TC, **not** shielded,
+      **not** new-player (TC ≥ 5), and **not** one you raided inside its repeat
+      window. Repeat the button a few times to confirm variety.
+- [ ] **No targets:** with nobody in range (e.g. only new/shielded islands), the
+      button replies "No raidable islands in range right now …" instead of opening
+      an island.
+- [ ] **Loss cooldown (F15):** after a **failed** raid you can re-attempt the same
+      target after **6h** (not 24h); after a **win** the 24h lock still applies.
+      The refusal message shows the correct "raidable again `<t>`" time, and
+      Find Target won't offer a target still inside its window.
+
 ## Edge cases & things to watch
 
 - [ ] **Refresh** button always re-renders current state (resources ticked).
