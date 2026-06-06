@@ -245,6 +245,7 @@ export const PVP = {
   WALL_DR_CAP: 0.45, // (reference) max wall damage reduction
   JITTER: 0.1, // ±10% randomness on the power ratio
   STONE_PER_WALL_HP: 0.25, // /repair cost: 1 Stone restores 4 HP
+  VAULT_FLOOR_PER_LEVEL: 2000, // flat per-resource amount the vault protects per Keep-line level
 };
 
 /** Fraction of attacking units killed before the clash by defender towers. */
@@ -259,7 +260,7 @@ export function vaultPct(level: number): number {
 
 /** Flat per-resource amount the vault protects regardless of percentage. */
 export function vaultFloor(level: number): number {
-  return level > 0 ? level * 2000 : 0;
+  return level > 0 ? level * PVP.VAULT_FLOOR_PER_LEVEL : 0;
 }
 
 /** Attacker raid-cooldown reduction from the Naval line (max 40%). */

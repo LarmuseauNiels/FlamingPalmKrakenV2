@@ -85,6 +85,14 @@ export abstract class IslanderEmbeds {
       });
     }
 
+    if (island.starvedUnits > 0) {
+      embed.addFields({
+        name: "⚠️ Famine",
+        value: `Your island ran out of Food — **${island.starvedUnits}** unit(s) starved. Build more Farms (and Housing) to feed your army.`,
+        inline: false,
+      });
+    }
+
     if (nextUnlock) {
       embed.addFields({
         name: `🔒 Unlocks at Town Center ${nextUnlock.tc}`,

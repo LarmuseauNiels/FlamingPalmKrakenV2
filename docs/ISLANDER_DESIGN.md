@@ -84,6 +84,9 @@ building rows — no structural change):
   update `lastTick`. No background job needed for accrual.
 - **Storage cap** comes from the Warehouse (+ a small base cap from the Town
   Center). Production halts when a resource is at cap — this is the idle limit.
+  **Exception:** Currency is **uncapped** (it's the scarce, bankable raiding
+  reward; capping it would silently destroy looted/exchanged coin). See
+  `ISLANDER_IMPROVEMENTS.md` F4.
 - **Food upkeep:** population consumes food per hour. If food hits 0, population
   slowly starves (decays) until balanced. This keeps Housing/Farm in tension.
 

@@ -227,9 +227,9 @@ trains/defends; leaderboard still correct with cache.
 
 ## 5. Open Questions (resolve before coding the affected phase)
 
-- [ ] **F4 Currency cap:** uncap (recommended) or show cap everywhere?
-- [ ] **F1/F2 starvation:** confirm compounding decay + unit culling order
-      (lowest value first?), and whether to warn the player.
+- [x] **F4 Currency cap:** **uncapped** (resolved, Phase A).
+- [x] **F1/F2 starvation:** **compounding decay**, cull **weakest units first**,
+      warn via a "⚠️ Famine" embed field (resolved, Phase A).
 - [ ] **F7 exchange:** build now (Phase D) or defer & strike from design docs?
       If build: confirm ratio (1.5:1), daily-cap base, and that Currency is
       non-purchasable. Tally storage: `PointHistory`-style marker vs new column.
@@ -245,13 +245,13 @@ trains/defends; leaderboard still correct with cache.
 
 | ID | Title | Phase | Status |
 |---|---|---|---|
-| F1 | Compounding starvation | A | Planned |
-| F2 | Units obey starvation | A | Planned |
-| F3 | Transactional spend | A | Planned |
-| F4 | Currency cap consistency | A | Planned |
-| F5 | Vault floor data/doc reconcile | A | Planned |
-| F6 | Casualty rounding | A | Planned |
-| F16 | Min rush cost | A | Planned |
+| F1 | Compounding starvation | A | ✅ Done (2026-06-06) |
+| F2 | Units obey starvation | A | ✅ Done (2026-06-06) |
+| F3 | Transactional spend | A | ✅ Done (2026-06-06) |
+| F4 | Currency cap consistency (uncapped) | A | ✅ Done (2026-06-06) |
+| F5 | Vault floor data/doc reconcile | A | ✅ Done (2026-06-06) |
+| F6 | Casualty rounding | A | ✅ Done (2026-06-06) |
+| F16 | Min rush cost | A | ✅ Done (2026-06-06) |
 | F10 | Shield/cooldown in embed | B | Planned |
 | F12 | Own rank (+ categories in E) | B / E | Planned |
 | F18 | Document tower pre-kill | B | Planned |
@@ -263,5 +263,31 @@ trains/defends; leaderboard still correct with cache.
 | F13 | Daily reward / streak | E | Planned |
 | F14 | Defensive unit / remove type | F | Planned |
 | F17 | Leaderboard powerScore cache | F | Planned |
+| F19 | Keep-line `Citadel` tier name unreachable (`maxLevel 15` < tier-3 threshold 20) | F | Planned (found during Phase A) |
+
+### Phase A — implementation notes (2026-06-06)
+Decisions taken from §2 (all per the recommendation):
+- **F4:** Currency is **uncapped** — accrual, Points exchange and raid loot no
+  longer clamp it to storage. Embed/image already showed it without a cap.
+- **F1:** starvation now compounds — `pop · (1 − STARVATION_RATE)^hours`.
+- **F2:** when starvation drops population below the army's needs, the **weakest
+  units (lowest attack+HP) are culled** to fit; a "⚠️ Famine" note shows on the
+  next `/island`. (`island.starvedUnits` carries the count to the embed.)
+- **F3:** all spends (`startBuild`, `startUpgrade`, `trainUnit`, `rush`,
+  `repairWalls`, `exchangePoints`) now use **conditional `updateMany`** guards
+  (`where: { <res>: { gte: cost } }, data: { decrement }`) and fail closed if the
+  affected-row count is 0 — no double-charge / negative balances under concurrent
+  clicks.
+- **F5:** vault flat floor extracted to `PVP.VAULT_FLOOR_PER_LEVEL` (2,000/level,
+  preserving live behaviour); Balance §6.3 table + changelog updated to match.
+- **F6:** casualties use `Math.round` (capped at the stack size) so 1–6-unit
+  garrisons can take losses.
+- **F16:** rush cost floored at `Math.max(1, …)`.
+
+Residual (deferred, not in F-scope): the *build-slot* race (two different builds
+started concurrently can both pass the one-at-a-time check) is unaffected by the
+resource guard; the UI disables Build/Upgrade while building, so it needs a
+deliberate click-storm to hit. Tighten with an interactive transaction if it ever
+shows up in practice.
 </content>
 </invoke>

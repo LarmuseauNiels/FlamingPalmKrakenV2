@@ -273,19 +273,24 @@ export abstract class IslanderModule {
 
     const wood = clamp(island.Wood + prod.Wood * hours);
     const stone = clamp(island.Stone + prod.Stone * hours);
-    const currency = clamp(island.Currency + prod.Currency * hours);
+    // Currency is intentionally uncapped — it's the scarce, bankable raiding
+    // reward, so storage never silently eats it (see ISLANDER_IMPROVEMENTS.md F4).
+    const currency = Math.max(0, Math.round(island.Currency + prod.Currency * hours));
 
     // Food: production minus population upkeep.
     const upkeep = island.Population * CONSTANTS.FOOD_UPKEEP_PER_POP * hours;
-    let food = clamp(island.Food + prod.Food * hours - upkeep);
+    const netFood = island.Food + prod.Food * hours - upkeep;
+    let food = clamp(netFood);
 
-    // Population: grow toward capacity if fed, else starve.
+    // Population: grow toward capacity if fed, else starve. Starvation decays
+    // *compounding* (per-hour) rather than linearly, so a long offline gap can't
+    // wipe the whole population in a single tick (ISLANDER_IMPROVEMENTS.md F1).
     const popCap = this.populationCap(island);
     let population = island.Population;
-    if (island.Food + prod.Food * hours - upkeep <= 0 && population > 0) {
+    if (netFood <= 0 && population > 0) {
       population = Math.max(
         0,
-        Math.round(population * (1 - CONSTANTS.STARVATION_RATE * hours))
+        Math.floor(population * Math.pow(1 - CONSTANTS.STARVATION_RATE, hours))
       );
     } else if (population < popCap) {
       population = Math.min(
@@ -313,7 +318,58 @@ export abstract class IslanderModule {
     island.Currency = currency;
     island.Population = population;
     island.LastTick = new Date(now);
+
+    // Famine: trained units occupy population, so if starvation dropped the
+    // population below what the army needs, the weakest units starve too —
+    // otherwise armies would be immune to famine (ISLANDER_IMPROVEMENTS.md F2).
+    island.starvedUnits = await this.cullUnitsToPopulation(island, population);
     return island;
+  }
+
+  /**
+   * Remove units (weakest first) until the population they occupy fits within
+   * `population`, freeing pop for the survivors. Persists row updates/deletes and
+   * mirrors the change on the in-memory island. Returns the count culled.
+   */
+  private static async cullUnitsToPopulation(
+    island: IslandWithDetail,
+    population: number
+  ): Promise<number> {
+    let used = this.usedPopulation(island);
+    if (used <= population) return 0;
+
+    // Weakest (lowest attack+HP) units starve first.
+    const rows = [...(island.Units ?? [])].sort((a: any, b: any) => {
+      const da = unitByName(a.i_Unit?.Name);
+      const db = unitByName(b.i_Unit?.Name);
+      return ((da?.attack ?? 0) + (da?.hp ?? 0)) - ((db?.attack ?? 0) + (db?.hp ?? 0));
+    });
+
+    let culled = 0;
+    for (const row of rows) {
+      if (used <= population) break;
+      const def = unitByName(row.i_Unit?.Name);
+      if (!def || def.pop <= 0) continue;
+      const overBy = used - population;
+      const removeCount = Math.min(row.count, Math.ceil(overBy / def.pop));
+      if (removeCount <= 0) continue;
+
+      const remaining = row.count - removeCount;
+      if (remaining > 0) {
+        await global.client.prisma.i_Unit_Island.update({
+          where: { IslandID_UnitID: { IslandID: island.ID, UnitID: row.UnitID } },
+          data: { count: remaining },
+        });
+      } else {
+        await global.client.prisma.i_Unit_Island.delete({
+          where: { IslandID_UnitID: { IslandID: island.ID, UnitID: row.UnitID } },
+        });
+      }
+      row.count = remaining;
+      used -= def.pop * removeCount;
+      culled += removeCount;
+    }
+    return culled;
   }
 
   /** Create/fetch + finalize completed builds + accrue resources. */
@@ -457,7 +513,8 @@ export abstract class IslanderModule {
     const seconds = this.buildSeconds(island, s.time);
     const ready = new Date(Date.now() + seconds * 1000);
 
-    await this.spend(island, s);
+    if (!(await this.trySpend(island, s)))
+      return this.fail("Your resources changed — try again.");
     await global.client.prisma.i_Building_Island.create({
       data: {
         BuildingID: ids.get(lineKey)!,
@@ -499,7 +556,8 @@ export abstract class IslanderModule {
     const seconds = this.buildSeconds(island, s.time);
     const ready = new Date(Date.now() + seconds * 1000);
 
-    await this.spend(island, s);
+    if (!(await this.trySpend(island, s)))
+      return this.fail("Your resources changed — try again.");
     await global.client.prisma.i_Building_Island.update({
       where: { BuildingID_IslandID: { BuildingID: b.BuildingID, IslandID: userId } },
       data: { upgrading: next, upgradeReady: ready },
@@ -520,14 +578,18 @@ export abstract class IslanderModule {
       0,
       (new Date(cb.upgradeReady).getTime() - Date.now()) / 1000
     );
-    const cost = Math.ceil(remaining / CONSTANTS.RUSH_SECONDS_PER_CURRENCY);
+    // Always at least 1 Currency, so a near-finished build can't be rushed free.
+    const cost = Math.max(1, Math.ceil(remaining / CONSTANTS.RUSH_SECONDS_PER_CURRENCY));
     if (island.Currency < cost)
       return this.fail(`Rushing costs ${cost} 🪙 — you have ${island.Currency}.`);
 
-    await global.client.prisma.i_Island.update({
-      where: { ID: userId },
-      data: { Currency: island.Currency - cost },
+    // Guarded decrement so a double-click can't charge twice (F3).
+    const spent = await global.client.prisma.i_Island.updateMany({
+      where: { ID: userId, Currency: { gte: cost } },
+      data: { Currency: { decrement: cost } },
     });
+    if (spent.count === 0)
+      return this.fail("Your Currency changed — try again.");
     await global.client.prisma.i_Building_Island.update({
       where: { BuildingID_IslandID: { BuildingID: cb.BuildingID, IslandID: userId } },
       data: { upgradeReady: new Date() },
@@ -644,7 +706,8 @@ export abstract class IslanderModule {
     const afford = this.canAfford(island, cost);
     if (afford) return this.fail(afford);
 
-    await this.spend(island, cost);
+    if (!(await this.trySpend(island, cost)))
+      return this.fail("Your resources changed — try again.");
 
     // Upsert the unit count.
     const prisma = global.client.prisma;
@@ -694,10 +757,13 @@ export abstract class IslanderModule {
     if (island.Stone < cost)
       return this.fail(`Repairing ${missing} wall HP costs ${cost} 🪨 — you have ${island.Stone}.`);
 
-    await global.client.prisma.i_Island.update({
-      where: { ID: userId },
-      data: { Stone: island.Stone - cost },
+    // Guarded decrement so a double-click can't charge twice (F3).
+    const spent = await global.client.prisma.i_Island.updateMany({
+      where: { ID: userId, Stone: { gte: cost } },
+      data: { Stone: { decrement: cost } },
     });
+    if (spent.count === 0)
+      return this.fail("Your Stone changed — try again.");
     await global.client.prisma.i_Building_Island.update({
       where: { BuildingID_IslandID: { BuildingID: row.BuildingID, IslandID: userId } },
       data: { wallHP: max },
@@ -828,7 +894,7 @@ export abstract class IslanderModule {
     }
   }
 
-  /** Convert community Points into island Currency (rate-limited, capped). */
+  /** Convert community Points into island Currency (rate-limited). */
   static async exchangePoints(userId: string, points: number) {
     if (!this.pointsExchangeEnabled)
       return this.fail("Points exchange is currently disabled.");
@@ -856,40 +922,62 @@ export abstract class IslanderModule {
 
     const island = await this.prepare(userId);
     const gain = points * INTEGRATIONS.POINTS_PER_CURRENCY;
-    const cap = this.storageCap(island);
-    const newCurrency = Math.min(cap, island.Currency + gain);
-    const actuallyGained = newCurrency - island.Currency;
 
+    // Guarded decrement so concurrent exchanges can't double-spend Points (F3).
+    const spent = await prisma.points.updateMany({
+      where: { userid: userId, TotalPoints: { gte: points } },
+      data: { TotalPoints: { decrement: points } },
+    });
+    if (spent.count === 0)
+      return this.fail(`You only have ${balance} :palm_tree: points.`);
     await prisma.points.update({
       where: { userid: userId },
-      data: { TotalPoints: { decrement: points }, lastComment: "Islander currency exchange" },
+      data: { lastComment: "Islander currency exchange" },
     });
     await prisma.pointHistory.create({
       data: { userid: userId, points: -points, comment: `ISL:exchange ${points} pts → ${gain} 🪙` },
     });
-    await prisma.i_Island.update({ where: { ID: userId }, data: { Currency: newCurrency } });
+    // Currency is uncapped (F4), so the full conversion always lands.
+    await prisma.i_Island.update({ where: { ID: userId }, data: { Currency: { increment: gain } } });
 
-    const wasted = gain - actuallyGained;
-    return this.ok(
-      `🔁 Converted **${points}** :palm_tree: → **${actuallyGained}** 🪙` +
-        (wasted > 0 ? ` (${wasted} lost to your storage cap)` : "") + "."
-    );
+    return this.ok(`🔁 Converted **${points}** :palm_tree: → **${gain}** 🪙.`);
   }
 
   // ── small helpers ──────────────────────────────────────────────────────────
 
-  private static async spend(
+  /**
+   * Atomically spend resources with a DB-level guard so concurrent clicks can't
+   * double-charge or drive a balance negative (ISLANDER_IMPROVEMENTS.md F3). The
+   * conditional `updateMany` only decrements when every balance still covers the
+   * cost; a 0 affected-row count means we lost a race. Callers should still
+   * `canAfford` first for a friendly "need X more" message — this is the
+   * authoritative gate. Returns true if the spend was applied.
+   */
+  private static async trySpend(
     island: IslandWithDetail,
     c: { wood: number; stone: number; food: number; currency: number }
-  ): Promise<void> {
-    const data = {
-      Wood: island.Wood - c.wood,
-      Stone: island.Stone - c.stone,
-      Food: island.Food - c.food,
-      Currency: island.Currency - c.currency,
-    };
-    await global.client.prisma.i_Island.update({ where: { ID: island.ID }, data });
-    Object.assign(island, data);
+  ): Promise<boolean> {
+    const res = await global.client.prisma.i_Island.updateMany({
+      where: {
+        ID: island.ID,
+        Wood: { gte: c.wood },
+        Stone: { gte: c.stone },
+        Food: { gte: c.food },
+        Currency: { gte: c.currency },
+      },
+      data: {
+        Wood: { decrement: c.wood },
+        Stone: { decrement: c.stone },
+        Food: { decrement: c.food },
+        Currency: { decrement: c.currency },
+      },
+    });
+    if (res.count === 0) return false;
+    island.Wood -= c.wood;
+    island.Stone -= c.stone;
+    island.Food -= c.food;
+    island.Currency -= c.currency;
+    return true;
   }
 
   private static busyMessage(b: any): string {

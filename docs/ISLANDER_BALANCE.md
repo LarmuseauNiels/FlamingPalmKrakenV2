@@ -216,15 +216,24 @@ Pre-battle kill is capped at **25%**.
 `Function = vault`, `FunctAttribute = % of each resource protected from raids`.
 Late-unlock line (Castle requires a high TC).
 
-| Level | Name | Wood | Stone | Vault % protected | Vault flat floor | Time | TC req |
-|---|---|---|---|---|---|---|---|
-| 1 | Castle | 2k | 3k | 15% | 1,000 | 7.2k | 15 |
-| 5 | Castle | 18k | 27k | 25% | 5,000 | 50k | 18 |
-| 10 | Keep | 60k | 90k | 40% | 20,000 | 86.4k | 25 |
-| 15 | Citadel | 160k | 240k | 55% | 50,000 | 86.4k | 30 |
+| Level | Name | Vault % protected | Vault flat floor | TC req |
+|---|---|---|---|---|
+| 1 | Castle | 15% | 2,000 | 15 |
+| 5 | Castle | 26% | 10,000 | 18 |
+| 10 | Keep | 41% | 20,000 | 25 |
+| 15 | Citadel | 55% | 30,000 | 30 |
 
-**Protected amount** per resource = `max(flatFloor, total · vault%)`, clamped to
-the current total. Loot can only ever touch the unprotected remainder.
+**Vault flat floor** = `level · PVP.VAULT_FLOOR_PER_LEVEL` (2,000/level — the
+authoritative lever lives in `islander/data/balance.ts`; this table is
+illustrative). **Protected amount** per resource =
+`max(flatFloor, total · vault%)`, clamped to the current total. Loot can only
+ever touch the unprotected remainder. Costs/time follow the standard growth
+curve (`levelStats`).
+
+> **Note (tier names):** the Keep line's `maxLevel` is **15**, so in the live
+> seed it only ever spans **Castle (1–9) → Keep (10–15)**; the third tier name
+> *Citadel* (which `tierNameFor` swaps in at level 20+) is currently
+> unreachable. Tracked as **F19** in `ISLANDER_IMPROVEMENTS.md`.
 
 ---
 
@@ -326,3 +335,4 @@ When adjusting these numbers post-launch:
 |---|---|
 | 2026-06-04 | Initial v1 seed values. |
 | 2026-06-05 | Reachability rebalance: cost growth `1.55 → 1.35` (matches production/storage); `TC_STORAGE_PER_LEVEL 250 → 500`; Warehouse base storage `1000 → 1500`; Keep base cost `wood 2000→700, stone 3000→900`. Result: every tier affordable (0 unaffordable across all building levels; max single-upgrade cost ≈1.5M vs L30 cap ≈9M). Also widened `i_BuildingLevel` cost columns to `UNSIGNED INT`. Apply with `/island-reload`. |
+| 2026-06-06 | Phase A correctness pass (`ISLANDER_IMPROVEMENTS.md`): **Currency is now uncapped** (no longer clamped to storage on accrual/exchange/loot); **vault flat floor** reconciled to the data-driven `PVP.VAULT_FLOOR_PER_LEVEL` (2,000/level — §6.3 table updated to match, the previous doc's 1k/5k/50k figures were never in code). Starvation, casualty-rounding and concurrency changes are logic-only (no balance numbers). |

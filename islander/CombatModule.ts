@@ -207,7 +207,8 @@ export abstract class CombatModule {
         Wood: Math.min(attackerCap, attacker.Wood + loot.Wood),
         Stone: Math.min(attackerCap, attacker.Stone + loot.Stone),
         Food: Math.min(attackerCap, attacker.Food + loot.Food),
-        Currency: Math.min(attackerCap, attacker.Currency + loot.Currency),
+        // Currency is uncapped (F4) — looted coin always lands in full.
+        Currency: attacker.Currency + loot.Currency,
         RaidCooldown: new Date(
           now +
             PVP.RAID_COOLDOWN_HOURS *
@@ -286,7 +287,9 @@ export abstract class CombatModule {
     const losses: Record<string, number> = {};
     for (const row of island.Units ?? []) {
       const name = row.i_Unit?.Name;
-      const killed = Math.floor(row.count * frac);
+      // Round (not floor) so small stacks can still take losses — a 1–6 unit
+      // garrison was previously unkillable (ISLANDER_IMPROVEMENTS.md F6).
+      const killed = Math.min(row.count, Math.round(row.count * frac));
       if (killed <= 0) continue;
       const remaining = row.count - killed;
       losses[name] = killed;
