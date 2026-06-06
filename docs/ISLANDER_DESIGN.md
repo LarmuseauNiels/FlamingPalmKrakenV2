@@ -222,16 +222,22 @@ pushing players to keep a separate Soldier garrison. Future unit types
 ## 6. PvP Raiding (core competitive loop)
 
 ### 6.1 Initiating a raid
-Open the target's island with `/island @member` and press **Raid ⚔️**. The
-raider commits their **entire army** (all land + naval units). Validations:
+Open the target's island with `/island @member` — or press **Find Target 🎯** on
+your own island to be matched with a random *eligible* rival (within the
+matchmaking band, not shielded/new, not on your repeat-target cooldown) — then
+press **Raid ⚔️**. The raider commits their **entire army** (all land + naval
+units). Validations:
 - Attacker has units **and at least one ship** (Naval ≥ 1) to reach the island.
 - Target is **not under a protection shield** (§6.3) and not a new player
   (TC ≥ 5).
-- Attacker is **not on raid cooldown**, and hasn't raided this target in the
-  last 24h (repeat-target guard).
+- Attacker is **not on raid cooldown**, and hasn't raided this target recently
+  (repeat-target guard: 24h after a win, 6h after a loss).
 - **Matchmaking guardrail:** target's TC level must be within ±5 of the
   attacker's. **Scout 🔭** reveals an
   estimate of a target's defenses for a small Currency cost.
+
+The **Raid ⚔️** button is disabled when the target is shielded/new or you are on
+cooldown (§7), so a found or browsed target reflects whether it can be hit.
 
 ### 6.2 Combat resolution (instant, server-side)
 1. Compute attacker power = Σ(unit attack × count) × smithing multiplier.

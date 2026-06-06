@@ -204,6 +204,21 @@ and **within ±5 TC** of each other.
 - [ ] **F18:** no behavioural change — towers still inflict heavier attacker
       losses; this item is documentation only.
 
+## Phase C — PvP discovery (`ISLANDER_IMPROVEMENTS.md` F9, F15)
+
+- [ ] **Find Target (F9):** press **Find Target 🎯** on your own island → opens a
+      random eligible rival's island (ephemeral) with Scout/Raid available.
+- [ ] **Eligibility:** the offered target is always within ±5 TC, **not** shielded,
+      **not** new-player (TC ≥ 5), and **not** one you raided inside its repeat
+      window. Repeat the button a few times to confirm variety.
+- [ ] **No targets:** with nobody in range (e.g. only new/shielded islands), the
+      button replies "No raidable islands in range right now …" instead of opening
+      an island.
+- [ ] **Loss cooldown (F15):** after a **failed** raid you can re-attempt the same
+      target after **6h** (not 24h); after a **win** the 24h lock still applies.
+      The refusal message shows the correct "raidable again `<t>`" time, and
+      Find Target won't offer a target still inside its window.
+
 ## Edge cases & things to watch
 
 - [ ] **Refresh** button always re-renders current state (resources ticked).

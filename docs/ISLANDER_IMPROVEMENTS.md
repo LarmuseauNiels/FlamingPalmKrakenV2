@@ -255,8 +255,8 @@ trains/defends; leaderboard still correct with cache.
 | F10 | Shield/cooldown in embed | B | ✅ Done (2026-06-06) |
 | F12 | Own rank (categories still in E) | B / E | ✅ Done (rank); categories Planned |
 | F18 | Document tower pre-kill | B | ✅ Done (2026-06-06) |
-| F9 | Find Target matchmaking | C | Planned |
-| F15 | Shorter loss repeat-cooldown | C | Planned |
+| F9 | Find Target matchmaking | C | ✅ Done (2026-06-06) |
+| F15 | Shorter loss repeat-cooldown | C | ✅ Done (2026-06-06) |
 | F7 | Marketplace resource exchange | D | Planned |
 | F8 | Durable build-complete DMs | D | Planned |
 | F11 | War Log button | E | Planned |
@@ -306,5 +306,24 @@ shows up in practice.
 - **F18:** documented (code comment + Balance §9 note) that tower pre-kill is a
   floor on the attacker loss fraction, not a separate removal pass. No behaviour
   change.
+
+### Phase C — implementation notes (2026-06-06)
+- **F9 (Find Target):** `IslanderModule.findRaidTarget(attackerId)` queries all
+  non-shielded islands, filters to the matchmaking band (±5 TC), excludes
+  new-player-protected islands and any target still on the attacker's repeat
+  cooldown, and returns a random eligible target (or null). A **Find Target 🎯**
+  button (own island) opens that target's `/island` ephemerally via
+  `IslanderView.build(..., isOwner=false, viewerId=ownerId)`, so the existing
+  Scout/Raid buttons (and the Phase B Raid-disable logic) apply. "No targets in
+  range" is a friendly ephemeral message.
+- **F15 (loss cooldown):** the repeat-target guard now bases its window on the
+  **most recent** raid against that defender — `REPEAT_TARGET_HOURS` (24h) after a
+  win, `REPEAT_TARGET_LOSS_HOURS` (6h) after a loss. `findRaidTarget` mirrors the
+  same win/loss windows so it never offers a target the raid would then reject.
+
+Note: Find Target intentionally does **not** pre-check the attacker's own
+readiness (ships/army/cooldown) — those are reported by the Raid action itself.
+The matchmaking pick is currently uniform-random within the eligible set;
+power-score weighting is a possible later tweak (F17 territory).
 </content>
 </invoke>

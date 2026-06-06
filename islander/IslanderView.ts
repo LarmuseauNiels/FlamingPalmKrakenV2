@@ -102,7 +102,12 @@ export abstract class IslanderView {
           .setCustomId(`islander_repair_${targetId}`)
           .setLabel("Repair 🧱")
           .setStyle(ButtonStyle.Secondary)
-          .setDisabled(!wallsDamaged)
+          .setDisabled(!wallsDamaged),
+        // Find a random eligible rival to raid (opens their island).
+        new ButtonBuilder()
+          .setCustomId(`islander_find_${targetId}`)
+          .setLabel("Find Target 🎯")
+          .setStyle(ButtonStyle.Danger)
       );
       // Optional Points → Currency exchange (Phase 5, off unless enabled).
       if (IslanderModule.pointsExchangeEnabled) {

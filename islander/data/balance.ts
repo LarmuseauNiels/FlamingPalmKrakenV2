@@ -238,7 +238,8 @@ export const PVP = {
   NEW_PLAYER_SHIELD_TC: 5, // islands below this Town Center level can't be raided
   POST_RAID_SHIELD_HOURS: 8, // protection after being successfully raided
   RAID_COOLDOWN_HOURS: 4, // base attacker cooldown (reduced by Naval)
-  REPEAT_TARGET_HOURS: 24, // can't re-raid the same victim within this window
+  REPEAT_TARGET_HOURS: 24, // can't re-raid the same victim within this window after a WIN
+  REPEAT_TARGET_LOSS_HOURS: 6, // shorter re-raid window after a failed raid (F15)
   MATCHMAKING_BAND: 5, // target TC must be within ±this of the attacker's
   SCOUT_COST: 50, // Currency to scout a target's defenses
   TOWER_KILL_CAP: 0.25, // max fraction of attackers towers kill pre-battle

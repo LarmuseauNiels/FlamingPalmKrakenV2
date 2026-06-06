@@ -125,15 +125,25 @@ export abstract class CombatModule {
     if (Math.abs(attackerTC - defenderTC) > PVP.MATCHMAKING_BAND)
       return { ok: false, message: `Target is out of range — Town Center must be within ±${PVP.MATCHMAKING_BAND} of yours (you ${attackerTC}, them ${defenderTC}).` };
 
-    const recent = await prisma.i_Raid.findFirst({
-      where: {
-        AttackerID: attackerId,
-        DefenderID: defenderId,
-        TimeStamp: { gt: new Date(now - PVP.REPEAT_TARGET_HOURS * 3_600_000) },
-      },
+    // Repeat-target guard: a successful raid locks the target for the full
+    // window, but a *failed* raid only locks it for the shorter loss window so a
+    // beaten attacker isn't punished as if they'd farmed it (F15). Basis is the
+    // most recent raid against this defender.
+    const lastRaid = await prisma.i_Raid.findFirst({
+      where: { AttackerID: attackerId, DefenderID: defenderId },
+      orderBy: { TimeStamp: "desc" },
     });
-    if (recent)
-      return { ok: false, message: `You've raided ${defenderName} recently — wait ${PVP.REPEAT_TARGET_HOURS}h between raids on the same island.` };
+    if (lastRaid) {
+      const windowH = lastRaid.AttackerWon
+        ? PVP.REPEAT_TARGET_HOURS
+        : PVP.REPEAT_TARGET_LOSS_HOURS;
+      const readyAt = new Date(lastRaid.TimeStamp).getTime() + windowH * 3_600_000;
+      if (readyAt > now)
+        return {
+          ok: false,
+          message: `You've raided ${defenderName} recently — raidable again ${IslanderModule.discordTime(new Date(readyAt))}.`,
+        };
+    }
 
     // ── Combat resolution (ISLANDER_BALANCE.md §9) ──
     const atkSmith = 1 + IslanderModule.smithingBonus(attacker);

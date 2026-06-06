@@ -862,6 +862,60 @@ export abstract class IslanderModule {
     return cd && cd.getTime() > Date.now() ? cd : null;
   }
 
+  /**
+   * Pick a random eligible raid target for `attackerId` (F9). Applies the same
+   * gates the raid itself enforces — within the matchmaking TC band, not under
+   * new-player protection, not currently shielded, and not on the attacker's
+   * repeat-target cooldown — so a found target is actually raidable. Returns the
+   * target's island ID, or null when nobody is in range.
+   */
+  static async findRaidTarget(attackerId: string): Promise<{ id: string } | null> {
+    const prisma = global.client.prisma;
+    const attacker = await this.prepare(attackerId);
+    const attackerTC = this.townCenterLevel(attacker);
+    const now = Date.now();
+
+    // Candidate islands: not me, and not currently shielded.
+    const islands = await prisma.i_Island.findMany({
+      where: {
+        ID: { not: attackerId },
+        OR: [{ ShieldUntil: null }, { ShieldUntil: { lte: new Date(now) } }],
+      },
+      include: { Buildings: { include: { i_Building: true } } },
+    });
+
+    // Build a per-defender "raidable again" map from this attacker's recent raids,
+    // honouring the win/loss repeat windows (mirrors CombatModule's guard).
+    const recentRaids = await prisma.i_Raid.findMany({
+      where: {
+        AttackerID: attackerId,
+        TimeStamp: { gt: new Date(now - PVP.REPEAT_TARGET_HOURS * 3_600_000) },
+      },
+      orderBy: { TimeStamp: "desc" },
+    });
+    const blockedUntil = new Map<string, number>();
+    for (const r of recentRaids) {
+      if (blockedUntil.has(r.DefenderID)) continue; // latest raid per target wins
+      const windowH = r.AttackerWon
+        ? PVP.REPEAT_TARGET_HOURS
+        : PVP.REPEAT_TARGET_LOSS_HOURS;
+      blockedUntil.set(r.DefenderID, new Date(r.TimeStamp).getTime() + windowH * 3_600_000);
+    }
+
+    const eligible = islands.filter((i: any) => {
+      const tc = this.townCenterLevel(i);
+      if (tc < PVP.NEW_PLAYER_SHIELD_TC) return false;
+      if (Math.abs(tc - attackerTC) > PVP.MATCHMAKING_BAND) return false;
+      const until = blockedUntil.get(i.ID);
+      if (until && until > now) return false;
+      return true;
+    });
+    if (!eligible.length) return null;
+
+    const pick = eligible[Math.floor(Math.random() * eligible.length)];
+    return { id: pick.ID };
+  }
+
   // ── Phase 5: community-economy integrations (feature-flagged, off by default) ─
 
   /** Award community Points for Islander milestones? (env ISLANDER_AWARD_POINTS) */

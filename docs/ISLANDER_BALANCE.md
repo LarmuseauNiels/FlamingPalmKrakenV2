@@ -281,7 +281,8 @@ later); the unit instances themselves are lost.
 | `NEW_PLAYER_SHIELD_TC` | TC < 5 | Islands below this TC are unraidable. |
 | `POST_RAID_SHIELD` | 8 h | Protection window after being successfully raided. |
 | `RAID_COOLDOWN` | 4 h | Base attacker cooldown (reduced by Naval, §5.3). |
-| `REPEAT_TARGET_COOLDOWN` | 24 h | Can't re-raid the same victim within this window. |
+| `REPEAT_TARGET_HOURS` | 24 h | Can't re-raid the same victim within this window **after a win**. |
+| `REPEAT_TARGET_LOSS_HOURS` | 6 h | Shorter re-raid window after a **failed** raid, so a beaten attacker isn't locked out as long (F15). |
 | `MATCHMAKING_BAND` | ±5 TC | `/raid` target's TC must be within ±5 of attacker's. |
 | `SCOUT_COST` | 50 Currency | Cost of `/scout` for an estimated defense readout. |
 | `WALL_DR_CAP` | 45% | Max wall damage reduction. |
