@@ -1,8 +1,13 @@
 // Discord embed builders for Islander. See docs/ISLANDER_DESIGN.md §7.2.
 
 import { EmbedBuilder } from "discord.js";
-import { lineByKey, tierNameFor, UNITS, ResourceKey } from "./data/balance";
+import { lineByKey, tierNameFor, UNITS, ResourceKey, PVP } from "./data/balance";
 import { IslandWithDetail, IslanderModule } from "./IslanderModule";
+
+/** Discord relative timestamp helper, e.g. "in 3 hours". */
+function rel(d: Date): string {
+  return `<t:${Math.floor(d.getTime() / 1000)}:R>`;
+}
 
 export abstract class IslanderEmbeds {
   static status(
@@ -22,9 +27,10 @@ export abstract class IslanderEmbeds {
         attack: number;
         smithing: number;
       };
+      isOwner?: boolean;
     }
   ): EmbedBuilder {
-    const { cap, popCap, production, tcLevel, currentBuild, nextUnlock, army } = opts;
+    const { cap, popCap, production, tcLevel, currentBuild, nextUnlock, army, isOwner } = opts;
 
     const resLine = (
       label: string,
@@ -84,6 +90,30 @@ export abstract class IslanderEmbeds {
         inline: false,
       });
     }
+
+    // PvP status: defensive shield (shown to anyone, so an attacker knows it's
+    // protected) + the owner's own raid cooldown (F10).
+    const now = Date.now();
+    const statusLines: string[] = [];
+    const shield = island.ShieldUntil ? new Date(island.ShieldUntil) : null;
+    if (shield && shield.getTime() > now) {
+      statusLines.push(`🛡️ Shielded — raidable again ${rel(shield)}`);
+    } else if (tcLevel < PVP.NEW_PLAYER_SHIELD_TC) {
+      statusLines.push(
+        `🛡️ New-player protection (until Town Center ${PVP.NEW_PLAYER_SHIELD_TC})`
+      );
+    } else {
+      statusLines.push("⚔️ Raidable");
+    }
+    if (isOwner) {
+      const cd = island.RaidCooldown ? new Date(island.RaidCooldown) : null;
+      statusLines.push(
+        cd && cd.getTime() > now
+          ? `⏳ Your raiders are resting — ready ${rel(cd)}`
+          : "🚣 Raiders ready to sail"
+      );
+    }
+    embed.addFields({ name: "Status", value: statusLines.join("\n"), inline: true });
 
     if (island.starvedUnits > 0) {
       embed.addFields({
@@ -166,12 +196,13 @@ export abstract class IslanderEmbeds {
       .setTimestamp();
   }
 
-  /** Top-islands leaderboard. */
+  /** Top-islands leaderboard, with the viewer's own rank if outside the list. */
   static leaderboard(
-    entries: { name: string; score: number; tc: number }[]
+    entries: { name: string; score: number; tc: number }[],
+    viewer?: { name: string; rank: number; score: number; tc: number; total: number }
   ): EmbedBuilder {
     const medals = ["🥇", "🥈", "🥉"];
-    const body = entries.length
+    let body = entries.length
       ? entries
           .map(
             (e, i) =>
@@ -179,6 +210,14 @@ export abstract class IslanderEmbeds {
           )
           .join("\n")
       : "No islands yet — be the first with `/island`!";
+
+    // Append the viewer's standing when they're not already in the shown slice.
+    if (viewer && viewer.rank > entries.length) {
+      body +=
+        `\n…\n\`#${viewer.rank}\` **${viewer.name}** — ${viewer.score} pts (TC ${viewer.tc})` +
+        ` · _you, of ${viewer.total}_`;
+    }
+
     return new EmbedBuilder()
       .setColor("#FD8612")
       .setTitle("🏆 Islander Leaderboard")

@@ -304,6 +304,13 @@ defPower = Σ(garrison.HP-weighted defense) · (1 + smithingBonus)
 The `±10%` jitter and casualty-on-both-sides rule mean a slightly weaker attacker
 *can* win but bleeds for it — discouraging risk-free farming.
 
+> **Tower pre-kill (step 1) is implemented as a floor on the attacker's loss
+> fraction, not a separate unit-removal pass.** Towers thin `atkPower` in the
+> power calc (survivors = `count · (1 − killPct)`), and `attackerLossFrac` is then
+> `max(killPct, …)`, so the tower kill % also surfaces as casualties. Net effect
+> matches the formula above without double-counting. (See `ISLANDER_IMPROVEMENTS.md`
+> F18.)
+
 ---
 
 ## 10. Power Score (leaderboard & matchmaking)

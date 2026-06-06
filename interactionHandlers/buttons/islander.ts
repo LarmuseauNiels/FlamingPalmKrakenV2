@@ -35,7 +35,8 @@ export default class IslanderButton implements IHandler {
         const message = await IslanderView.build(
           ownerId,
           target?.username ?? "Island",
-          interaction.user.id === ownerId
+          interaction.user.id === ownerId,
+          interaction.user.id
         );
         await interaction.editReply(message);
         return;
@@ -75,7 +76,7 @@ export default class IslanderButton implements IHandler {
         await interaction.deferUpdate();
         const target = await global.client.users.fetch(ownerId).catch(() => null);
         await interaction.editReply(
-          await IslanderView.build(ownerId, target?.username ?? "Island", true)
+          await IslanderView.build(ownerId, target?.username ?? "Island", true, interaction.user.id)
         );
         return;
       }
@@ -91,7 +92,8 @@ export default class IslanderButton implements IHandler {
         const message = await IslanderView.build(
           ownerId,
           target?.username ?? "Island",
-          true
+          true,
+          interaction.user.id
         );
         await interaction.editReply(message);
         return;
@@ -251,14 +253,20 @@ export default class IslanderButton implements IHandler {
 
   private async showLeaderboard(interaction: ButtonInteraction) {
     await interaction.deferReply({ ephemeral: true });
-    const top = await IslanderModule.leaderboard(10);
+    const { top, viewer } = await IslanderModule.leaderboard(10, interaction.user.id);
     const entries = await Promise.all(
       top.map(async (e) => {
         const u = await global.client.users.fetch(e.id).catch(() => null);
         return { name: u?.username ?? "Unknown", score: e.score, tc: e.tc };
       })
     );
-    await interaction.editReply({ embeds: [IslanderEmbeds.leaderboard(entries)] });
+    // Only resolve/append the viewer's own line when they're outside the top slice.
+    let viewerEntry;
+    if (viewer && viewer.rank > entries.length) {
+      const u = await global.client.users.fetch(interaction.user.id).catch(() => null);
+      viewerEntry = { name: u?.username ?? "You", ...viewer };
+    }
+    await interaction.editReply({ embeds: [IslanderEmbeds.leaderboard(entries, viewerEntry)] });
   }
 
   private async doScout(interaction: ButtonInteraction, defenderId: string) {

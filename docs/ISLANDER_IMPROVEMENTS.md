@@ -252,9 +252,9 @@ trains/defends; leaderboard still correct with cache.
 | F5 | Vault floor data/doc reconcile | A | ✅ Done (2026-06-06) |
 | F6 | Casualty rounding | A | ✅ Done (2026-06-06) |
 | F16 | Min rush cost | A | ✅ Done (2026-06-06) |
-| F10 | Shield/cooldown in embed | B | Planned |
-| F12 | Own rank (+ categories in E) | B / E | Planned |
-| F18 | Document tower pre-kill | B | Planned |
+| F10 | Shield/cooldown in embed | B | ✅ Done (2026-06-06) |
+| F12 | Own rank (categories still in E) | B / E | ✅ Done (rank); categories Planned |
+| F18 | Document tower pre-kill | B | ✅ Done (2026-06-06) |
 | F9 | Find Target matchmaking | C | Planned |
 | F15 | Shorter loss repeat-cooldown | C | Planned |
 | F7 | Marketplace resource exchange | D | Planned |
@@ -289,5 +289,22 @@ started concurrently can both pass the one-at-a-time check) is unaffected by the
 resource guard; the UI disables Build/Upgrade while building, so it needs a
 deliberate click-storm to hit. Tighten with an interactive transaction if it ever
 shows up in practice.
+
+### Phase B — implementation notes (2026-06-06)
+- **F10 (status block):** `IslanderEmbeds.status` now renders a **Status** field —
+  🛡️ shield ("raidable again `<t:R>`") / new-player protection / "⚔️ Raidable",
+  plus, on your **own** island, your raid cooldown ("⏳ resting — ready `<t:R>`" /
+  "🚣 Raiders ready"). Reads `island.ShieldUntil` / `island.RaidCooldown` directly;
+  `isOwner` is threaded through `IslanderView.build` → embed opts.
+- **F10 (button state):** when viewing another island, `IslanderView.build` now
+  takes a `viewerId` and disables the **Raid ⚔️** button if the target is
+  shielded/new or the **viewer** is on cooldown (`IslanderModule.activeRaidCooldown`).
+  Scout stays enabled; the Status field explains the block.
+- **F12 (own rank):** `IslanderModule.leaderboard(limit, viewerId)` now returns
+  `{ top, viewer }`; the embed appends a `#N you, of T` line when the viewer falls
+  outside the shown slice. (Category boards remain Phase E.)
+- **F18:** documented (code comment + Balance §9 note) that tower pre-kill is a
+  floor on the attacker loss fraction, not a separate removal pass. No behaviour
+  change.
 </content>
 </invoke>

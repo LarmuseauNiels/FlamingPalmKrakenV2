@@ -163,6 +163,10 @@ export abstract class CombatModule {
     const win = ratio > 0.5;
 
     // Closer fights are bloodier; the loser takes the heavier toll.
+    // Tower pre-kill (`killPct`) is folded into the attacker loss fraction as a
+    // floor rather than removing units in a separate pass — towers already thin
+    // `atkPower` above, so this just guarantees their kill % shows up as
+    // casualties too (ISLANDER_IMPROVEMENTS.md F18).
     const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
     const attackerLossFrac = Math.max(killPct, clamp(0.15 + (1 - ratio) * 0.7, 0.1, 0.9));
     const defenderLossFrac = clamp(0.1 + ratio * 0.7, 0.05, 0.85);

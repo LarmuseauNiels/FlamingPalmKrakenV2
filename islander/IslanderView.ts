@@ -10,6 +10,7 @@ import {
 import { IslanderModule } from "./IslanderModule";
 import { IslanderImage } from "./IslanderImage";
 import { IslanderEmbeds } from "./IslanderEmbeds";
+import { PVP } from "./data/balance";
 
 export interface IslandMessage {
   embeds: any[];
@@ -22,11 +23,14 @@ export abstract class IslanderView {
    * @param targetId whose island to render
    * @param targetName display name for the owner
    * @param isOwner   whether the viewer owns this island (enables build/upgrade)
+   * @param viewerId  the id of the member viewing (the would-be attacker when not
+   *                  the owner) — used to reflect raid cooldown on the Raid button
    */
   static async build(
     targetId: string,
     targetName: string,
-    isOwner = true
+    isOwner = true,
+    viewerId?: string
   ): Promise<IslandMessage> {
     const view = await IslanderModule.getIslandView(targetId);
     const image = await IslanderImage.render(view.island, targetName);
@@ -38,7 +42,25 @@ export abstract class IslanderView {
       currentBuild: view.currentBuild,
       nextUnlock: view.nextUnlock,
       army: view.army,
+      isOwner,
     });
+
+    // When viewing another island, work out whether a raid is currently
+    // possible so the Raid button reflects it (shield / new-player / cooldown).
+    let raidBlocked = false;
+    if (!isOwner) {
+      const now = Date.now();
+      const shield = view.island.ShieldUntil
+        ? new Date(view.island.ShieldUntil)
+        : null;
+      const targetProtected =
+        (shield && shield.getTime() > now) ||
+        view.tcLevel < PVP.NEW_PLAYER_SHIELD_TC;
+      const cooldown = viewerId
+        ? await IslanderModule.activeRaidCooldown(viewerId)
+        : null;
+      raidBlocked = !!targetProtected || !!cooldown;
+    }
 
     const building = !!view.currentBuild;
     const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -102,6 +124,9 @@ export abstract class IslanderView {
           .setCustomId(`islander_raid_${targetId}`)
           .setLabel("Raid ⚔️")
           .setStyle(ButtonStyle.Danger)
+          // Disabled when the target is shielded/new, or the viewer is on
+          // cooldown — the Status field explains why. Scout stays available.
+          .setDisabled(raidBlocked)
       );
     }
 

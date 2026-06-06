@@ -811,24 +811,55 @@ export abstract class IslanderModule {
     return Math.round(10 * tc + 3 * buildingSum + armyVal / 10);
   }
 
-  /** Top islands by power score. */
+  /**
+   * Top islands by power score, plus the viewer's own rank when supplied (so the
+   * leaderboard can show "you're #N" even when outside the top slice — F12).
+   */
   static async leaderboard(
-    limit = 10
-  ): Promise<{ id: string; score: number; tc: number }[]> {
+    limit = 10,
+    viewerId?: string
+  ): Promise<{
+    top: { id: string; score: number; tc: number }[];
+    viewer?: { rank: number; score: number; tc: number; total: number };
+  }> {
     const islands = await global.client.prisma.i_Island.findMany({
       include: {
         Buildings: { include: { i_Building: true } },
         Units: { include: { i_Unit: true } },
       },
     });
-    return islands
+    const scored = islands
       .map((i: any) => ({
         id: i.ID,
         score: this.powerScore(i),
         tc: this.townCenterLevel(i),
       }))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit);
+      .sort((a, b) => b.score - a.score);
+
+    const top = scored.slice(0, limit);
+    let viewer;
+    if (viewerId) {
+      const idx = scored.findIndex((s) => s.id === viewerId);
+      if (idx >= 0) {
+        viewer = {
+          rank: idx + 1,
+          score: scored[idx].score,
+          tc: scored[idx].tc,
+          total: scored.length,
+        };
+      }
+    }
+    return { top, viewer };
+  }
+
+  /** The attacker raid-cooldown timestamp if still active, else null. */
+  static async activeRaidCooldown(userId: string): Promise<Date | null> {
+    const row = await global.client.prisma.i_Island.findUnique({
+      where: { ID: userId },
+      select: { RaidCooldown: true },
+    });
+    const cd = row?.RaidCooldown ? new Date(row.RaidCooldown) : null;
+    return cd && cd.getTime() > Date.now() ? cd : null;
   }
 
   // ── Phase 5: community-economy integrations (feature-flagged, off by default) ─

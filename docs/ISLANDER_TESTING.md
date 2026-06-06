@@ -187,6 +187,23 @@ and **within ±5 TC** of each other.
 - [ ] **Min rush cost (F16):** rushing a build with <6s remaining still costs
       **≥ 1** 🪙 (never free).
 
+## Phase B — Visibility & UX (`ISLANDER_IMPROVEMENTS.md` F10, F12, F18)
+
+- [ ] **Status field (F10):** `/island` shows a **Status** block. On your own
+      island it shows your shield state **and** raid cooldown ("🚣 Raiders ready"
+      or "⏳ resting — ready `<t>`"). On another's island it shows only their
+      shield/raidable state (no cooldown line).
+- [ ] **Shield reflected:** a freshly-raided (beaten) defender shows "🛡️ Shielded
+      — raidable again `<t>`"; a TC < 5 island shows "🛡️ New-player protection".
+- [ ] **Raid button disabled (F10):** viewing a shielded / new-player island
+      disables **Raid ⚔️** (Scout still enabled). Viewing any island while *you*
+      are on raid cooldown also disables Raid. An eligible target keeps Raid live.
+- [ ] **Own rank (F12):** open **Leaderboard 🏆** as someone outside the top 10 →
+      a `#N … you, of T` line is appended below the top list. A top-10 player sees
+      no duplicate line.
+- [ ] **F18:** no behavioural change — towers still inflict heavier attacker
+      losses; this item is documentation only.
+
 ## Edge cases & things to watch
 
 - [ ] **Refresh** button always re-renders current state (resources ticked).
