@@ -13,6 +13,11 @@ export default class RaidCustomTimeSubmitHandler implements IHandler {
   async execute(interaction: ModalSubmitInteraction) {
     if (!interaction.isModalSubmit()) return;
 
+    // Defer immediately — TimeParser.parse can fall back to a slow AI call that
+    // exceeds Discord's 3s interaction window, which would invalidate the token
+    // and cause a 10062 "Unknown interaction" error on reply.
+    await interaction.deferReply({ ephemeral: true });
+
     const raidId = parseInt(interaction.customId.split("_")[1]);
     const datetimeInput = interaction.fields.getTextInputValue("customTime");
 
@@ -32,17 +37,15 @@ export default class RaidCustomTimeSubmitHandler implements IHandler {
     const parsed = await TimeParser.parse(datetimeInput, timezone);
 
     if (!parsed.isValid()) {
-      await interaction.reply({
+      await interaction.editReply({
         content: `Could not parse **${datetimeInput}** as a date/time. Please use formats like \`DD/MM HH:mm\` or \`March 15 6:30pm\`.`,
-        ephemeral: true,
       });
       return;
     }
 
     if (parsed.isBefore(moment())) {
-      await interaction.reply({
+      await interaction.editReply({
         content: `The time **${datetimeInput}** is in the past! Please select a future time.`,
-        ephemeral: true,
       });
       return;
     }
@@ -50,9 +53,8 @@ export default class RaidCustomTimeSubmitHandler implements IHandler {
     try {
       await RaidScheduler.AddSingleSchedulingOptionToRaid(raidId, parsed.toDate());
 
-      await interaction.reply({
+      await interaction.editReply({
         content: `Successfully added <t:${parsed.unix()}:F> to the raid options! Participants will see it next time they open the voting menu.`,
-        ephemeral: true,
       });
 
       // Notify in LFG
@@ -71,9 +73,8 @@ export default class RaidCustomTimeSubmitHandler implements IHandler {
       }
     } catch (error) {
       log.error("Error adding custom scheduling option:", error);
-      await interaction.reply({
+      await interaction.editReply({
         content: "An error occurred while adding the custom time.",
-        ephemeral: true,
       });
     }
   }
