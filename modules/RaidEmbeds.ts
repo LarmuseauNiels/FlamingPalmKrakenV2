@@ -125,7 +125,7 @@ export abstract class RaidEmbeds {
   static buildSchedulingActionRow(raidId: number) {
     return new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
-        .setCustomId("raidVotes")
+        .setCustomId(`raidVotes_${raidId}`)
         .setLabel("View Participants' Chosen Times")
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
