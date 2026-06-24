@@ -90,6 +90,25 @@ export abstract class RaidScheduler {
   }
 
   static async AddSingleSchedulingOptionToRaid(raidId: number, timestamp: Date) {
+    // Guard against duplicates: if this raid already has an option at the exact
+    // same time, return it instead of creating a second identical row. Without
+    // this, a double-submit (retry after an error, double-click, or suggesting
+    // a time that already exists) creates duplicate "No votes" entries.
+    const existing =
+      await global.client.prisma.raidSchedulingOption.findFirst({
+        where: { RaidId: raidId, Timestamp: timestamp },
+      });
+    if (existing) {
+      log.info(
+        "Scheduling option already exists for raid " +
+          raidId +
+          " at " +
+          timestamp.toISOString() +
+          "; skipping duplicate"
+      );
+      return existing;
+    }
+
     const lastSchedulingOption =
       await global.client.prisma.raidSchedulingOption.findFirst({
         where: { RaidId: raidId },
@@ -99,13 +118,33 @@ export abstract class RaidScheduler {
     let lastOption = lastSchedulingOption ? lastSchedulingOption.Option : "@"; // '@' is ASCII before 'A'
     let nextOption = String.fromCharCode(lastOption.charCodeAt(0) + 1);
 
-    return global.client.prisma.raidSchedulingOption.create({
-      data: {
-        RaidId: raidId,
-        Timestamp: timestamp,
-        Option: nextOption,
-      },
-    });
+    try {
+      return await global.client.prisma.raidSchedulingOption.create({
+        data: {
+          RaidId: raidId,
+          Timestamp: timestamp,
+          Option: nextOption,
+        },
+      });
+    } catch (error: any) {
+      // P2002 = unique constraint violation on (RaidId, Timestamp). This closes
+      // the race the findFirst check above can't: two concurrent executions
+      // (e.g. a replayed gateway interaction) both passing the check and racing
+      // to insert. The DB rejects the second; return the row that won.
+      if (error?.code === "P2002") {
+        log.info(
+          "Duplicate scheduling option rejected by DB for raid " +
+            raidId +
+            " at " +
+            timestamp.toISOString() +
+            "; returning existing"
+        );
+        return global.client.prisma.raidSchedulingOption.findFirst({
+          where: { RaidId: raidId, Timestamp: timestamp },
+        });
+      }
+      throw error;
+    }
   }
 
   static async SendSchedulingMessage(raidId: number) {
