@@ -306,8 +306,12 @@ export abstract class RaidScheduler {
     log.info("Collecting raid " + raid.ID);
     let votes = await this.CollectSchedulingVotes(raid);
     let consensusVotes = new Map<RaidSchedulingOption, string[]>();
+    const now = new Date().getTime();
     votes.forEach((value, key) => {
-      if (value.length >= raid.MinPlayers) {
+      // Only schedule a slot that is still in the future — a slot whose time has
+      // already passed can't be played even if it reached enough votes. (Slots
+      // can outlive their time now that raids stay open until every slot passes.)
+      if (value.length >= raid.MinPlayers && key.Timestamp.getTime() > now) {
         consensusVotes.set(key, value);
       }
     });
