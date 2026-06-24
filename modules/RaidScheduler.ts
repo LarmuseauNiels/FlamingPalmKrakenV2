@@ -90,6 +90,25 @@ export abstract class RaidScheduler {
   }
 
   static async AddSingleSchedulingOptionToRaid(raidId: number, timestamp: Date) {
+    // Guard against duplicates: if this raid already has an option at the exact
+    // same time, return it instead of creating a second identical row. Without
+    // this, a double-submit (retry after an error, double-click, or suggesting
+    // a time that already exists) creates duplicate "No votes" entries.
+    const existing =
+      await global.client.prisma.raidSchedulingOption.findFirst({
+        where: { RaidId: raidId, Timestamp: timestamp },
+      });
+    if (existing) {
+      log.info(
+        "Scheduling option already exists for raid " +
+          raidId +
+          " at " +
+          timestamp.toISOString() +
+          "; skipping duplicate"
+      );
+      return existing;
+    }
+
     const lastSchedulingOption =
       await global.client.prisma.raidSchedulingOption.findFirst({
         where: { RaidId: raidId },
