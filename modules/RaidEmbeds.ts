@@ -39,9 +39,13 @@ export abstract class RaidEmbeds {
       RaidSchedulingOption: RaidSchedulingOption[];
     }
   ) {
-    let finishTime = new Date(raid.RaidSchedulingOption[0].Timestamp.getTime());
-    finishTime.setDate(finishTime.getDate() - 1);
-    finishTime.setHours(0, 0, 0, 0);
+    // Scheduling stays open until every proposed slot has passed — the raid is
+    // only cancelled once no upcoming slot remains (see RaidScheduler.scheduleRaid),
+    // so the close time is the latest option, not the earliest.
+    const latestTimestamp = Math.max(
+      ...raid.RaidSchedulingOption.map((o) => o.Timestamp.getTime())
+    );
+    let finishTime = new Date(latestTimestamp);
 
     let participants = "";
     raid.RaidAttendees.forEach((attendee) => {

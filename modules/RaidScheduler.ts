@@ -306,8 +306,12 @@ export abstract class RaidScheduler {
     log.info("Collecting raid " + raid.ID);
     let votes = await this.CollectSchedulingVotes(raid);
     let consensusVotes = new Map<RaidSchedulingOption, string[]>();
+    const now = new Date().getTime();
     votes.forEach((value, key) => {
-      if (value.length >= raid.MinPlayers) {
+      // Only schedule a slot that is still in the future — a slot whose time has
+      // already passed can't be played even if it reached enough votes. (Slots
+      // can outlive their time now that raids stay open until every slot passes.)
+      if (value.length >= raid.MinPlayers && key.Timestamp.getTime() > now) {
         consensusVotes.set(key, value);
       }
     });
@@ -330,10 +334,17 @@ export abstract class RaidScheduler {
       }
     } else {
       log.info("No consensus reached for raid " + raid.ID);
-      let finishingTime = new Date(raid.RaidSchedulingOption[0].Timestamp);
-      finishingTime.setDate(finishingTime.getDate() - 1);
-      finishingTime.setHours(0, 0, 0, 0);
-      if (new Date().getTime() > finishingTime.getTime()) {
+      // Only cancel once every proposed timeslot is in the past. As long as any
+      // slot (seeded or custom-suggested) is still upcoming, keep the raid open
+      // so people can still reach consensus on it — otherwise suggesting a later
+      // time would be pointless if the original earliest-slot deadline had passed.
+      const latestTimestamp = Math.max(
+        ...raid.RaidSchedulingOption.map((o) => o.Timestamp.getTime())
+      );
+      if (
+        raid.RaidSchedulingOption.length > 0 &&
+        new Date().getTime() > latestTimestamp
+      ) {
         log.info("Cancelling raid " + raid.ID);
         await this.cancelRaid(raid);
       }
