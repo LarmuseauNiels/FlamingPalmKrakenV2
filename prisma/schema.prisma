@@ -247,6 +247,7 @@ model RaidSchedulingOption {
   RaidAvailability RaidAvailability[]
   Raids            Raids?             @relation(fields: [RaidId], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "RaidSchedulingOption_Raids_ID_fk")
 
+  @@unique([RaidId, Timestamp], map: "RaidSchedulingOption_RaidId_Timestamp_key")
   @@index([RaidId], map: "RaidSchedulingOption_Raids_ID_fk")
 }
 
