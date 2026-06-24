@@ -114,6 +114,40 @@ export abstract class RaidScheduler {
       log.warn("Raid not found for scheduling message: " + raidId);
       return;
     }
+
+    await this.SendSchedulingDMs(raidId);
+
+    let participants = "";
+    raid.RaidAttendees.forEach((attendee) => {
+      participants += "<@" + attendee.MemberId + ">\n";
+    });
+
+    let updateEmbed = new EmbedBuilder()
+      .setTitle("Raid has entered scheduling: " + raid.Title)
+      .setDescription("Participants: \n" + participants)
+      .setFooter({
+        text: "Scheduling closes ",
+        iconURL:
+          "https://flamingpalm.com/assets/images/logo/FlamingPalmLogoSmall.png",
+      })
+      .setColor("#0099ff");
+    global.client.lfg
+      .send({ embeds: [updateEmbed] })
+      .catch((err) => log.error("Failed to send scheduling update to lfg:", err));
+  }
+
+  /**
+   * (Re)sends the scheduling DM — embed + fresh select menu of all current
+   * options — to every attendee of a raid. Used both when scheduling first
+   * opens and when a new option (e.g. a custom suggested time) is added, since
+   * Discord does not retroactively update select menus in already-sent DMs.
+   */
+  static async SendSchedulingDMs(raidId: number) {
+    let raid = await this.getRaid(raidId);
+    if (raid == null) {
+      log.warn("Raid not found for scheduling DMs: " + raidId);
+      return;
+    }
     let embed = RaidEmbeds.buildSchedulingMessage(raid);
     let row = RaidEmbeds.buildSchedulingActionRow(raid.ID);
     let selectMenu = RaidEmbeds.buildSchedulingSelectMenu(raid.ID, raid.RaidSchedulingOption);
@@ -148,24 +182,6 @@ export abstract class RaidScheduler {
           )
         );
     });
-
-    let participants = "";
-    raid.RaidAttendees.forEach((attendee) => {
-      participants += "<@" + attendee.MemberId + ">\n";
-    });
-
-    let updateEmbed = new EmbedBuilder()
-      .setTitle("Raid has entered scheduling: " + raid.Title)
-      .setDescription("Participants: \n" + participants)
-      .setFooter({
-        text: "Scheduling closes ",
-        iconURL:
-          "https://flamingpalm.com/assets/images/logo/FlamingPalmLogoSmall.png",
-      })
-      .setColor("#0099ff");
-    global.client.lfg
-      .send({ embeds: [updateEmbed] })
-      .catch((err) => log.error("Failed to send scheduling update to lfg:", err));
   }
 
   static async resendRaid(raidID: number, user: User) {
