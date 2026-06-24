@@ -176,10 +176,31 @@ export abstract class RaidScheduler {
   }
 
   /**
+   * Returns the scheduling-option IDs a member previously marked themselves
+   * available for, restricted to the given raid's options. Used to pre-select
+   * those options when (re)building the member's voting select menu so an
+   * existing vote isn't visually lost — and, on resend, not accidentally wiped
+   * when the member re-submits.
+   */
+  static async getMemberSelectedOptionIds(
+    memberId: string,
+    optionIds: number[]
+  ): Promise<number[]> {
+    if (optionIds.length === 0) return [];
+    const rows = await global.client.prisma.raidAvailability.findMany({
+      where: { MemberId: memberId, SchedulingOptionId: { in: optionIds } },
+      select: { SchedulingOptionId: true },
+    });
+    return rows.map((r) => r.SchedulingOptionId);
+  }
+
+  /**
    * (Re)sends the scheduling DM — embed + fresh select menu of all current
    * options — to every attendee of a raid. Used both when scheduling first
    * opens and when a new option (e.g. a custom suggested time) is added, since
    * Discord does not retroactively update select menus in already-sent DMs.
+   * The select menu is built per-attendee so each person's existing votes come
+   * back pre-selected.
    */
   static async SendSchedulingDMs(raidId: number) {
     let raid = await this.getRaid(raidId);
@@ -189,34 +210,44 @@ export abstract class RaidScheduler {
     }
     let embed = RaidEmbeds.buildSchedulingMessage(raid);
     let row = RaidEmbeds.buildSchedulingActionRow(raid.ID);
-    let selectMenu = RaidEmbeds.buildSchedulingSelectMenu(raid.ID, raid.RaidSchedulingOption);
+    const optionIds = raid.RaidSchedulingOption.map((o) => o.ID);
 
     raid.RaidAttendees.forEach((attendee) => {
-      global.client.users
-        .fetch(attendee.MemberId)
-        .then((user) => {
-          user
-            .send({
-              embeds: [embed],
-              components: [selectMenu, row],
-            } as MessageCreateOptions)
-            .catch((err) => {
-              global.client.log(
-                "Error sending scheduling message for raid " +
-                  raid.ID +
-                  "  to <@" +
-                  user.id +
-                  ">"
-              );
-              global.client.lfg.send({
-                content: `<@${user.id}>, I couldn't DM you the scheduling options for **${raid.Title}**! Please check your privacy settings and use \`/raid-resend raid:${raid.ID}\` to try again.`
-              }).catch(e => log.error("Failed to send DM failure notification to lfg:", e));
-              log.error("Error sending scheduling message:", err);
+      this.getMemberSelectedOptionIds(attendee.MemberId, optionIds)
+        .then((selected) => {
+          const selectMenu = RaidEmbeds.buildSchedulingSelectMenu(
+            raid.ID,
+            raid.RaidSchedulingOption,
+            selected
+          );
+          return global.client.users
+            .fetch(attendee.MemberId)
+            .then((user) => {
+              user
+                .send({
+                  embeds: [embed],
+                  components: [selectMenu, row],
+                } as MessageCreateOptions)
+                .catch((err) => {
+                  global.client.log(
+                    "Error sending scheduling message for raid " +
+                      raid.ID +
+                      "  to <@" +
+                      user.id +
+                      ">"
+                  );
+                  global.client.lfg.send({
+                    content: `<@${user.id}>, I couldn't DM you the scheduling options for **${raid.Title}**! Please check your privacy settings and use \`/raid-resend raid:${raid.ID}\` to try again.`
+                  }).catch(e => log.error("Failed to send DM failure notification to lfg:", e));
+                  log.error("Error sending scheduling message:", err);
+                });
             });
         })
         .catch((err) =>
           log.error(
-            "Failed to fetch user " + attendee.MemberId + " for scheduling:",
+            "Failed to prepare scheduling DM for user " +
+              attendee.MemberId +
+              ":",
             err
           )
         );
@@ -231,7 +262,13 @@ export abstract class RaidScheduler {
     }
     let embed = RaidEmbeds.buildSchedulingMessage(raid);
     let row = RaidEmbeds.buildSchedulingActionRow(raid.ID);
-    let selectMenu = RaidEmbeds.buildSchedulingSelectMenu(raid.ID, raid.RaidSchedulingOption);
+    const optionIds = raid.RaidSchedulingOption.map((o) => o.ID);
+    const selected = await this.getMemberSelectedOptionIds(user.id, optionIds);
+    let selectMenu = RaidEmbeds.buildSchedulingSelectMenu(
+      raid.ID,
+      raid.RaidSchedulingOption,
+      selected
+    );
 
     user
       .send({
