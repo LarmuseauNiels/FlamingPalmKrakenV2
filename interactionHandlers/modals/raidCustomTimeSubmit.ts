@@ -53,8 +53,12 @@ export default class RaidCustomTimeSubmitHandler implements IHandler {
     try {
       await RaidScheduler.AddSingleSchedulingOptionToRaid(raidId, parsed.toDate());
 
+      // Re-send the scheduling DM to every participant so the new option shows
+      // up in their voting menu — Discord won't update already-sent select menus.
+      await RaidScheduler.SendSchedulingDMs(raidId);
+
       await interaction.editReply({
-        content: `Successfully added <t:${parsed.unix()}:F> to the raid options! Participants will see it next time they open the voting menu.`,
+        content: `Successfully added <t:${parsed.unix()}:F> to the raid options! Participants have been sent an updated voting menu in their DMs.`,
       });
 
       // Notify in LFG
