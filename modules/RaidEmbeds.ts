@@ -142,23 +142,18 @@ export abstract class RaidEmbeds {
   ) {
     const select = new StringSelectMenuBuilder()
       .setCustomId(`raidVote_${raidId}`)
-      .setPlaceholder("Select all time slots you are available for")
+      .setPlaceholder("Select the time slots (A, B, C…) you are available for")
       .setMinValues(0)
       .setMaxValues(Math.min(options.length, 25));
 
     options.forEach((option) => {
-      const unixTime = Math.floor(option.Timestamp.getTime() / 1000);
-      // We use a formatted string for the label because select menus don't support discord timestamps in labels
-      const dateString = option.Timestamp.toLocaleDateString("en-GB", {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-
+      // Select menus don't support Discord timestamps in labels, so any time
+      // we render here would be fixed to the server's timezone and conflict
+      // with the per-viewer localized times shown in the message above.
+      // We therefore label options by their letter only and let users read
+      // the localized times from the message.
       select.addOptions({
-        label: `${option.Option}: ${dateString}`,
+        label: option.Option,
         value: option.ID.toString(),
         default: userSelectedOptions.includes(option.ID),
       });
