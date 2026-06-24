@@ -53,6 +53,9 @@ export abstract class RaidModule {
       },
       where: { ID: raidId },
     });
+    if (raid == null) {
+      return null;
+    }
     let votes = await RaidScheduler.CollectSchedulingVotes(raid);
 
     let embed = new EmbedBuilder()
