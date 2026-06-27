@@ -1,4 +1,10 @@
-import { EmbedBuilder, MessageCreateOptions, User } from "discord.js";
+import {
+  EmbedBuilder,
+  GuildScheduledEventEntityType,
+  GuildScheduledEventPrivacyLevel,
+  MessageCreateOptions,
+  User,
+} from "discord.js";
 import { RaidAttendees, Raids, RaidSchedulingOption } from "@prisma/client";
 import { RaidEmbeds } from "./RaidEmbeds";
 import { createLogger } from "../utils/logger";
@@ -74,17 +80,15 @@ export abstract class RaidScheduler {
     let thursday = new Date(tuesday.getTime());
     thursday.setDate(tuesday.getDate() + 2);
 
+    // Seed only a minimal set of default slots — one 19:00 (prime-time) option
+    // per day. The community prefers suggesting their own times, so keeping the
+    // defaults light avoids cluttering the voting menu. Custom suggestions
+    // continue lettering from "C" onward via AddSingleSchedulingOptionToRaid.
     return global.client.prisma.raidSchedulingOption.createMany({
       data: [
-        { RaidId: raidId, Timestamp: new Date(tuesday.setHours(17, 0, 0, 0)), Option: "A" },
-        { RaidId: raidId, Timestamp: new Date(tuesday.setHours(19, 0, 0, 0)), Option: "B" },
-        { RaidId: raidId, Timestamp: new Date(tuesday.setHours(21, 0, 0, 0)), Option: "C" },
-        { RaidId: raidId, Timestamp: new Date(wednesday.setHours(17, 0, 0, 0)), Option: "D" },
-        { RaidId: raidId, Timestamp: new Date(wednesday.setHours(19, 0, 0, 0)), Option: "E" },
-        { RaidId: raidId, Timestamp: new Date(wednesday.setHours(21, 0, 0, 0)), Option: "F" },
-        { RaidId: raidId, Timestamp: new Date(thursday.setHours(17, 0, 0, 0)), Option: "G" },
-        { RaidId: raidId, Timestamp: new Date(thursday.setHours(19, 0, 0, 0)), Option: "H" },
-        { RaidId: raidId, Timestamp: new Date(thursday.setHours(21, 0, 0, 0)), Option: "I" },
+        { RaidId: raidId, Timestamp: new Date(tuesday.setHours(19, 0, 0, 0)), Option: "A" },
+        { RaidId: raidId, Timestamp: new Date(wednesday.setHours(19, 0, 0, 0)), Option: "B" },
+        { RaidId: raidId, Timestamp: new Date(thursday.setHours(19, 0, 0, 0)), Option: "C" },
       ],
     });
   }
@@ -391,6 +395,30 @@ export abstract class RaidScheduler {
       where: { ID: raid.ID },
       data: { Status: 3 },
     });
+
+    // Surface the confirmed raid on the server's Events tab. External events
+    // require both an end time and a location; we run 2h from the chosen start
+    // and point at the LFG channel. Non-fatal: a failure here must not block the
+    // confirmation DMs/announcement below.
+    try {
+      const guild = await global.client.guilds.fetch(process.env.GUILD_ID!);
+      const start = key.Timestamp;
+      const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+      await guild.scheduledEvents.create({
+        name: raid.Title,
+        scheduledStartTime: start,
+        scheduledEndTime: end,
+        privacyLevel: GuildScheduledEventPrivacyLevel.GuildOnly,
+        entityType: GuildScheduledEventEntityType.External,
+        entityMetadata: { location: `#${global.client.lfg?.name ?? "lfg"}` },
+        description: `Raid scheduled via FlamingPalm. Participants: ${raid.RaidAttendees.length}`,
+      });
+    } catch (err) {
+      log.error(
+        "Failed to create Discord scheduled event for raid " + raid.ID + ":",
+        err
+      );
+    }
 
     let embed = new EmbedBuilder()
       .setTitle("Raid: " + raid.Title)

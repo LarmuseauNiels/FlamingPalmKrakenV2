@@ -51,7 +51,30 @@ export default class RaidCustomTimeSubmitHandler implements IHandler {
     }
 
     try {
-      await RaidScheduler.AddSingleSchedulingOptionToRaid(raidId, parsed.toDate());
+      const option = await RaidScheduler.AddSingleSchedulingOptionToRaid(
+        raidId,
+        parsed.toDate()
+      );
+
+      // Auto-accept the slot for whoever suggested it — they clearly want this
+      // time, so count them in without making them vote for their own option.
+      // upsert keeps it idempotent if the option already existed and they'd
+      // already voted (composite PK SchedulingOptionId + MemberId).
+      if (option) {
+        await global.client.prisma.raidAvailability.upsert({
+          where: {
+            SchedulingOptionId_MemberId: {
+              SchedulingOptionId: option.ID,
+              MemberId: interaction.user.id,
+            },
+          },
+          create: {
+            SchedulingOptionId: option.ID,
+            MemberId: interaction.user.id,
+          },
+          update: {},
+        });
+      }
 
       // Re-send the scheduling DM to every participant so the new option shows
       // up in their voting menu — Discord won't update already-sent select menus.
@@ -62,7 +85,11 @@ export default class RaidCustomTimeSubmitHandler implements IHandler {
       });
 
       // Notify in LFG
-      const raid = await global.client.prisma.raids.findUnique({
+      const raid = await global.client.prisma.raids.findFirst({
+        include: {
+          RaidAttendees: true,
+          RaidSchedulingOption: true,
+        },
         where: { ID: raidId },
       });
 
@@ -74,6 +101,13 @@ export default class RaidCustomTimeSubmitHandler implements IHandler {
           .catch((e) =>
             log.error("Failed to send custom time suggestion to lfg:", e)
           );
+
+        // The suggester's auto-vote may have completed consensus on this slot —
+        // re-check immediately so it can be scheduled without waiting for the
+        // next poll (mirrors the raidVote select handler).
+        if (raid.Status === 2) {
+          await RaidScheduler.scheduleRaid(raid as any);
+        }
       }
     } catch (error) {
       log.error("Error adding custom scheduling option:", error);
