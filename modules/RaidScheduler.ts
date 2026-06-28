@@ -404,6 +404,33 @@ export abstract class RaidScheduler {
       const guild = await global.client.guilds.fetch(process.env.GUILD_ID!);
       const start = key.Timestamp;
       const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+
+      // Embed the attendees as user mentions in the description so the 30-minute
+      // notification job (modules/statistics.ts) can parse them out and ping every
+      // participant. Discord scheduled events have no custom data field, so the
+      // description is the only writable surface for this list. Mentions in a
+      // description don't ping on their own — the actual ping happens in the
+      // announcement message content built from these mentions.
+      const prefix = `Raid scheduled via FlamingPalm. Participants (${raid.RaidAttendees.length}):\n`;
+      const mentions: string[] = [];
+      let truncated = false;
+      for (const attendee of raid.RaidAttendees) {
+        const mention = `<@${attendee.MemberId}>`;
+        // Discord caps the scheduled event description at 1000 characters.
+        if (prefix.length + [...mentions, mention].join(" ").length > 1000) {
+          truncated = true;
+          break;
+        }
+        mentions.push(mention);
+      }
+      if (truncated) {
+        log.warn(
+          "Raid " +
+            raid.ID +
+            " has too many attendees to list all in the scheduled event description; participant tagging will be partial."
+        );
+      }
+
       await guild.scheduledEvents.create({
         name: raid.Title,
         scheduledStartTime: start,
@@ -411,7 +438,7 @@ export abstract class RaidScheduler {
         privacyLevel: GuildScheduledEventPrivacyLevel.GuildOnly,
         entityType: GuildScheduledEventEntityType.External,
         entityMetadata: { location: `#${global.client.lfg?.name ?? "lfg"}` },
-        description: `Raid scheduled via FlamingPalm. Participants: ${raid.RaidAttendees.length}`,
+        description: prefix + mentions.join(" "),
       });
     } catch (err) {
       log.error(

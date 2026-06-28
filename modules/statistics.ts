@@ -163,6 +163,12 @@ module.exports = async function (client: FpgClient) {
                     .setFooter({ text: "Event at " });
                   let eventText =
                     event.name + (event.description ? event.description : "");
+                  // Participants are embedded as user mentions in the event
+                  // description by RaidScheduler.CreateRaid (raids have no role to
+                  // tag). Parse them out so we can ping every attendee here.
+                  const participantMentions = (
+                    description.match(/<@!?(\d+)>/g) ?? []
+                  ).map((m) => m.replace(/<@!?(\d+)>/, "<@$1>"));
                   guild.roles
                     .fetch()
                     .then((roles) => {
@@ -172,28 +178,25 @@ module.exports = async function (client: FpgClient) {
                           let role = roles.find((role) =>
                             eventText.includes(role.name)
                           );
-                          if (role) {
-                            announcements
-                              .send({
-                                content: "<@&" + role.id + ">",
-                                embeds: [eventEmbed],
-                              })
-                              .catch((error) =>
-                                log.error(
-                                  "Failed to send event announcement:",
-                                  error
-                                )
-                              );
-                          } else {
-                            announcements
-                              .send({ embeds: [eventEmbed] })
-                              .catch((error) =>
-                                log.error(
-                                  "Failed to send event announcement:",
-                                  error
-                                )
-                              );
-                          }
+                          // Tag the matched role (if any) plus every parsed
+                          // participant, deduped, in a single announcement.
+                          const mentions = [
+                            ...(role ? ["<@&" + role.id + ">"] : []),
+                            ...participantMentions,
+                          ];
+                          const content = [...new Set(mentions)].join(" ");
+                          announcements
+                            .send(
+                              content
+                                ? { content, embeds: [eventEmbed] }
+                                : { embeds: [eventEmbed] }
+                            )
+                            .catch((error) =>
+                              log.error(
+                                "Failed to send event announcement:",
+                                error
+                              )
+                            );
                         })
                         .catch((error) =>
                           log.error(
