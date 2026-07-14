@@ -32,7 +32,7 @@ export class TimeParser {
 
   /**
    * Parses a date/time string based on a given timezone and a set of predefined formats.
-   * If traditional parsing fails, it falls back to Google AI (Gemini).
+   * If traditional parsing fails, it falls back to Ollama AI.
    * @param input The date/time string to parse.
    * @param timezone The timezone to use for parsing (e.g., "Europe/Brussels", "UTC").
    * @returns A Promise resolving to a moment object (check .isValid() for success).
@@ -43,7 +43,7 @@ export class TimeParser {
 
     // Fallback to AI
     try {
-      const aiParsed = await global.client.googleAI.parseDate(input, timezone);
+      const aiParsed = await global.client.ollamaAI.parseDate(input, timezone);
       if (aiParsed) {
         return moment.tz(aiParsed, timezone);
       }

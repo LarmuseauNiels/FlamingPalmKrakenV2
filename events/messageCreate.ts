@@ -15,15 +15,15 @@ export default class messageCreate implements IEvent {
 
     if (message.mentions.has(global.client.user)) {
       log.info("Message mentions bot: " + message.content);
-      global.client.googleAI.ask(message.content).then((response: string) => {
+      global.client.ollamaAI.ask(message.content).then((response: string) => {
         if (response) {
             message.reply(response).catch((e) => log.error("Failed to reply with response:", e));
         } else {
-          log.error("Empty or invalid response from Google AI");
+          log.error("Empty or invalid response from Ollama AI");
           message.reply("I'm sorry, I couldn't process your request properly.").catch((e) => log.error("Failed to reply with error message:", e));
         }
       }).catch(error => {
-        log.error("Error with googleAI.ask:", error);
+        log.error("Error with ollamaAI.ask:", error);
         message.reply("Sorry, I encountered an error processing your request.").catch((e) => log.error("Failed to reply with error message:", e));
       });
     }

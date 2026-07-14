@@ -8,7 +8,7 @@ A Discord bot for the FlamingPalm gaming community, providing raid scheduling, a
 - **Achievements & Points** — Track member achievements and point balances with a full audit trail
 - **Member Profiles** — Custom profile image generation using canvas
 - **Reward Shop** — Points-based reward redemption system
-- **AI Assistant** — Google Gemini 1.5 Flash powered community assistant with tool-calling
+- **AI Assistant** — Ollama-powered community assistant (gemma4:cloud) with tool-calling
 - **Web API** — Express server with Discord OAuth for a companion website
 - **Game Server Status** — Vintage Story and Pelican-managed game server monitoring
 
@@ -19,7 +19,7 @@ A Discord bot for the FlamingPalm gaming community, providing raid scheduling, a
 - **Discord:** Discord.js 14
 - **Database:** MySQL via Prisma ORM
 - **Web:** Express + Passport (Discord OAuth) + JWT
-- **AI:** OpenAI GPT-4o-mini
+- **AI:** Ollama (gemma4:cloud, OpenAI-compatible API)
 - **Image Generation:** @napi-rs/canvas
 - **Deployment:** CapRover (Docker, node:21-alpine)
 - **Error Tracking:** Bugsnag
@@ -61,7 +61,9 @@ A Discord bot for the FlamingPalm gaming community, providing raid scheduling, a
    | `OAUTHSECRET` | Discord OAuth client secret |
    | `CALLBACK_URL` | OAuth redirect URL |
    | `JWT_SECRET` | JWT signing secret |
-   | `OPENAI_API_KEY` | OpenAI API key |
+   | `OLLAMA_AI_KEY` | Ollama cloud API key |
+   | `OLLAMA_MODEL` | Ollama model name (optional, defaults to gemma4:cloud) |
+   | `OLLAMA_BASE_URL` | Ollama OpenAI-compatible endpoint (optional, defaults to https://ollama.com/v1) |
    | `BUGSNAG_API_KEY` | Bugsnag error tracking key |
    | `LOG_LEVEL` | Logger verbosity: `DEBUG`, `INFO`, `WARN`, `ERROR` |
    | `DISABLE` | Set to skip startup (optional) |
@@ -105,7 +107,7 @@ FlamingPalmKrakenV2/
 │   └── migrations/           # Prisma migration history
 ├── components/
 │   ├── FpgClient.ts          # Extended Discord.js Client (core hub)
-│   └── GoogleAI.ts           # Google Gemini 1.5 Flash wrapper with tool-calling
+│   └── OllamaAI.ts           # Ollama AI wrapper with tool-calling
 ├── events/                   # Discord.js event handlers
 ├── interactionHandlers/
 │   ├── commands/             # 23 slash command handlers

@@ -11,11 +11,11 @@ AI assistant guide for the FlamingPalm Discord bot codebase.
 - Achievement and points system
 - Member profiles with custom image generation
 - Reward shop
-- Google Gemini 1.5 Flash powered community assistant
+- Ollama-powered community assistant (gemma4:cloud)
 - Web API with Discord OAuth for a companion website
 - Game server monitoring (Vintage Story + Pelican-managed servers)
 
-**Stack:** TypeScript · Node.js 21 · Discord.js 14 · Prisma + MySQL · Express · OpenAI GPT-4o-mini · CapRover Docker deployment
+**Stack:** TypeScript · Node.js 21 · Discord.js 14 · Prisma + MySQL · Express · Ollama (gemma4:cloud, OpenAI-compatible API) · CapRover Docker deployment
 
 ---
 
@@ -32,7 +32,7 @@ FlamingPalmKrakenV2/
 │   └── migrations/           # Prisma migration history
 ├── components/
 │   ├── FpgClient.ts          # Extended Discord.js Client — core hub class
-│   └── GoogleAI.ts           # Google Gemini 1.5 Flash wrapper with tool-calling
+│   └── OllamaAI.ts           # Ollama AI wrapper (OpenAI-compatible API) with tool-calling
 ├── events/                   # Discord.js event handlers (8 files)
 ├── interactionHandlers/
 │   ├── commands/             # 23 slash command handlers
@@ -142,8 +142,9 @@ const raids = await global.client.prisma.raids.findMany(...);
 | `OAUTHSECRET` | Discord OAuth client secret |
 | `CALLBACK_URL` | OAuth redirect URL |
 | `JWT_SECRET` | JWT signing secret |
-| `OPENAI_API_KEY` | OpenAI API key |
-| `ANTHROPIC_API_KEY` | Anthropic API key (Claude Haiku for timestamp parsing) |
+| `OLLAMA_AI_KEY` | Ollama cloud API key |
+| `OLLAMA_MODEL` | Ollama model name (optional, defaults to gemma4:cloud) |
+| `OLLAMA_BASE_URL` | Ollama OpenAI-compatible endpoint (optional, defaults to https://ollama.com/v1) |
 | `BUGSNAG_API_KEY` | Bugsnag error tracking key |
 | `LOG_LEVEL` | Logger level: DEBUG, INFO, WARN, ERROR |
 | `DISABLE` | Set to skip startup (optional) |
@@ -249,7 +250,7 @@ await interaction.editReply({ content: '...' });
 | `index.ts` | Bot startup, Bugsnag init, loads FpgClient |
 | `deploy-commands.ts` | Registers/updates slash commands via Discord REST API |
 | `components/FpgClient.ts` | Core client: loads all handlers, holds all collections |
-| `components/Assistant.ts` | OpenAI thread management and tool-calling |
+| `components/OllamaAI.ts` | Ollama AI wrapper with tool-calling |
 | `events/interactionCreate.ts` | Routes all interactions to the correct handler |
 | `events/clientReady.ts` | Post-login setup: channels, invites, event cache |
 | `modules/RaidModule.ts` | All raid database operations |
