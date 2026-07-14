@@ -3,6 +3,7 @@ import { createLogger } from "../utils/logger";
 import { RaidModule } from "../modules/RaidModule";
 import { RaidScheduler } from "../modules/RaidScheduler";
 import { ChannelUpdates } from "../islander/ChannelUpdates";
+import { TimeParser } from "../utils/TimeParser";
 
 const log = createLogger("OllamaAI");
 
@@ -69,6 +70,23 @@ export class OllamaAI {
           },
         },
       },
+      {
+        type: "function",
+        function: {
+          name: "getTimestamp",
+          description: "Convert a natural-language date/time into Discord timestamp tags using the user's configured timezone. Returns the timestamp in multiple Discord formats (short time, long time, short date, long date, short date/time, long date/time, relative). Use this when a user asks for a timestamp or wants to convert a time into Discord's timestamp format.",
+          parameters: {
+            type: "object",
+            properties: {
+              datetime: {
+                type: "string",
+                description: "The date and/or time to convert, e.g. '15/03 18:30', 'tomorrow 9am', 'March 15 6:30pm', '18:30'",
+              },
+            },
+            required: ["datetime"],
+          },
+        },
+      },
     ];
 
     this.systemInstructionText =
@@ -90,7 +108,8 @@ export class OllamaAI {
       "- Use the tools provided to fetch real-time data about events, raids, the store, and scheduled raids when asked. " +
       "If a member mentions a raid by name or asks about a specific raid, use getRaids first to find the raid ID, then use getRaidDetails for full information.\n" +
       "- When a member asks you to create a new raid, ALWAYS confirm the title and minimum number of players with them before calling the createRaid tool. " +
-      "Default to 4 minimum players if the member doesn't specify. Only call createRaid after the member confirms.";
+      "Default to 4 minimum players if the member doesn't specify. Only call createRaid after the member confirms.\n" +
+      "- When a member asks for a Discord timestamp or wants to convert a time, use the getTimestamp tool with their date/time input.";
   }
 
   /**
@@ -279,6 +298,8 @@ export class OllamaAI {
         return await this.getUpcomingRaidsString();
       case "createRaid":
         return await this.createRaidString(call.arguments, authorId || "");
+      case "getTimestamp":
+        return await this.getTimestampString(call.arguments, authorId || "");
       default:
         return "Tool not found.";
     }
@@ -426,6 +447,65 @@ export class OllamaAI {
       log.error("Failed to create raid:", err);
       return "Failed to create the raid. Please try again or use /create-raid instead.";
     }
+  }
+
+  private async getTimestampString(rawArgs: string | object, authorId: string): Promise<string> {
+    let args: any;
+    try {
+      args = typeof rawArgs === "string" ? JSON.parse(rawArgs) : rawArgs;
+    } catch {
+      return "Invalid arguments for getTimestamp.";
+    }
+
+    const datetimeInput = args?.datetime;
+    if (!datetimeInput || typeof datetimeInput !== "string") {
+      return "A date/time input is required.";
+    }
+
+    // Look up the user's timezone
+    let timezone = "UTC";
+    let timezoneWasSet = false;
+    try {
+      const member = await globalThis.client.prisma.members.findUnique({
+        where: { ID: authorId },
+        select: { Timezone: true },
+      });
+      if (member?.Timezone) {
+        timezone = member.Timezone;
+        timezoneWasSet = true;
+      }
+    } catch (err) {
+      log.error("Failed to fetch member timezone for timestamp:", err);
+    }
+
+    const parsed = await TimeParser.parse(datetimeInput, timezone);
+
+    if (!parsed.isValid()) {
+      const tzNote = timezoneWasSet
+        ? `Timezone: ${timezone}`
+        : "No timezone set (using UTC). The user can set their timezone with /set-timezone.";
+      return `Could not parse "${datetimeInput}" as a date/time. ${tzNote}`;
+    }
+
+    const unixSeconds = parsed.unix();
+
+    const formats = [
+      { label: "Short time", code: "t", example: "9:41 PM" },
+      { label: "Long time", code: "T", example: "9:41:30 PM" },
+      { label: "Short date", code: "d", example: "30/06/2021" },
+      { label: "Long date", code: "D", example: "30 June 2021" },
+      { label: "Short date/time", code: "f", example: "30 June 2021 9:41 PM" },
+      { label: "Long date/time", code: "F", example: "Wednesday, 30 June 2021 9:41 PM" },
+      { label: "Relative", code: "R", example: "in 2 hours" },
+    ];
+
+    let string = `Timestamps for "${datetimeInput}" (Timezone: ${timezoneWasSet ? timezone : "UTC (not set)"}):\n`;
+    formats.forEach((f) => {
+      const tag = `<t:${unixSeconds}:${f.code}>`;
+      string += `${f.label}: ${tag} — copy: \`${tag}\`\n`;
+    });
+
+    return string;
   }
 
   private async getRaidsString(): Promise<string> {
