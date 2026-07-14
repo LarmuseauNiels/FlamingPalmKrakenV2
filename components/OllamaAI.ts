@@ -181,7 +181,10 @@ export class OllamaAI {
       "- When a member asks about game server status (e.g. 'is the Minecraft server up?'), use the getGameServerStatus tool.\n" +
       "- When a member asks to join a raid, confirm which raid they want to join, then use getRaids to find the raid ID if needed, and call joinRaid after they confirm. Only join raids that are open (Status 1).\n" +
       "- When a member asks to leave a raid, confirm which raid they want to leave, then use getRaids or getRaidDetails to find the raid ID if needed, and call leaveRaid after they confirm.\n" +
-      "- When a member asks to set or change their timezone, use the setTimezone tool with a valid IANA timezone name (e.g. Europe/Brussels, America/New_York).";
+      "- When a member asks to set or change their timezone, use the setTimezone tool with a valid IANA timezone name (e.g. Europe/Brussels, America/New_York).\n" +
+      "Conversation context: You can remember previous messages in a conversation, but only when the member uses Discord's reply feature to reply to your messages. " +
+      "If a member sends a follow-up message without replying to your previous response, you will not have the context of the earlier exchange. " +
+      "Always remind members to reply to your message if they want to ask a follow-up question, especially after actions that require confirmation (like creating or joining a raid).";
   }
 
   /**
