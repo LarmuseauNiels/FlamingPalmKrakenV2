@@ -112,7 +112,7 @@ async function fetchServers(baseUrl: string, apiKey: string): Promise<PelicanSer
       const allocs = s.attributes.relationships?.allocations?.data ?? [];
       const primary = allocs.find((a: any) => a.attributes.is_default) ?? allocs[0];
       const allocation: Allocation | null = primary
-        ? { address: `${primary.attributes.ip_alias || primary.attributes.ip}:${primary.attributes.port}` }
+        ? { address: `server.flamingpalm.com:${primary.attributes.port}` }
         : null;
 
       const variables: ServerVariable[] = (s.attributes.relationships?.variables?.data ?? [])
@@ -325,12 +325,12 @@ module.exports = async function (client: FpgClient) {
   async function resolveServerMessages(channel: TextChannel): Promise<void> {
     log.info(`Scanning #${channel.name} for existing server status messages...`);
     const messages = await channel.messages.fetch({ limit: 100 });
-    
+
     for (const msg of Array.from(messages.values())) {
       if (msg.author.id !== client.user?.id) continue;
       const footer = msg.embeds[0]?.footer?.text;
       if (!footer) continue;
-      
+
       const identifier = footer.split(" · ")[0].trim();
       // Pelican identifiers are typically 8 characters (hex), but we check for general Alphanumeric
       if (/^[a-z0-9]+$/.test(identifier) && identifier.length >= 6) {
@@ -409,7 +409,7 @@ module.exports = async function (client: FpgClient) {
             // Only repost if the message was truly deleted or not found
             // Discord error 10008 is "Unknown Message"
             const isNotFound = err.code === 10008 || err.status === 404;
-            
+
             if (isNotFound) {
               log.warn(`Message ${existingId} for ${server.identifier} not found, will repost.`);
               serverMessages.delete(server.identifier);
