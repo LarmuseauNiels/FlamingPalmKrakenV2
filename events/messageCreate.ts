@@ -29,7 +29,7 @@ export default class messageCreate implements IEvent {
 
     log.info("Message mentions bot: " + message.content);
 
-    global.client.ollamaAI.ask(message.content, contextId).then((result: { response: string; messages: any[] }) => {
+    global.client.ollamaAI.ask(message.content, contextId, message.author.id).then((result: { response: string; messages: any[] }) => {
       if (result.response) {
         message.reply(result.response).then((sentMessage: Message) => {
           // Store the conversation context under the bot's reply message ID

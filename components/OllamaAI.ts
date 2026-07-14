@@ -1,5 +1,8 @@
 import OpenAI from "openai";
 import { createLogger } from "../utils/logger";
+import { RaidModule } from "../modules/RaidModule";
+import { RaidScheduler } from "../modules/RaidScheduler";
+import { ChannelUpdates } from "../islander/ChannelUpdates";
 
 const log = createLogger("OllamaAI");
 
@@ -45,6 +48,27 @@ export class OllamaAI {
           description: "Get raids that have been confirmed and scheduled (a time slot was selected and the raid is upcoming). Use this when a member asks what raids are coming up or what's scheduled.",
         },
       },
+      {
+        type: "function",
+        function: {
+          name: "createRaid",
+          description: "Create a new raid. Only use this after confirming the title and minimum players with the user. The raid creator is automatically set to the user who requested it.",
+          parameters: {
+            type: "object",
+            properties: {
+              title: {
+                type: "string",
+                description: "The name of the raid or game",
+              },
+              minPlayers: {
+                type: "number",
+                description: "The minimum number of players needed to start scheduling (default: 4)",
+              },
+            },
+            required: ["title"],
+          },
+        },
+      },
     ];
 
     this.systemInstructionText =
@@ -64,7 +88,9 @@ export class OllamaAI {
       "- Anyone can create a new raid using /create-raid!\n" +
       "- Members earn 'palm tree' points for participating in events, redeemable at https://flamingpalm.com.\n" +
       "- Use the tools provided to fetch real-time data about events, raids, the store, and scheduled raids when asked. " +
-      "If a member mentions a raid by name or asks about a specific raid, use getRaids first to find the raid ID, then use getRaidDetails for full information.";
+      "If a member mentions a raid by name or asks about a specific raid, use getRaids first to find the raid ID, then use getRaidDetails for full information.\n" +
+      "- When a member asks you to create a new raid, ALWAYS confirm the title and minimum number of players with them before calling the createRaid tool. " +
+      "Default to 4 minimum players if the member doesn't specify. Only call createRaid after the member confirms.";
   }
 
   /**
@@ -160,7 +186,7 @@ export class OllamaAI {
     return this.conversationContexts.has(messageId);
   }
 
-  public async ask(question: string, contextId?: string): Promise<{ response: string; messages: any[] }> {
+  public async ask(question: string, contextId?: string, authorId?: string): Promise<{ response: string; messages: any[] }> {
     this.cleanupExpiredContexts();
 
     // Load existing conversation context if this is a reply to a bot message
@@ -203,7 +229,7 @@ export class OllamaAI {
 
         for (const call of responseMessage.tool_calls) {
           if (call.type === "function") {
-            const output = await this.handleFunctionCall(call.function);
+            const output = await this.handleFunctionCall(call.function, authorId);
             messages.push({
               tool_call_id: call.id,
               role: "tool",
@@ -239,7 +265,7 @@ export class OllamaAI {
     };
   }
 
-  private async handleFunctionCall(call: any): Promise<string> {
+  private async handleFunctionCall(call: any, authorId?: string): Promise<string> {
     switch (call.name) {
       case "getEvents":
         return await this.getEventsString();
@@ -251,6 +277,8 @@ export class OllamaAI {
         return await this.getRaidDetailsString(call.arguments);
       case "getUpcomingRaids":
         return await this.getUpcomingRaidsString();
+      case "createRaid":
+        return await this.createRaidString(call.arguments, authorId || "");
       default:
         return "Tool not found.";
     }
@@ -354,6 +382,50 @@ export class OllamaAI {
       string += `Raid: ${raid.Title} - ID: ${raid.ID} - When: ${time} - Attendees: ${raid.RaidAttendees.length}/${raid.MinPlayers ?? 4}\n`;
     });
     return string;
+  }
+
+  private async createRaidString(rawArgs: string | object, authorId: string): Promise<string> {
+    let args: any;
+    try {
+      args = typeof rawArgs === "string" ? JSON.parse(rawArgs) : rawArgs;
+    } catch {
+      return "Invalid arguments for createRaid.";
+    }
+
+    const title = args?.title;
+    if (!title || typeof title !== "string") {
+      return "A raid title is required.";
+    }
+
+    const minPlayers = typeof args?.minPlayers === "number" ? args.minPlayers : 4;
+
+    try {
+      const raid = await globalThis.client.prisma.raids.create({
+        data: {
+          Title: title,
+          MinPlayers: minPlayers,
+          Creator: authorId,
+        },
+      });
+
+      // Auto-enlist the creator and check scheduling (same flow as /create-raid)
+      try {
+        await RaidModule.AddAttendeeToRaid(raid.ID, authorId);
+        await RaidScheduler.SchedulingCreationCheck(raid.ID);
+      } catch (err) {
+        log.error("Failed to auto-enlist raid creator:", err);
+      }
+
+      // Post the updated raid list to the raid channel
+      ChannelUpdates.MessageWithRaid("New raid created: " + title).catch((err) =>
+        log.error("Failed to send raid channel update:", err)
+      );
+
+      return `Successfully created raid "${title}" (ID: ${raid.ID}) with a minimum of ${minPlayers} players. The creator has been automatically enlisted and the raid has been posted to the raid channel.`;
+    } catch (err) {
+      log.error("Failed to create raid:", err);
+      return "Failed to create the raid. Please try again or use /create-raid instead.";
+    }
   }
 
   private async getRaidsString(): Promise<string> {
