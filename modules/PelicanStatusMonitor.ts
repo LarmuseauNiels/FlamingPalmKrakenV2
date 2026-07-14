@@ -434,3 +434,55 @@ module.exports = async function (client: FpgClient) {
     updateStatus().catch((err) => log.error("Pelican status cron error:", err));
   });
 };
+
+module.exports.getServerStatuses = async function (): Promise<string> {
+  const baseUrl = process.env.PELICAN_URL?.replace(/\/$/, "");
+  const apiKey = process.env.PELICAN_API_KEY;
+
+  if (!baseUrl || !apiKey) {
+    return "Game server monitoring is not configured.";
+  }
+
+  try {
+    const servers = await fetchServers(baseUrl, apiKey);
+
+    const resourceMap = new Map<string, ServerResources>();
+    await Promise.all(
+      servers.map(async (server) => {
+        try {
+          resourceMap.set(server.identifier, await fetchResources(baseUrl, apiKey, server.identifier));
+        } catch {
+          // Resource fetch failed for this server — skip it
+        }
+      })
+    );
+
+    let string = "";
+    servers.forEach((server) => {
+      const res = resourceMap.get(server.identifier);
+      if (!res) {
+        string += `${server.name}: Status unavailable\n`;
+        return;
+      }
+      if (res.is_suspended) {
+        string += `${server.name}: Suspended\n`;
+        return;
+      }
+      const address = server.allocation?.address ?? "No address configured";
+      const state = res.current_state;
+      if (state === "offline" || state === "missing") {
+        string += `${server.name}: ${state === "offline" ? "Offline" : "Offline (machine down)"} | Address: ${address}\n`;
+        return;
+      }
+      const uptime = state === "running" ? formatUptime(res.resources.uptime) : "—";
+      const cpu = res.resources.cpu_absolute.toFixed(1);
+      const ram = formatBytes(res.resources.memory_bytes);
+      string += `${server.name}: ${state} | Address: ${address} | Uptime: ${uptime} | CPU: ${cpu}% | RAM: ${ram}\n`;
+    });
+
+    return string || "No game servers found.";
+  } catch (err: any) {
+    log.error("getServerStatuses failed:", err.message || err);
+    return "Failed to fetch game server status. Please try again later.";
+  }
+};

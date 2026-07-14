@@ -4,6 +4,8 @@ import { RaidModule } from "../modules/RaidModule";
 import { RaidScheduler } from "../modules/RaidScheduler";
 import { ChannelUpdates } from "../islander/ChannelUpdates";
 import { TimeParser } from "../utils/TimeParser";
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const PelicanStatusMonitor: any = require("../modules/PelicanStatusMonitor.js");
 
 const log = createLogger("OllamaAI");
 
@@ -87,6 +89,20 @@ export class OllamaAI {
           },
         },
       },
+      {
+        type: "function",
+        function: {
+          name: "getMemberPoints",
+          description: "Get the current palm tree points balance and recent point history for the user who asked. Use this when a member asks how many points they have or about their recent point transactions.",
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "getGameServerStatus",
+          description: "Get the current status of all game servers (Pelican-managed). Shows server name, online state, address, uptime, CPU and RAM usage. Use this when a member asks if a game server is up or about server status.",
+        },
+      },
     ];
 
     this.systemInstructionText =
@@ -109,7 +125,9 @@ export class OllamaAI {
       "If a member mentions a raid by name or asks about a specific raid, use getRaids first to find the raid ID, then use getRaidDetails for full information.\n" +
       "- When a member asks you to create a new raid, ALWAYS confirm the title and minimum number of players with them before calling the createRaid tool. " +
       "Default to 4 minimum players if the member doesn't specify. Only call createRaid after the member confirms.\n" +
-      "- When a member asks for a Discord timestamp or wants to convert a time, use the getTimestamp tool with their date/time input.";
+      "- When a member asks for a Discord timestamp or wants to convert a time, use the getTimestamp tool with their date/time input.\n" +
+      "- When a member asks about their palm tree points balance, use the getMemberPoints tool.\n" +
+      "- When a member asks about game server status (e.g. 'is the Minecraft server up?'), use the getGameServerStatus tool.";
   }
 
   /**
@@ -300,6 +318,10 @@ export class OllamaAI {
         return await this.createRaidString(call.arguments, authorId || "");
       case "getTimestamp":
         return await this.getTimestampString(call.arguments, authorId || "");
+      case "getMemberPoints":
+        return await this.getMemberPointsString(authorId || "");
+      case "getGameServerStatus":
+        return await this.getGameServerStatusString();
       default:
         return "Tool not found.";
     }
@@ -403,6 +425,55 @@ export class OllamaAI {
       string += `Raid: ${raid.Title} - ID: ${raid.ID} - When: ${time} - Attendees: ${raid.RaidAttendees.length}/${raid.MinPlayers ?? 4}\n`;
     });
     return string;
+  }
+
+  private async getMemberPointsString(authorId: string): Promise<string> {
+    if (!authorId) {
+      return "Unable to determine which member is asking.";
+    }
+
+    // Fetch current points balance
+    const points = await globalThis.client.prisma.points.findUnique({
+      where: { userid: authorId },
+    });
+
+    // Fetch recent point history (last 10 entries)
+    const history = await globalThis.client.prisma.pointHistory.findMany({
+      where: { userid: authorId },
+      orderBy: { TimeStamp: "desc" },
+      take: 10,
+    });
+
+    const totalPoints = points?.TotalPoints ?? 0;
+    const memberName = global.client.idToName(authorId) ?? "Unknown member";
+
+    let string = `Member: ${memberName}\n`;
+    string += `Total palm tree points: ${totalPoints}\n`;
+
+    if (points?.lastComment) {
+      string += `Last transaction: ${points.lastComment}\n`;
+    }
+
+    if (history.length > 0) {
+      string += `\nRecent point history (last ${history.length}):\n`;
+      history.forEach((entry: any) => {
+        const date = new Date(entry.TimeStamp).toLocaleDateString();
+        string += `  ${date}: ${entry.points > 0 ? "+" : ""}${entry.points} — ${entry.comment}\n`;
+      });
+    } else {
+      string += "\nNo recent point history found.";
+    }
+
+    return string;
+  }
+
+  private async getGameServerStatusString(): Promise<string> {
+    try {
+      return await PelicanStatusMonitor.getServerStatuses();
+    } catch (err: any) {
+      log.error("Failed to fetch game server status:", err);
+      return "Failed to fetch game server status. Please try again later.";
+    }
   }
 
   private async createRaidString(rawArgs: string | object, authorId: string): Promise<string> {
