@@ -5,9 +5,10 @@ const log = createLogger("OllamaAI");
 
 export class OllamaAI {
   private openai: OpenAI;
-  private messages: any[] = [];
   private tools: any[] = [];
   private systemInstructionText: string = "";
+  private conversationContexts: Map<string, { messages: any[]; timestamp: number }> = new Map();
+  private readonly CONTEXT_TTL_MS = 30 * 60 * 1000; // 30 minutes
   private readonly model = process.env.OLLAMA_MODEL || "gemma4:cloud";
 
   constructor() {
@@ -20,6 +21,30 @@ export class OllamaAI {
       { type: "function", function: { name: "getEvents", description: "Get the current discord events for the week" } },
       { type: "function", function: { name: "getRaids", description: "Get the current available raids to join" } },
       { type: "function", function: { name: "getStore", description: "Get the current available rewards in the FlamingPalm store" } },
+      {
+        type: "function",
+        function: {
+          name: "getRaidDetails",
+          description: "Get detailed information about a specific raid, including signed-up members and scheduling options with vote counts. Use this when a member asks about a specific raid by name or when they want to know who's in a raid or what time options are proposed.",
+          parameters: {
+            type: "object",
+            properties: {
+              raidId: {
+                type: "number",
+                description: "The numeric ID of the raid",
+              },
+            },
+            required: ["raidId"],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "getUpcomingRaids",
+          description: "Get raids that have been confirmed and scheduled (a time slot was selected and the raid is upcoming). Use this when a member asks what raids are coming up or what's scheduled.",
+        },
+      },
     ];
 
     this.systemInstructionText =
@@ -38,9 +63,8 @@ export class OllamaAI {
       "Common Tasks:\n" +
       "- Anyone can create a new raid using /create-raid!\n" +
       "- Members earn 'palm tree' points for participating in events, redeemable at https://flamingpalm.com.\n" +
-      "- Use the tools provided to fetch real-time data about events, raids, and the store when asked.";
-
-    this.messages = [{ role: "system", content: this.systemInstructionText }];
+      "- Use the tools provided to fetch real-time data about events, raids, the store, and scheduled raids when asked. " +
+      "If a member mentions a raid by name or asks about a specific raid, use getRaids first to find the raid ID, then use getRaidDetails for full information.";
   }
 
   /**
@@ -119,51 +143,76 @@ export class OllamaAI {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  public async ask(question: string): Promise<string> {
+  private cleanupExpiredContexts(): void {
+    const now = Date.now();
+    for (const [key, entry] of this.conversationContexts) {
+      if (now - entry.timestamp > this.CONTEXT_TTL_MS) {
+        this.conversationContexts.delete(key);
+      }
+    }
+  }
+
+  public storeContext(messageId: string, messages: any[]): void {
+    this.conversationContexts.set(messageId, { messages, timestamp: Date.now() });
+  }
+
+  public hasContext(messageId: string): boolean {
+    return this.conversationContexts.has(messageId);
+  }
+
+  public async ask(question: string, contextId?: string): Promise<{ response: string; messages: any[] }> {
+    this.cleanupExpiredContexts();
+
+    // Load existing conversation context if this is a reply to a bot message
+    let messages: any[];
+    if (contextId && this.conversationContexts.has(contextId)) {
+      messages = [...this.conversationContexts.get(contextId)!.messages];
+      log.debug(`Loaded conversation context from message ${contextId} (${messages.length} messages)`);
+    } else {
+      messages = [{ role: "system", content: this.systemInstructionText }];
+    }
+
+    messages.push({ role: "user", content: question });
+
     let retries = 0;
     const maxRetries = 1;
+    const maxToolRounds = 5;
 
-    this.messages.push({ role: "user", content: question });
-
-    while (retries <= maxRetries) {
+    for (let round = 0; round <= maxToolRounds; round++) {
       try {
-        log.debug(`Sending question to Ollama: ${question}${retries > 0 ? ` (Retry ${retries})` : ""}`);
+        log.debug(`Sending question to Ollama (round ${round}): ${question}`);
 
         let result = await this.openai.chat.completions.create({
           model: this.model,
-          messages: this.messages,
+          messages: messages,
           tools: this.tools,
         });
 
         let responseMessage = result.choices[0].message;
-        this.messages.push(responseMessage);
+        messages.push(responseMessage);
 
-        if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
-          log.debug("Ollama requested tool calls:", responseMessage.tool_calls);
-
-          for (const call of responseMessage.tool_calls) {
-            if (call.type === "function") {
-              const output = await this.handleFunctionCall(call.function);
-              this.messages.push({
-                tool_call_id: call.id,
-                role: "tool",
-                name: call.function.name,
-                content: output,
-              });
-            }
-          }
-
-          // Send tool outputs back to model to get final response
-          result = await this.openai.chat.completions.create({
-            model: this.model,
-            messages: this.messages,
-            tools: this.tools,
-          });
-          responseMessage = result.choices[0].message;
-          this.messages.push(responseMessage);
+        if (!responseMessage.tool_calls || responseMessage.tool_calls.length === 0) {
+          // No more tool calls — return the final text response
+          return {
+            response: responseMessage.content || "I'm sorry, I generated a response but couldn't format it as text.",
+            messages,
+          };
         }
 
-        return responseMessage.content || "I'm sorry, I generated a response but couldn't format it as text.";
+        log.debug("Ollama requested tool calls:", responseMessage.tool_calls);
+
+        for (const call of responseMessage.tool_calls) {
+          if (call.type === "function") {
+            const output = await this.handleFunctionCall(call.function);
+            messages.push({
+              tool_call_id: call.id,
+              role: "tool",
+              name: call.function.name,
+              content: output,
+            });
+          }
+        }
+        // Loop back to send tool outputs and get next response
       } catch (error: any) {
         const isRetryable = error.status === 429 || error.status >= 500;
 
@@ -172,14 +221,22 @@ export class OllamaAI {
           const delay = Math.pow(2, retries) * 1000;
           log.warn(`Ollama error ${error.status}. Retrying in ${delay}ms... (Attempt ${retries}/${maxRetries})`);
           await this.wait(delay);
+          round--; // retry the same round
           continue;
         }
 
         log.error("Error in Ollama ask method:", error);
-        return "Sorry, I encountered an error while processing your request.";
+        return {
+          response: "Sorry, I encountered an error while processing your request.",
+          messages,
+        };
       }
     }
-    return "Sorry, the AI service is currently overloaded. Please try again in a moment.";
+
+    return {
+      response: "Sorry, I reached the maximum number of tool calls without getting a final answer. Please try rephrasing your question.",
+      messages,
+    };
   }
 
   private async handleFunctionCall(call: any): Promise<string> {
@@ -190,9 +247,113 @@ export class OllamaAI {
         return await this.getRaidsString();
       case "getStore":
         return await this.getStoreString();
+      case "getRaidDetails":
+        return await this.getRaidDetailsString(call.arguments);
+      case "getUpcomingRaids":
+        return await this.getUpcomingRaidsString();
       default:
         return "Tool not found.";
     }
+  }
+
+  private async getRaidDetailsString(rawArgs: string | object): Promise<string> {
+    let args: any;
+    try {
+      args = typeof rawArgs === "string" ? JSON.parse(rawArgs) : rawArgs;
+    } catch {
+      return "Invalid arguments for getRaidDetails.";
+    }
+    const raidId = args?.raidId;
+    if (!raidId || typeof raidId !== "number") {
+      return "A valid numeric raid ID is required.";
+    }
+
+    const raid = await globalThis.client.prisma.raids.findFirst({
+      where: { ID: raidId },
+      include: {
+        RaidAttendees: true,
+        RaidSchedulingOption: { include: { RaidAvailability: true } },
+      },
+    });
+
+    if (!raid) {
+      return `Raid ${raidId} not found.`;
+    }
+
+    const statusMap: Record<number, string> = {
+      1: "Open (collecting attendees)",
+      2: "Scheduling (voting on times)",
+      3: "Scheduled (confirmed)",
+      4: "Cancelled",
+    };
+    const statusText = statusMap[raid.Status ?? 1] ?? "Unknown";
+
+    let string = `Raid: ${raid.Title}\n`;
+    string += `ID: ${raid.ID}\n`;
+    string += `Status: ${statusText}\n`;
+    string += `Creator: ${global.client.idToName(raid.Creator) ?? raid.Creator}\n`;
+    string += `Min Players: ${raid.MinPlayers ?? 4}\n`;
+    string += `Created: ${new Date(raid.CreationTime ?? Date.now()).toLocaleString()}\n`;
+
+    // Attendees
+    string += `\nAttendees (${raid.RaidAttendees.length}):\n`;
+    if (raid.RaidAttendees.length === 0) {
+      string += "  No one has signed up yet.\n";
+    } else {
+      raid.RaidAttendees.forEach((a: any) => {
+        const name = global.client.idToName(a.MemberId) ?? a.MemberId;
+        string += `  - ${name}\n`;
+      });
+    }
+
+    // Scheduling options
+    if (raid.RaidSchedulingOption && raid.RaidSchedulingOption.length > 0) {
+      string += `\nScheduling Options:\n`;
+      raid.RaidSchedulingOption.forEach((opt: any) => {
+        const time = new Date(opt.Timestamp).toLocaleString();
+        const selected = opt.IsSelected ? " [SELECTED]" : "";
+        const voteCount = opt.RaidAvailability?.length ?? 0;
+        string += `  ${time}${selected} — ${voteCount} vote(s)\n`;
+      });
+    }
+
+    return string;
+  }
+
+  private async getUpcomingRaidsString(): Promise<string> {
+    const now = new Date();
+    const raids = await globalThis.client.prisma.raids.findMany({
+      where: { Status: 3 },
+      include: {
+        RaidAttendees: true,
+        RaidSchedulingOption: { where: { IsSelected: true } },
+      },
+    });
+
+    const upcoming = raids.filter((r) =>
+      r.RaidSchedulingOption.some(
+        (opt) => opt.Timestamp > now
+      )
+    );
+
+    if (upcoming.length === 0) {
+      return "No upcoming scheduled raids found.";
+    }
+
+    // Sort by earliest scheduled time
+    upcoming.sort((a, b) => {
+      const aTime = a.RaidSchedulingOption.find((o) => o.IsSelected)?.Timestamp ?? new Date(0);
+      const bTime = b.RaidSchedulingOption.find((o) => o.IsSelected)?.Timestamp ?? new Date(0);
+      return aTime.getTime() - bTime.getTime();
+    });
+
+    let string = "";
+    upcoming.forEach((raid) => {
+      const selectedOpt = raid.RaidSchedulingOption.find((o) => o.IsSelected);
+      const time = selectedOpt ? new Date(selectedOpt.Timestamp).toLocaleString() : "Unknown time";
+      string += `Raid: ${raid.Title} - ID: ${raid.ID} - When: ${time} - Attendees: ${raid.RaidAttendees.length}/${raid.MinPlayers ?? 4}\n`;
+    });
+    return string;
   }
 
   private async getRaidsString(): Promise<string> {
