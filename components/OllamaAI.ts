@@ -120,6 +120,40 @@ export class OllamaAI {
           },
         },
       },
+      {
+        type: "function",
+        function: {
+          name: "setTimezone",
+          description: "Set the user's timezone so the bot can parse date/time inputs correctly. The timezone must be a valid IANA timezone name (e.g. Europe/Brussels, America/New_York, Asia/Tokyo). Use this when a user asks to set or change their timezone.",
+          parameters: {
+            type: "object",
+            properties: {
+              timezone: {
+                type: "string",
+                description: "A valid IANA timezone name (e.g. Europe/Brussels, America/New_York, Asia/Tokyo)",
+              },
+            },
+            required: ["timezone"],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "leaveRaid",
+          description: "Remove the user from a raid they are signed up for. Only use this after confirming with the user which raid they want to leave. Use getRaids or getRaidDetails to find the raid ID if needed before calling this tool.",
+          parameters: {
+            type: "object",
+            properties: {
+              raidId: {
+                type: "number",
+                description: "The numeric ID of the raid to leave",
+              },
+            },
+            required: ["raidId"],
+          },
+        },
+      },
     ];
 
     this.systemInstructionText =
@@ -145,7 +179,9 @@ export class OllamaAI {
       "- When a member asks for a Discord timestamp or wants to convert a time, use the getTimestamp tool with their date/time input.\n" +
       "- When a member asks about their palm tree points balance, use the getMemberPoints tool.\n" +
       "- When a member asks about game server status (e.g. 'is the Minecraft server up?'), use the getGameServerStatus tool.\n" +
-      "- When a member asks to join a raid, confirm which raid they want to join, then use getRaids to find the raid ID if needed, and call joinRaid after they confirm. Only join raids that are open (Status 1).";
+      "- When a member asks to join a raid, confirm which raid they want to join, then use getRaids to find the raid ID if needed, and call joinRaid after they confirm. Only join raids that are open (Status 1).\n" +
+      "- When a member asks to leave a raid, confirm which raid they want to leave, then use getRaids or getRaidDetails to find the raid ID if needed, and call leaveRaid after they confirm.\n" +
+      "- When a member asks to set or change their timezone, use the setTimezone tool with a valid IANA timezone name (e.g. Europe/Brussels, America/New_York).";
   }
 
   /**
@@ -342,6 +378,10 @@ export class OllamaAI {
         return await this.getGameServerStatusString();
       case "joinRaid":
         return await this.joinRaidString(call.arguments, authorId || "");
+      case "setTimezone":
+        return await this.setTimezoneString(call.arguments, authorId || "");
+      case "leaveRaid":
+        return await this.leaveRaidString(call.arguments, authorId || "");
       default:
         return "Tool not found.";
     }
@@ -549,6 +589,102 @@ export class OllamaAI {
       }
       log.error("Failed to join raid:", err);
       return "Failed to join the raid. Please try again or use the raid channel directly.";
+    }
+  }
+
+  private async setTimezoneString(rawArgs: string | object, authorId: string): Promise<string> {
+    let args: any;
+    try {
+      args = typeof rawArgs === "string" ? JSON.parse(rawArgs) : rawArgs;
+    } catch {
+      return "Invalid arguments for setTimezone.";
+    }
+
+    const timezone = args?.timezone;
+    if (!timezone || typeof timezone !== "string") {
+      return "A valid IANA timezone name is required (e.g. Europe/Brussels, America/New_York).";
+    }
+
+    // Validate against IANA timezone list
+    const validTimezones: string[] = (Intl as any).supportedValuesOf("timeZone");
+    if (!validTimezones.includes(timezone)) {
+      return `"${timezone}" is not a valid IANA timezone. Examples of valid timezones: Europe/Brussels, America/New_York, Asia/Tokyo, Australia/Sydney.`;
+    }
+
+    if (!authorId) {
+      return "Unable to determine which member is setting their timezone.";
+    }
+
+    try {
+      await globalThis.client.prisma.members.upsert({
+        where: { ID: authorId },
+        update: { Timezone: timezone },
+        create: { ID: authorId, Timezone: timezone },
+      });
+
+      return `Your timezone has been set to ${timezone}. The bot will now use this timezone when parsing date/time inputs for you (e.g. timestamps and raid scheduling).`;
+    } catch (err) {
+      log.error("Failed to set timezone:", err);
+      return "Failed to set your timezone. Please try again or use /set-timezone.";
+    }
+  }
+
+  private async leaveRaidString(rawArgs: string | object, authorId: string): Promise<string> {
+    let args: any;
+    try {
+      args = typeof rawArgs === "string" ? JSON.parse(rawArgs) : rawArgs;
+    } catch {
+      return "Invalid arguments for leaveRaid.";
+    }
+
+    const raidId = args?.raidId;
+    if (!raidId || typeof raidId !== "number") {
+      return "A valid numeric raid ID is required.";
+    }
+
+    if (!authorId) {
+      return "Unable to determine which member is leaving.";
+    }
+
+    // Check the raid exists and the user is signed up
+    const raid = await globalThis.client.prisma.raids.findFirst({
+      where: { ID: raidId },
+      include: { RaidAttendees: true },
+    });
+
+    if (!raid) {
+      return `Raid ${raidId} not found.`;
+    }
+
+    const isSignedUp = raid.RaidAttendees.some((a: any) => a.MemberId === authorId);
+    if (!isSignedUp) {
+      return `You are not signed up for "${raid.Title}".`;
+    }
+
+    try {
+      await globalThis.client.prisma.raidAttendees.delete({
+        where: {
+          RaidId_MemberId: {
+            RaidId: raidId,
+            MemberId: authorId,
+          },
+        },
+      });
+
+      // Post a channel update so the raid list reflects the change
+      ChannelUpdates.MessageWithRaid(`<@${authorId}> has left the raid: ${raid.Title}`).catch((err) =>
+        log.error("Failed to send raid channel update after leaving:", err)
+      );
+
+      const remaining = raid.RaidAttendees.length - 1;
+      return `Successfully left "${raid.Title}". There are now ${remaining} attendee(s) signed up.`;
+    } catch (err: any) {
+      // Handle record not found (already left)
+      if (err?.code === "P2025") {
+        return `You are not signed up for "${raid.Title}".`;
+      }
+      log.error("Failed to leave raid:", err);
+      return "Failed to leave the raid. Please try again or use the raid channel directly.";
     }
   }
 
