@@ -103,6 +103,23 @@ export class OllamaAI {
           description: "Get the current status of all game servers (Pelican-managed). Shows server name, online state, address, uptime, CPU and RAM usage. Use this when a member asks if a game server is up or about server status.",
         },
       },
+      {
+        type: "function",
+        function: {
+          name: "joinRaid",
+          description: "Join an open raid on behalf of the user. Only use this after confirming with the user which raid they want to join. The user must provide or confirm the raid name, then use getRaids to find the raid ID if needed before calling this tool.",
+          parameters: {
+            type: "object",
+            properties: {
+              raidId: {
+                type: "number",
+                description: "The numeric ID of the raid to join",
+              },
+            },
+            required: ["raidId"],
+          },
+        },
+      },
     ];
 
     this.systemInstructionText =
@@ -127,7 +144,8 @@ export class OllamaAI {
       "Default to 4 minimum players if the member doesn't specify. Only call createRaid after the member confirms.\n" +
       "- When a member asks for a Discord timestamp or wants to convert a time, use the getTimestamp tool with their date/time input.\n" +
       "- When a member asks about their palm tree points balance, use the getMemberPoints tool.\n" +
-      "- When a member asks about game server status (e.g. 'is the Minecraft server up?'), use the getGameServerStatus tool.";
+      "- When a member asks about game server status (e.g. 'is the Minecraft server up?'), use the getGameServerStatus tool.\n" +
+      "- When a member asks to join a raid, confirm which raid they want to join, then use getRaids to find the raid ID if needed, and call joinRaid after they confirm. Only join raids that are open (Status 1).";
   }
 
   /**
@@ -322,6 +340,8 @@ export class OllamaAI {
         return await this.getMemberPointsString(authorId || "");
       case "getGameServerStatus":
         return await this.getGameServerStatusString();
+      case "joinRaid":
+        return await this.joinRaidString(call.arguments, authorId || "");
       default:
         return "Tool not found.";
     }
@@ -473,6 +493,62 @@ export class OllamaAI {
     } catch (err: any) {
       log.error("Failed to fetch game server status:", err);
       return "Failed to fetch game server status. Please try again later.";
+    }
+  }
+
+  private async joinRaidString(rawArgs: string | object, authorId: string): Promise<string> {
+    let args: any;
+    try {
+      args = typeof rawArgs === "string" ? JSON.parse(rawArgs) : rawArgs;
+    } catch {
+      return "Invalid arguments for joinRaid.";
+    }
+
+    const raidId = args?.raidId;
+    if (!raidId || typeof raidId !== "number") {
+      return "A valid numeric raid ID is required.";
+    }
+
+    if (!authorId) {
+      return "Unable to determine which member is joining.";
+    }
+
+    // Check the raid exists and is open (Status 1)
+    const raid = await globalThis.client.prisma.raids.findFirst({
+      where: { ID: raidId },
+      include: { RaidAttendees: true },
+    });
+
+    if (!raid) {
+      return `Raid ${raidId} not found.`;
+    }
+
+    if (raid.Status !== 1) {
+      const statusMap: Record<number, string> = {
+        2: "currently in the scheduling phase",
+        3: "already scheduled",
+        4: "cancelled",
+      };
+      return `Cannot join "${raid.Title}" — this raid is ${statusMap[raid.Status ?? 1] ?? "not open for joining"}.`;
+    }
+
+    // Check if already joined
+    const alreadyJoined = raid.RaidAttendees.some((a: any) => a.MemberId === authorId);
+    if (alreadyJoined) {
+      return `You are already signed up for "${raid.Title}".`;
+    }
+
+    try {
+      await RaidModule.AddUserToRaid(authorId, raidId);
+      const attendeeCount = raid.RaidAttendees.length + 1;
+      return `Successfully joined "${raid.Title}" (ID: ${raidId}). You are attendee ${attendeeCount} of ${raid.MinPlayers ?? 4} needed. The raid channel has been updated.`;
+    } catch (err: any) {
+      // Handle unique constraint violation (already joined)
+      if (err?.code === "P2002") {
+        return `You are already signed up for "${raid.Title}".`;
+      }
+      log.error("Failed to join raid:", err);
+      return "Failed to join the raid. Please try again or use the raid channel directly.";
     }
   }
 
