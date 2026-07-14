@@ -363,7 +363,7 @@ export class OllamaAI {
     });
     let string = "";
     raids.forEach((raid) => {
-      string += `Raid: ${raid.Title} - Attendees: ${raid.RaidAttendees.length}/${raid.MinPlayers} \n`;
+      string += `Raid: ${raid.Title} - ID: ${raid.ID} - Attendees: ${raid.RaidAttendees.length}/${raid.MinPlayers} \n`;
     });
     return string || "No open raids found.";
   }
