@@ -29,7 +29,7 @@
     "openai": "^6.34.0",
     "passport": "^0.7.0",
     "passport-discord-auth": "^1.2.0",
-    "typescript": "^5.0.2"
+    "prisma": "^4.12.0"
   },
   "overrides": {
     "fast-xml-parser": "^5.8.0",
@@ -43,7 +43,6 @@
     "@types/node": "^18.15.5",
     "@types/node-cron": "^3.0.11",
     "prettier": "2.7.1",
-    "prisma": "^4.12.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.0.2"
   }
