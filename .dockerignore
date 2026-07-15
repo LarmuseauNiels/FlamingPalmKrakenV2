@@ -1,0 +1,15 @@
+node_modules
+bin
+.git
+.github
+.idea
+.vscode
+.zed
+.env
+env.ps1
+environment.*
+*.log
+docs
+*.md
+tsconfig.test.json
+.claude
