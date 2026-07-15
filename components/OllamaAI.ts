@@ -821,13 +821,15 @@ export class OllamaAI {
 
   private async getStoreString(): Promise<string> {
     let rewards = await global.client.prisma.reward.findMany({
-      include: { RewardItem: true },
+      include: {
+        RewardItem: { where: { RedeemedBy: "" }, select: { RewardItemID: true } },
+      },
       orderBy: { Price: "asc" },
     });
     let string = "";
     rewards.forEach((reward) => {
       if (reward.visible) {
-        let stock = reward.RewardItem.filter((x) => x.RedeemedBy === "").length;
+        let stock = reward.RewardItem.length;
         if (stock === 0) string += `Reward: ${reward.Title} - Out of stock \n`;
         else {
           string += `Reward: ${reward.Title} - Price: ${reward.Price} palm trees \n`;

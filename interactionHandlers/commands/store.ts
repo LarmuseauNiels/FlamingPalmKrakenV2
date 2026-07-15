@@ -38,15 +38,15 @@ export default class StoreHandler implements IHandler {
       });
 
     const rewards = await global.client.prisma.reward.findMany({
-      include: { RewardItem: true },
+      include: {
+        RewardItem: { where: { RedeemedBy: "" }, select: { RewardItemID: true } },
+      },
       orderBy: { Price: "asc" },
     });
 
     rewards.forEach((reward) => {
       if (reward.visible) {
-        const stock = reward.RewardItem.filter(
-          (x) => x.RedeemedBy === ""
-        ).length;
+        const stock = reward.RewardItem.length;
         if (stock === 0) {
           embed.addFields({
             name: reward.Title,

@@ -1,4 +1,10 @@
-import { Client, GatewayIntentBits, Partials, TextChannel } from "discord.js";
+import {
+  Client,
+  GatewayIntentBits,
+  Options,
+  Partials,
+  TextChannel,
+} from "discord.js";
 import { OllamaAI } from "./OllamaAI";
 import { PrismaClient } from "@prisma/client";
 import { AchievementsModule } from "../modules/AchievementsModule";
@@ -54,6 +60,22 @@ export class FpgClient extends Client {
         GatewayIntentBits.GuildScheduledEvents,
       ],
       partials: [Partials.Message, Partials.Channel, Partials.Reaction],
+      // Cap the most volatile caches so a long-running process doesn't leak.
+      // discord.js only sweeps threads by default; everything else grows forever.
+      makeCache: Options.cacheWithLimits({
+        ...Options.DefaultMakeCacheSettings,
+        MessageManager: 50,
+      }),
+      sweepers: {
+        ...Options.DefaultSweeperSettings,
+        // Drop cached messages older than 30 min, hourly.
+        messages: { interval: 3600, lifetime: 1800 },
+        // Evict non-client bot users hourly (real members stay for lookups).
+        users: {
+          interval: 3600,
+          filter: () => (user) => user.bot && user.id !== user.client.user?.id,
+        },
+      },
     });
 
     this.prisma = new PrismaClient();
