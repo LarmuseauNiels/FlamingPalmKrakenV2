@@ -4,6 +4,7 @@ import { RaidModule } from "../modules/RaidModule";
 import { RaidScheduler } from "../modules/RaidScheduler";
 import { ChannelUpdates } from "../islander/ChannelUpdates";
 import { TimeParser } from "../utils/TimeParser";
+import { getSteamGameInfo } from "../modules/SteamModule";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const PelicanStatusMonitor: any = require("../modules/PelicanStatusMonitor.js");
 
@@ -154,6 +155,23 @@ export class OllamaAI {
           },
         },
       },
+      {
+        type: "function",
+        function: {
+          name: "getSteamGameInfo",
+          description: "Look up information about a video game on Steam by name — description, genres, price, release date, developer/publisher and review score. Use this when a member asks about a game, whether it's on Steam, how much it costs, or what it's about.",
+          parameters: {
+            type: "object",
+            properties: {
+              query: {
+                type: "string",
+                description: "The name of the game to look up on Steam",
+              },
+            },
+            required: ["query"],
+          },
+        },
+      },
     ];
 
     this.systemInstructionText =
@@ -182,6 +200,7 @@ export class OllamaAI {
       "- When a member asks to join a raid, confirm which raid they want to join, then use getRaids to find the raid ID if needed, and call joinRaid after they confirm. Only join raids that are open (Status 1).\n" +
       "- When a member asks to leave a raid, confirm which raid they want to leave, then use getRaids or getRaidDetails to find the raid ID if needed, and call leaveRaid after they confirm.\n" +
       "- When a member asks to set or change their timezone, use the setTimezone tool with a valid IANA timezone name (e.g. Europe/Brussels, America/New_York).\n" +
+      "- When a member asks about a video game (what it's about, its price, whether it's on Steam), use the getSteamGameInfo tool with the game's name.\n" +
       "Conversation context: You can remember previous messages in a conversation, but only when the member uses Discord's reply feature to reply to your messages. " +
       "If a member sends a follow-up message without replying to your previous response, you will not have the context of the earlier exchange. " +
       "Always remind members to reply to your message if they want to ask a follow-up question, especially after actions that require confirmation (like creating or joining a raid).";
@@ -385,8 +404,29 @@ export class OllamaAI {
         return await this.setTimezoneString(call.arguments, authorId || "");
       case "leaveRaid":
         return await this.leaveRaidString(call.arguments, authorId || "");
+      case "getSteamGameInfo":
+        return await this.getSteamGameInfoString(call.arguments);
       default:
         return "Tool not found.";
+    }
+  }
+
+  private async getSteamGameInfoString(rawArgs: string | object): Promise<string> {
+    let args: any;
+    try {
+      args = typeof rawArgs === "string" ? JSON.parse(rawArgs) : rawArgs;
+    } catch {
+      return "Invalid arguments for getSteamGameInfo.";
+    }
+    const query = args?.query;
+    if (!query || typeof query !== "string") {
+      return "Please provide a game name to look up.";
+    }
+    try {
+      return await getSteamGameInfo(query);
+    } catch (error) {
+      log.error("getSteamGameInfo failed", error);
+      return "Sorry, I couldn't look up that game on Steam right now.";
     }
   }
 
