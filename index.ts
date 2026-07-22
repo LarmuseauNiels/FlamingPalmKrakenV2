@@ -10,7 +10,8 @@ if (process.env.DISABLE) {
 Bugsnag.start({
   apiKey: process.env.BUGSNAG_API_KEY,
   plugins: [BugsnagPluginExpress],
-  appVersion: process.env.CAPROVER_GIT_COMMIT_SHA.slice(0, 7),
+  appVersion: (process.env.CAPROVER_GIT_COMMIT_SHA ?? "unknown").slice(0, 7),
+  releaseStage: process.env.NODE_ENV || "development",
 });
 
 global.bugsnag = Bugsnag;

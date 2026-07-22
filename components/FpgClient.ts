@@ -94,7 +94,14 @@ export class FpgClient extends Client {
 
   log(loggText) {
     logger.info(loggText);
-    this.logChannel.send("```" + loggText + "```");
+    // logChannel is assigned in clientReady; guard against the startup window
+    // where it's still undefined. Also guard against log text that contains
+    // backticks or exceeds Discord's 2000-char message limit.
+    if (!this.logChannel) return;
+    const fenced = "```" + String(loggText).replace(/```/g, "\u0060\u0060\u0060").slice(0, 1990) + "```";
+    this.logChannel.send(fenced).catch((err) =>
+      logger.error("Failed to send to log channel:", err)
+    );
   }
 
   idToName(id) {

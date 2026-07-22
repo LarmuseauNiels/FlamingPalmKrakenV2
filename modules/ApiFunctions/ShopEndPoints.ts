@@ -8,10 +8,10 @@ export function shopEndPoints(app) {
   let apiPrefix = "/members/";
 
   app.get(apiPrefix + "points", authenticateToken, async function (req, res) {
-    let points = await global.client.prisma.points.findFirst({
+    let points = await global.client.prisma.points.findUnique({
       where: { userid: req.user.id },
     });
-    if (points.Blocked) res.send(jsonify(0));
+    if (!points || points.Blocked) res.send(jsonify(0));
     else res.send(jsonify(points.TotalPoints));
   });
 
@@ -98,6 +98,9 @@ export function shopEndPoints(app) {
           where: { userid: user.id },
         });
 
+        if (!points) {
+          return res.status(400).send("No points account found");
+        }
         if (points.Blocked) {
           return res.status(400).send("You are blocked from redeeming items");
         }

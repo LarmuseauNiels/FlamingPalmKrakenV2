@@ -1,20 +1,83 @@
-import { authenticateToken, jsonify } from "./Helpers";
+import { authenticateAdmin, authenticateToken, jsonify } from "./Helpers";
 import Rank from "../profile";
 import { createLogger } from "../../utils/logger";
 
 const log = createLogger("ProfileEndPoints");
 
+// Allowlists for the /profileTester dev endpoint. These mirror the files that
+// actually exist under assets/, so query params can't be used to read arbitrary
+// files from disk (path traversal). Keep these in sync when badges/backgrounds
+// are added or removed.
+const VALID_BADGES = new Set([
+  "admiral",
+  "arma5",
+  "crusader",
+  "island",
+  "microphone",
+  "party5",
+  "raid5",
+  "refReg1",
+  "rocket",
+  "ship",
+  "silk_road",
+  "sold",
+  "spanish_conquistador",
+  "submarine",
+  "tank",
+]);
+
+const VALID_BACKGROUNDS = new Set([
+  "alpine_tundra",
+  "arctic1",
+  "arctic2",
+  "bayou",
+  "bayou2",
+  "city",
+  "crusaders_marching_to_jerusalem",
+  "desert",
+  "jungle",
+  "kingdom",
+  "lake",
+  "messerschmitt",
+  "roman_horses",
+  "roman_soldiers",
+  "savanna",
+  "space",
+  "spaceship",
+  "spitfire",
+  "submarine",
+  "tank",
+  "tropical_islands",
+  "volcano",
+]);
+
+// Loose hex color validation: #RGB, #RGBA, #RRGGBB, or #RRGGBBAA. Used for the
+// color query params on /profileTester so an attacker can't smuggle arbitrary
+// strings into the canvas renderer.
+const HEX_COLOR = /^#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+
+function safeColor(value: unknown, fallback: string): string {
+  return typeof value === "string" && HEX_COLOR.test(value) ? value : fallback;
+}
+
 export function profileEndPoints(app) {
   let apiPrefix = "/members/";
 
-  // Dev tool: render a profile card with query-param overrides
-  app.get("/profileTester", async function (req, res) {
-    var achievements = [];
-    if (req.query.achievement1) achievements.push({ imagePath: `assets/badges/${req.query.achievement1}.png` });
-    if (req.query.achievement2) achievements.push({ imagePath: `assets/badges/${req.query.achievement2}.png` });
-    if (req.query.achievement3) achievements.push({ imagePath: `assets/badges/${req.query.achievement3}.png` });
-    if (req.query.achievement4) achievements.push({ imagePath: `assets/badges/${req.query.achievement4}.png` });
-    if (req.query.achievement5) achievements.push({ imagePath: `assets/badges/${req.query.achievement5}.png` });
+  // Dev tool: render a profile card with query-param overrides.
+  // Gated to non-production + admin auth to prevent abuse, and all query
+  // params are validated against allowlists to prevent path traversal.
+  app.get("/profileTester", authenticateAdmin, async function (req, res) {
+    if (process.env.NODE_ENV === "production") {
+      return res.status(404).send("Not available");
+    }
+
+    const achievements: { imagePath: string }[] = [];
+    for (const slot of ["achievement1", "achievement2", "achievement3", "achievement4", "achievement5"]) {
+      const raw = req.query[slot];
+      if (typeof raw === "string" && VALID_BADGES.has(raw)) {
+        achievements.push({ imagePath: `assets/badges/${raw}.png` });
+      }
+    }
 
     const rank = new Rank()
       .setUsername("Kraken")
@@ -25,14 +88,16 @@ export function profileEndPoints(app) {
       .setRequiredXP(1200)
       .setRank(1, "RANK", false)
       .setLevel(473, "LEVEL", true)
-      .setCustomStatusColor(req.query.statusColor ?? "#FF0000")
-      .setProgressBar(req.query.progressBarColor ?? "#FF0000", "COLOR")
-      .setBackground("COLOR", req.query.backgroundColor ?? "#2b2f35")
+      .setCustomStatusColor(safeColor(req.query.statusColor, "#FF0000"))
+      .setProgressBar(safeColor(req.query.progressBarColor, "#FF0000"), "COLOR")
+      .setBackground("COLOR", safeColor(req.query.backgroundColor, "#2b2f35"))
       .setAchievements(achievements);
-    if (req.query.backgroundImage) {
+
+    const bgRaw = req.query.backgroundImage;
+    if (typeof bgRaw === "string" && VALID_BACKGROUNDS.has(bgRaw)) {
       rank
         .setOverlay("#2b2f35", 0.4)
-        .setBackground("IMAGE", `assets/${req.query.backgroundImage}.png`);
+        .setBackground("IMAGE", `assets/${bgRaw}.png`);
     }
 
     let data = await rank.build();
@@ -63,9 +128,20 @@ export function profileEndPoints(app) {
       if (!profile) return res.status(400).send("No profile data");
       // @ts-ignore
       global.client.prisma.profile
-        .update({
+        .upsert({
           where: { userid: user.id },
-          data: {
+          update: {
+            StatusColor: profile.StatusColor,
+            BackgroundImage: profile.BackgroundImage,
+            ProgressBarColor: profile.ProgressBarColor,
+            Achievement1: profile.Achievement1,
+            Achievement2: profile.Achievement2,
+            Achievement3: profile.Achievement3,
+            Achievement4: profile.Achievement4,
+            Achievement5: profile.Achievement5,
+          },
+          create: {
+            userid: user.id,
             StatusColor: profile.StatusColor,
             BackgroundImage: profile.BackgroundImage,
             ProgressBarColor: profile.ProgressBarColor,

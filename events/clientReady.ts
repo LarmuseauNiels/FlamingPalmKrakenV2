@@ -30,7 +30,7 @@ export default class ready implements IEvent {
     client.log(
       `Ready! Logged in as ${
         client.user!.tag
-      }, version ${process.env.CAPROVER_GIT_COMMIT_SHA!.slice(0, 7)}`
+      }, version ${(process.env.CAPROVER_GIT_COMMIT_SHA ?? "unknown").slice(0, 7)}`
     );
     require("../modules/statistics.js")(client);
     require("../modules/VintageStoryStatus.js")(client);
