@@ -14,9 +14,13 @@ export default class messageCreate implements IEvent {
       message.react("👎").then(() => log.debug("Reacted with thumbs down")).catch((e) => log.error("Failed to react:", e));
     }
 
+    // In DMs, every non-bot message is directed at the bot — treat as a trigger.
+    const isDM = !message.guild;
+
     // Determine if this message should trigger the bot:
-    // 1. @-mention of the bot (fresh question or reply with mention)
-    // 2. Reply to a previous bot message (follow-up conversation)
+    // 1. Sent in a DM (direct conversation with the bot)
+    // 2. @-mention of the bot (fresh question or reply with mention)
+    // 3. Reply to a previous bot message (follow-up conversation)
     let contextId: string | undefined;
     if (message.reference?.messageId) {
       contextId = message.reference.messageId;
@@ -25,7 +29,7 @@ export default class messageCreate implements IEvent {
     const isMention = message.mentions.has(global.client.user);
     const isReplyToBot = contextId ? global.client.ollamaAI.hasContext(contextId) : false;
 
-    if (!isMention && !isReplyToBot) return;
+    if (!isDM && !isMention && !isReplyToBot) return;
 
     log.info("Message mentions bot: " + message.content);
 
