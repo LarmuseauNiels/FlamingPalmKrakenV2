@@ -124,6 +124,13 @@ export class OllamaAI {
       {
         type: "function",
         function: {
+          name: "getTimezone",
+          description: "Get the currently configured IANA timezone for the user who asked. Use this when a member asks what their current timezone is set to, or wants to verify their timezone is correct before setting a new one.",
+        },
+      },
+      {
+        type: "function",
+        function: {
           name: "setTimezone",
           description: "Set the user's timezone so the bot can parse date/time inputs correctly. The timezone must be a valid IANA timezone name (e.g. Europe/Brussels, America/New_York, Asia/Tokyo). Use this when a user asks to set or change their timezone.",
           parameters: {
@@ -200,6 +207,7 @@ export class OllamaAI {
       "- When a member asks to join a raid, confirm which raid they want to join, then use getRaids to find the raid ID if needed, and call joinRaid after they confirm. Only join raids that are open (Status 1).\n" +
       "- When a member asks to leave a raid, confirm which raid they want to leave, then use getRaids or getRaidDetails to find the raid ID if needed, and call leaveRaid after they confirm.\n" +
       "- When a member asks to set or change their timezone, use the setTimezone tool with a valid IANA timezone name (e.g. Europe/Brussels, America/New_York).\n" +
+      "- When a member asks what their current timezone is, or wants to check it before changing it, use the getTimezone tool. If they then want to change it, chain directly into the setTimezone tool without re-asking.\n" +
       "- When a member asks about a video game (what it's about, its price, whether it's on Steam), use the getSteamGameInfo tool with the game's name.\n" +
       "Conversation context: You can remember previous messages in a conversation, but only when the member uses Discord's reply feature to reply to your messages. " +
       "If a member sends a follow-up message without replying to your previous response, you will not have the context of the earlier exchange. " +
@@ -402,6 +410,8 @@ export class OllamaAI {
         return await this.joinRaidString(call.arguments, authorId || "");
       case "setTimezone":
         return await this.setTimezoneString(call.arguments, authorId || "");
+      case "getTimezone":
+        return await this.getTimezoneString(authorId || "");
       case "leaveRaid":
         return await this.leaveRaidString(call.arguments, authorId || "");
       case "getSteamGameInfo":
@@ -632,6 +642,42 @@ export class OllamaAI {
       }
       log.error("Failed to join raid:", err);
       return "Failed to join the raid. Please try again or use the raid channel directly.";
+    }
+  }
+
+  private async getTimezoneString(authorId: string): Promise<string> {
+    if (!authorId) {
+      return "Unable to determine which member is requesting their timezone.";
+    }
+
+    try {
+      const member = await globalThis.client.prisma.members.findUnique({
+        where: { ID: authorId },
+        select: { Timezone: true, DisplayName: true },
+      });
+
+      if (!member) {
+        return "You don't have a timezone configured yet. Use the setTimezone tool with a valid IANA timezone name (e.g. Europe/Brussels, America/New_York) to set one.";
+      }
+
+      if (!member.Timezone) {
+        return "You don't have a timezone configured yet. Use the setTimezone tool with a valid IANA timezone name (e.g. Europe/Brussels, America/New_York) to set one.";
+      }
+
+      // Validate the stored value is still a recognized IANA timezone
+      const validTimezones: string[] = (Intl as any).supportedValuesOf("timeZone");
+      if (!validTimezones.includes(member.Timezone)) {
+        return `Your timezone is currently set to "${member.Timezone}", but this is not a recognised IANA timezone anymore. Please set a new one using the setTimezone tool (e.g. Europe/Brussels, America/New_York).`;
+      }
+
+      // Show the user-friendly current time in their zone so they can sanity-check it
+      const now = new Date();
+      const localTime = now.toLocaleString("en-GB", { timeZone: member.Timezone, dateStyle: "full", timeStyle: "long" });
+
+      return `Your timezone is currently set to ${member.Timezone}. The current time there is ${localTime}. If this looks wrong, tell me your new timezone and I'll update it.`;
+    } catch (err) {
+      log.error("Failed to get timezone:", err);
+      return "Failed to retrieve your timezone. Please try again or use /set-timezone to set it.";
     }
   }
 
