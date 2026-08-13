@@ -50,6 +50,7 @@ FlamingPalmKrakenV2/
 │   ├── VintageStoryStatus.ts # Vintage Story server status monitoring
 │   ├── PelicanStatusMonitor.ts # Pelican panel game server monitoring
 │   ├── NotificationLevels.ts # User notification preferences
+│   ├── PartyNightReminder.ts # Weekly DM reminder to admins about Party Night points
 │   ├── profile.js            # Profile image generation (legacy JS)
 │   └── ApiFunctions/         # Organized Express route handlers
 │       ├── AdminEndPoints.ts
@@ -140,6 +141,7 @@ const raids = await global.client.prisma.raids.findMany(...);
 | `GUILD_ID` | Discord server (guild) ID |
 | `DATABASE_URL` | MySQL connection string |
 | `OAUTHSECRET` | Discord OAuth client secret |
+| `ADMIN_IDS` | Comma-separated Discord IDs — admin web API access + Party Night reminder DMs |
 | `CALLBACK_URL` | OAuth redirect URL |
 | `JWT_SECRET` | JWT signing secret |
 | `OLLAMA_AI_KEY` | Ollama cloud API key |
@@ -259,6 +261,7 @@ await interaction.editReply({ content: '...' });
 | `modules/AchievementsModule.ts` | Achievement logic + canvas profile image generation |
 | `modules/WebApi.ts` | Express app, Passport OAuth, JWT auth middleware |
 | `modules/PelicanStatusMonitor.ts` | Pelican panel game server status + Discord embeds |
+| `modules/PartyNightReminder.ts` | Saturday 21:00 Europe/Brussels DM reminder to `ADMIN_IDS` |
 | `modules/ApiFunctions/` | Route handlers organized by domain |
 | `utils/logger.ts` | All logging — use this everywhere |
 | `prisma/schema.prisma` | Source of truth for all database models |
