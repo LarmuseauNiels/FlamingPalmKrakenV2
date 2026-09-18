@@ -79,8 +79,10 @@ export class WebApi {
       } // auth success
     );
 
-    // Health check
-    app.get("/", (req, res) => {
+    // Health check. Lives at /health because "/" is the Activity's entry point:
+    // Discord loads an Activity from the ROOT of the mapped domain, so the SPA
+    // has to be served there (see ApiFunctions/ActivityEndPoints.ts).
+    app.get("/health", (req, res) => {
       res.send(jsonify({ uptime: process.uptime() }));
     });
 

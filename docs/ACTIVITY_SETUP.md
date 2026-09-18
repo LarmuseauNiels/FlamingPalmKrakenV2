@@ -13,7 +13,7 @@ on top of an API that already works. The storefront itself is thin on purpose.
 
 | Path | Purpose |
 |---|---|
-| `modules/ApiFunctions/ActivityEndPoints.ts` | `/api/activity/config`, `/api/activity/token`, static hosting of the built SPA at `/activity` |
+| `modules/ApiFunctions/ActivityEndPoints.ts` | `/api/activity/config`, `/api/activity/token`, static hosting of the built SPA at `/` (and `/activity` as a debug alias) |
 | `activity/` | Vite + TypeScript SPA (no framework) |
 | `interactionHandlers/buttons/openStore.ts` | Launches the Activity from a button (`launchActivity()`) |
 | `deploy-commands.ts` | Registers the entry point command when `ACTIVITY_ENABLED=true` |
@@ -59,10 +59,19 @@ and a more reliable answer.
 
    | Prefix | Target |
    |---|---|
-   | `/` | your API domain, e.g. `api.flamingpalm.com` |
+   | `/` | `kraken-bot.majesty.flamingpalm.com` (no `https://`) |
 
-   A single root mapping covers both the SPA (`/activity/…`) and the API
-   (`/members/…`, `/api/activity/…`).
+   **Discord loads the Activity from the root of that domain.** That is why the
+   API serves the SPA at `/` rather than at `/activity` — one root mapping then
+   covers the page, its assets *and* every `/members/…` and `/api/activity/…`
+   call the page makes, with no prefix-rewriting to reason about.
+
+   Because `/` is now the Activity, the uptime health check moved to
+   **`/health`**. If you monitor the bot externally (UptimeRobot), repoint it.
+
+   > **Symptom if this is wrong:** the Activity opens and shows
+   > `{"uptime": …}` — that is the old health check answering at `/`, meaning
+   > the deployed build predates this change or the mapping target is off.
 
 3. **Reward images.** Shop items carry absolute `imageurl` values. Anything not
    covered by a mapping is blocked by CSP, and the cards drop the image rather
@@ -120,7 +129,8 @@ the `.discordsays.com` host.
 
 - [ ] `npm run build` (bot) and `npm --prefix activity run build` both succeed
 - [ ] `GET /api/activity/config` returns the client id
-- [ ] `GET /activity/` serves the SPA in a normal browser
+- [ ] `GET /` serves the SPA (not `{"uptime": …}`) and `GET /health` returns uptime
+- [ ] `GET /activity/` serves the same SPA (debug alias)
 - [ ] `/store` shows the "Open in Discord" button when `ACTIVITY_ENABLED=true`
 - [ ] The app launcher lists `/shop` after `npm run deploy`
 - [ ] Opening the Activity reaches the store grid without a CSP error in console
