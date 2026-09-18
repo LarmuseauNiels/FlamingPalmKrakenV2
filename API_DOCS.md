@@ -64,6 +64,8 @@ IDs). Requests that pass JWT validation but fail the admin check receive
 |--------|------|------|-------------|
 | `GET` | `/auth` | None | Redirect to Discord OAuth2 consent screen |
 | `GET` | `/login` | OAuth callback | Exchange Discord OAuth code for a JWT; returns `"<jwt-string>"` |
+| `GET` | `/api/activity/config` | None | Bootstrap values for the Discord Activity SPA |
+| `POST` | `/api/activity/token` | None | Exchange a Discord Activity OAuth code for a JWT |
 
 ---
 
@@ -849,6 +851,81 @@ back to a live Discord API fetch if the cache is empty.
 - **Auth:** None
 - **Response:** Discord `GuildScheduledEvent` collection (raw Discord.js
   object, serialised to JSON)
+
+---
+
+### Activity
+
+Base prefix: `/api/activity/`
+
+Endpoints for the Discord Activity (the storefront that runs inside Discord).
+See `docs/ACTIVITY_SETUP.md` for the developer-portal configuration.
+
+An Activity runs in a sandboxed iframe and cannot use the redirect-based
+`/auth` → `/login` flow, so it authenticates with a code exchange instead. Both
+paths mint the same JWT, so every `/members/*` endpoint works unchanged from
+inside the Activity.
+
+#### `GET /api/activity/config`
+
+Values the SPA needs before it can construct the Embedded App SDK. Served at
+runtime so the client id never has to be baked into the bundle.
+
+- **Auth:** None
+- **Response:**
+
+```json
+{ "clientId": "123456789012345678" }
+```
+
+#### `POST /api/activity/token`
+
+Exchanges the OAuth code returned by `discordSdk.commands.authorize()` for a
+Discord access token and a FlamingPalm JWT.
+
+Guild membership is verified against the bot's guild cache
+(`guild.members.fetch`) rather than the `guilds` OAuth scope, so the Activity
+only requests `identify`. Non-members are rejected with `403`.
+
+Logs to `Login_History` and refreshes the member's cached avatar, best-effort —
+a missing `Members` row does not fail the request.
+
+- **Auth:** None (the code itself is the credential)
+- **Request body:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `code` | `string` | OAuth authorization code from the Embedded App SDK |
+
+- **Response:**
+
+```json
+{
+  "access_token": "<discord-access-token>",
+  "token": "<jwt-string>"
+}
+```
+
+`access_token` is needed by `discordSdk.commands.authenticate()`; `token` is the
+bearer token for every other endpoint. The JWT expires after **7 days** (the
+website's `/login` JWT does not expire).
+
+- **Errors:**
+
+| Status | Meaning |
+|--------|---------|
+| `400` | Missing `code` |
+| `401` | Invalid or expired authorization code |
+| `403` | Authenticated user is not a member of `GUILD_ID` |
+| `502` | Discord returned no access token or no user |
+
+#### `GET /activity/*`
+
+Static hosting for the built SPA (`activity/dist`), with an `index.html`
+fallback for client-side routes. Returns 404s for asset paths when the SPA
+has not been built.
+
+- **Auth:** None
 
 ---
 

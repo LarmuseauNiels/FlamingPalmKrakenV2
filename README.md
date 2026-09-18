@@ -11,6 +11,7 @@ A Discord bot for the FlamingPalm gaming community, providing raid scheduling, a
 - **AI Assistant** — Ollama-powered community assistant (gemma4:cloud) with tool-calling
 - **Web API** — Express server with Discord OAuth for a companion website
 - **Game Server Status** — Vintage Story and Pelican-managed game server monitoring
+- **Discord Activity** — in-Discord points storefront (see `docs/ACTIVITY_SETUP.md`)
 
 ## Stack
 
@@ -67,7 +68,8 @@ A Discord bot for the FlamingPalm gaming community, providing raid scheduling, a
    | `BUGSNAG_API_KEY` | Bugsnag error tracking key |
    | `LOG_LEVEL` | Logger verbosity: `DEBUG`, `INFO`, `WARN`, `ERROR` |
    | `DISABLE` | Set to skip startup (optional) |
-   | `CAPROVER_GIT_COMMIT_SHA` | Version tracking (optional) |
+   | `ACTIVITY_ENABLED` | `true` to enable the Discord Activity storefront (optional) |
+| `CAPROVER_GIT_COMMIT_SHA` | Version tracking (optional) |
 
 4. **Run database migrations**
 

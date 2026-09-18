@@ -1,4 +1,6 @@
 node_modules
+activity/node_modules
+activity/dist
 bin
 .git
 .github

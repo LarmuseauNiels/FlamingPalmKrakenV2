@@ -9,6 +9,8 @@
         "RUN npm ci",
         "COPY . .",
         "RUN npx prisma generate && npx tsc",
+        "# Activity SPA (own package.json / lockfile, separate from the bot build)",
+        "RUN npm --prefix activity ci --no-audit --no-fund && npm --prefix activity run build",
 
         "FROM node:24-alpine",
         "RUN apk add --no-cache openssl",
@@ -26,6 +28,7 @@
         "COPY --from=builder /usr/src/app/node_modules/.prisma ./node_modules/.prisma",
         "COPY prisma ./prisma",
         "COPY assets ./assets",
+        "COPY --from=builder /usr/src/app/activity/dist ./activity/dist",
         "CMD [ \"npm\", \"start\" ]"
     ]
  }

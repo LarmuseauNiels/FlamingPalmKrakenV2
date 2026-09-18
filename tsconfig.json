@@ -123,6 +123,7 @@
     "node_modules",
     "<node_internals>/**",
     "bin",
+    "activity",
     "sprites",
     "interactionHandlers/disabledCommands"
   ]

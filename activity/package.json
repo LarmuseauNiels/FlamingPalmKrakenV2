@@ -1,0 +1,19 @@
+{
+  "name": "flamingpalm-activity",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "FlamingPalm Discord Activity — points storefront spike",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@discord/embedded-app-sdk": "^2.5.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.0",
+    "vite": "^8.3.0"
+  }
+}
