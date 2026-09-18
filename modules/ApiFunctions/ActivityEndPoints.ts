@@ -111,13 +111,31 @@ export function activityEndPoints(app) {
     }
   });
 
-  // Static hosting for the built SPA. Registered after the API routes above so
-  // /api/activity/* can never be shadowed by a file on disk.
+  // Static hosting for the built SPA.
+  //
+  // Discord loads an Activity from the ROOT of the domain named in the root URL
+  // mapping, so the SPA must be served at "/" — that single mapping then covers
+  // the page, its assets, and every /members/* call the page makes. Serving it
+  // only under /activity would hand Discord whatever "/" returns instead.
+  //
+  // activityEndPoints() is called last in WebApi, so every API route is already
+  // registered and a file on disk can never shadow one. express.static only
+  // matches paths that exist on disk; everything else falls through.
+  app.use(express.static(ACTIVITY_DIST));
+
+  // Alias, so the SPA is also reachable at /activity for debugging in a normal
+  // browser without disturbing whatever is at the root.
   app.use("/activity", express.static(ACTIVITY_DIST));
 
-  // SPA fallback: any unmatched /activity/* path serves index.html so client
-  // routing keeps working. Skips asset-looking paths so a missing bundle 404s
-  // honestly instead of returning HTML with a .js content type.
+  // Reached only when activity/dist is missing (express.static above serves
+  // index.html for "/" whenever it exists). Keeps the old uptime payload so a
+  // deploy without the SPA built doesn't turn the root into a 404.
+  app.get("/", function (req, res) {
+    res.send(jsonify({ uptime: process.uptime() }));
+  });
+
+  // SPA fallback for the /activity alias. Skips asset-looking paths so a missing
+  // bundle 404s honestly instead of returning HTML with a .js content type.
   app.get("/activity/*", function (req, res, next) {
     if (path.extname(req.path)) return next();
     res.sendFile(path.join(ACTIVITY_DIST, "index.html"), (err) => {

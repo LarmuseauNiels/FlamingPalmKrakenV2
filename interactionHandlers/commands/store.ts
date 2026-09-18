@@ -44,30 +44,47 @@ export default class StoreHandler implements IHandler {
       orderBy: { Price: "asc" },
     });
 
-    rewards.forEach((reward) => {
-      if (reward.visible) {
-        const stock = reward.RewardItem.length;
-        if (stock === 0) {
-          embed.addFields({
-            name: reward.Title,
-            value: `out of stock`,
-            inline: true,
-          });
-        } else if (reward.nonSalePrice && reward.nonSalePrice > 0) {
-          embed.addFields({
-            name: reward.Title,
-            value: `~~${reward.nonSalePrice}~~ **${reward.Price}:palm_tree:**`,
-            inline: true,
-          });
-        } else {
-          embed.addFields({
-            name: reward.Title,
-            value: `**${reward.Price}:palm_tree:**`,
-            inline: true,
-          });
-        }
+    // Embeds accept at most 25 fields. Past that `addFields` throws
+    // "Invalid number value" and the whole command fails, so keep a slot free
+    // for an overflow notice once the store outgrows the limit.
+    const MAX_EMBED_FIELDS = 25;
+    const visibleRewards = rewards.filter((reward) => reward.visible);
+    const shownRewards =
+      visibleRewards.length > MAX_EMBED_FIELDS
+        ? visibleRewards.slice(0, MAX_EMBED_FIELDS - 1)
+        : visibleRewards;
+
+    shownRewards.forEach((reward) => {
+      const stock = reward.RewardItem.length;
+      if (stock === 0) {
+        embed.addFields({
+          name: reward.Title,
+          value: `out of stock`,
+          inline: true,
+        });
+      } else if (reward.nonSalePrice && reward.nonSalePrice > 0) {
+        embed.addFields({
+          name: reward.Title,
+          value: `~~${reward.nonSalePrice}~~ **${reward.Price}:palm_tree:**`,
+          inline: true,
+        });
+      } else {
+        embed.addFields({
+          name: reward.Title,
+          value: `**${reward.Price}:palm_tree:**`,
+          inline: true,
+        });
       }
     });
+
+    const hidden = visibleRewards.length - shownRewards.length;
+    if (hidden > 0) {
+      embed.addFields({
+        name: `+${hidden} more`,
+        value: "Use the buttons below to see the full store.",
+        inline: true,
+      });
+    }
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
