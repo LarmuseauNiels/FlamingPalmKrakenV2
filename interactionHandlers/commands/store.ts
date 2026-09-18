@@ -78,6 +78,17 @@ export default class StoreHandler implements IHandler {
         .setStyle(ButtonStyle.Link)
     );
 
+    // Only offer the in-Discord storefront once Activities are switched on in
+    // the developer portal — launching one otherwise just errors for the user.
+    if (process.env.ACTIVITY_ENABLED === "true") {
+      row.addComponents(
+        new ButtonBuilder()
+          .setCustomId("openStore")
+          .setLabel("Open in Discord")
+          .setStyle(ButtonStyle.Primary)
+      );
+    }
+
     await interaction.reply({
       embeds: [embed],
       components: [row],

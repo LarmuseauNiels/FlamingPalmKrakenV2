@@ -22,6 +22,25 @@ for (const file of commandFiles) {
   }
 }
 
+// Discord Activity entry point command (type 4 = PRIMARY_ENTRY_POINT,
+// handler 2 = DISCORD_LAUNCH_ACTIVITY). Discord opens the Activity itself, so
+// no interaction reaches the bot and there is no handler file for this one.
+//
+// Gated behind ACTIVITY_ENABLED because registering an entry point command for
+// an app that doesn't have Activities switched on in the developer portal
+// fails the whole PUT — which would take every other command down with it.
+// Note the inverse too: once Activities are on, Discord auto-creates a default
+// entry point command, and a PUT that omits this entry would delete it.
+if (process.env.ACTIVITY_ENABLED === "true") {
+  commands.push({
+    name: "shop",
+    description: "Open the FlamingPalm points store",
+    type: 4,
+    handler: 2,
+  });
+  log.info("Including the Activity entry point command (ACTIVITY_ENABLED=true).");
+}
+
 const contextMenus = fs
   .readdirSync(path.join(__dirname, "interactionHandlers", "contextmenus"))
   .filter((file) => file.endsWith(".ts") || file.endsWith(".js"));

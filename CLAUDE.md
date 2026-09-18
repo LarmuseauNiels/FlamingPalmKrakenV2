@@ -40,6 +40,8 @@ FlamingPalmKrakenV2/
 │   ├── selects/              # 1 select menu handler
 │   ├── contextmenus/         # 3 right-click context menu handlers
 │   └── disabledCommands/     # Archived/disabled commands (not loaded)
+├── activity/                 # Discord Activity SPA (Vite + TS) — see docs/ACTIVITY_SETUP.md
+│   └── src/                  # http/auth/api/ui modules; builds to activity/dist
 ├── modules/
 │   ├── RaidModule.ts         # Raid CRUD, attendance, subscriptions
 │   ├── RaidScheduler.ts      # Automatic scheduling lifecycle
@@ -58,6 +60,7 @@ FlamingPalmKrakenV2/
 │       ├── ProfileEndPoints.ts
 │       ├── ShopEndPoints.ts
 │       ├── LegacyEndPoints.ts
+│       ├── ActivityEndPoints.ts
 │       ├── Helpers.ts
 │       └── ViewModels/       # DTOs (DashBoardModel, ShopItem, User, etc.)
 ├── interfaces/
@@ -150,6 +153,7 @@ const raids = await global.client.prisma.raids.findMany(...);
 | `BUGSNAG_API_KEY` | Bugsnag error tracking key |
 | `LOG_LEVEL` | Logger level: DEBUG, INFO, WARN, ERROR |
 | `DISABLE` | Set to skip startup (optional) |
+| `ACTIVITY_ENABLED` | `true` to register the Activity entry point command and show the in-Discord store button (optional, default off) |
 | `ISLANDER_AWARD_POINTS` | `true` to award community Points for Islander milestones (optional, default off) |
 | `ISLANDER_POINTS_EXCHANGE` | `true` to enable the Points→island-Currency exchange button (optional, default off) |
 | `CAPROVER_GIT_COMMIT_SHA` | Version tracking (optional) |
@@ -160,6 +164,10 @@ npm run build    # Compile TypeScript → ./bin/
 npm start        # Apply pending DB migrations (prisma migrate deploy) + run the bot
 npm run migrate  # Apply pending DB migrations only (prisma migrate deploy)
 npm run deploy   # Build + register slash commands with Discord
+
+# Activity SPA (separate build, own package.json)
+npm --prefix activity install
+npm --prefix activity run build   # -> activity/dist, served at /activity
 ```
 
 > **Note:** `npm start` runs `prisma/migrate-deploy.js` before launching the bot,
@@ -263,6 +271,8 @@ await interaction.editReply({ content: '...' });
 | `modules/PelicanStatusMonitor.ts` | Pelican panel game server status + Discord embeds |
 | `modules/PartyNightReminder.ts` | Saturday 21:00 Europe/Brussels DM reminder to `ADMIN_IDS` |
 | `modules/ApiFunctions/` | Route handlers organized by domain |
+| `modules/ApiFunctions/ActivityEndPoints.ts` | Discord Activity OAuth code exchange + static hosting of `activity/dist` |
+| `activity/` | Discord Activity SPA — separate Vite build, excluded from the bot's `tsc` |
 | `utils/logger.ts` | All logging — use this everywhere |
 | `prisma/schema.prisma` | Source of truth for all database models |
 
@@ -307,4 +317,7 @@ Key models and their purpose:
 4. **Using `console.log` instead of `logger`** — errors won't reach Bugsnag in production.
 5. **Handler `name` mismatches** — the `name` in a handler must exactly match the Discord command name or button `customId`.
 6. **`disabledCommands/` directory** — files here are intentionally not loaded; don't move files there expecting them to work.
-7. **Editing API endpoints without updating `API_DOCS.md`** — whenever you add, remove, or change a field or behaviour in any endpoint under `modules/ApiFunctions/`, update the corresponding section in `API_DOCS.md` to keep the docs in sync.
+7. **Forgetting the Activity is a separate build** — `activity/` has its own
+   `package.json` and is excluded from the bot's `tsconfig.json`. `npm run build`
+   at the root does not build it; `captain-definition` builds it separately.
+8. **Editing API endpoints without updating `API_DOCS.md`** — whenever you add, remove, or change a field or behaviour in any endpoint under `modules/ApiFunctions/`, update the corresponding section in `API_DOCS.md` to keep the docs in sync.
