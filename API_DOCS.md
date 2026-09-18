@@ -73,7 +73,8 @@ IDs). Requests that pass JWT validation but fail the admin check receive
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET` | `/` | None | Health check — returns `{ uptime: <seconds> }` |
+| `GET` | `/health` | None | Health check — returns `{ uptime: <seconds> }` |
+| `GET` | `/` | None | Serves the Discord Activity SPA; falls back to `{ uptime: <seconds> }` when `activity/dist` is missing |
 
 ---
 
@@ -919,11 +920,18 @@ website's `/login` JWT does not expire).
 | `403` | Authenticated user is not a member of `GUILD_ID` |
 | `502` | Discord returned no access token or no user |
 
-#### `GET /activity/*`
+#### `GET /` and `GET /activity/*`
 
-Static hosting for the built SPA (`activity/dist`), with an `index.html`
-fallback for client-side routes. Returns 404s for asset paths when the SPA
-has not been built.
+Static hosting for the built SPA (`activity/dist`).
+
+The SPA is served at **`/`** because Discord loads an Activity from the root of
+the domain named in the root URL mapping. A single root mapping therefore covers
+the page, its assets and every API call it makes. `/activity/*` is kept as a
+debug alias for opening the app in a normal browser.
+
+When `activity/dist` is missing, `/` falls back to the uptime payload so a build
+without the SPA doesn't turn the root into a 404. Asset paths 404 rather than
+returning `index.html` under a `.js` content type.
 
 - **Auth:** None
 
