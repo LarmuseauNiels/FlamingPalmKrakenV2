@@ -65,6 +65,8 @@ A Discord bot for the FlamingPalm gaming community, providing raid scheduling, a
    | `OLLAMA_AI_KEY` | Ollama cloud API key |
    | `OLLAMA_MODEL` | Ollama model name (optional, defaults to gemma4:cloud) |
    | `OLLAMA_BASE_URL` | Ollama OpenAI-compatible endpoint (optional, defaults to https://ollama.com/v1) |
+   | `PELICAN_START_ROLE_ID` | Discord role ID allowed to start game servers through the AI assistant (optional) |
+   | `PELICAN_MANAGE_ROLE_ID` | Discord role ID allowed to start, restart and stop game servers through the AI assistant (optional) |
    | `BUGSNAG_API_KEY` | Bugsnag error tracking key |
    | `LOG_LEVEL` | Logger verbosity: `DEBUG`, `INFO`, `WARN`, `ERROR` |
    | `DISABLE` | Set to skip startup (optional) |
