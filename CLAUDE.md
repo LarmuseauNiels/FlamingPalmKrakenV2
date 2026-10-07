@@ -150,6 +150,8 @@ const raids = await global.client.prisma.raids.findMany(...);
 | `OLLAMA_AI_KEY` | Ollama cloud API key |
 | `OLLAMA_MODEL` | Ollama model name (optional, defaults to gemma4:cloud) |
 | `OLLAMA_BASE_URL` | Ollama OpenAI-compatible endpoint (optional, defaults to https://ollama.com/v1) |
+| `PELICAN_START_ROLE_ID` | Discord role ID allowed to start game servers through the AI assistant (optional; tool disabled when unset) |
+| `PELICAN_MANAGE_ROLE_ID` | Discord role ID allowed to start, restart and stop game servers through the AI assistant (optional; restart/stop disabled when unset) |
 | `BUGSNAG_API_KEY` | Bugsnag error tracking key |
 | `LOG_LEVEL` | Logger level: DEBUG, INFO, WARN, ERROR |
 | `DISABLE` | Set to skip startup (optional) |

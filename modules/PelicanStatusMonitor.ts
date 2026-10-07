@@ -486,3 +486,79 @@ module.exports.getServerStatuses = async function (): Promise<string> {
     return "Failed to fetch game server status. Please try again later.";
   }
 };
+
+const POWER_SIGNALS: Record<string, { allowedStates: string[]; done: string }> = {
+  start:   { allowedStates: ["offline"],             done: "is starting. It may take a minute or two before it is joinable." },
+  restart: { allowedStates: ["running"],             done: "is restarting. It may take a minute or two before it is joinable again." },
+  stop:    { allowedStates: ["running", "starting"], done: "is stopping." },
+};
+
+/**
+ * Sends a power signal (start, restart or stop) to the game server whose name
+ * matches `query`. Matching is case-insensitive: an exact name match wins,
+ * otherwise a unique partial match is used. Returns a human-readable result
+ * for the AI assistant.
+ */
+module.exports.powerServer = async function (query: string, signal: string): Promise<string> {
+  const baseUrl = process.env.PELICAN_URL?.replace(/\/$/, "");
+  const apiKey = process.env.PELICAN_API_KEY;
+
+  if (!baseUrl || !apiKey) {
+    return "Game server control is not configured.";
+  }
+
+  const signalInfo = POWER_SIGNALS[signal];
+  if (!signalInfo) {
+    return `Unknown power action "${signal}".`;
+  }
+
+  try {
+    const servers = await fetchServers(baseUrl, apiKey);
+    const needle = query.trim().toLowerCase();
+    const exact = servers.filter((s) => s.name.toLowerCase() === needle);
+    const matches = exact.length ? exact : servers.filter((s) => s.name.toLowerCase().includes(needle));
+
+    if (matches.length === 0) {
+      return `No game server matches "${query}". Available servers: ${servers.map((s) => s.name).join(", ") || "none"}.`;
+    }
+    if (matches.length > 1) {
+      return `"${query}" matches several servers: ${matches.map((s) => s.name).join(", ")}. Ask the member which one they mean.`;
+    }
+
+    const server = matches[0];
+    const res = await fetchResources(baseUrl, apiKey, server.identifier);
+    if (res.is_suspended) {
+      return `${server.name} is suspended and cannot be controlled.`;
+    }
+    if (res.current_state === "missing") {
+      return `${server.name} cannot be controlled because its machine is offline.`;
+    }
+    if (!signalInfo.allowedStates.includes(res.current_state)) {
+      return `${server.name} is currently ${res.current_state}, so it can't be sent "${signal}".`;
+    }
+
+    await axios.post(
+      `${baseUrl}/api/client/servers/${server.identifier}/power`,
+      { signal },
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        timeout: 10000,
+      }
+    );
+
+    const address = server.allocation?.address ?? "no address configured";
+    return signal === "stop"
+      ? `${server.name} ${signalInfo.done}`
+      : `${server.name} ${signalInfo.done} Address: ${address}`;
+  } catch (err: any) {
+    if (err.response?.status === 409) {
+      return "That server is busy or already changing state. Try again in a moment.";
+    }
+    log.error(`powerServer (${signal}) failed:`, err.message || err);
+    return `Failed to ${signal} the game server. Please try again later.`;
+  }
+};

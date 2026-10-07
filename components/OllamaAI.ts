@@ -179,6 +179,45 @@ export class OllamaAI {
           },
         },
       },
+      {
+        type: "function",
+        function: {
+          name: "startGameServer",
+          description: "Start an offline game server (Pelican-managed) on behalf of the user. Only members with the server starter or server manager role may do this; the tool checks the role itself and reports if the user lacks it. Use this when a member asks to start or boot up a game server. Use getGameServerStatus first if you need the exact server name.",
+          parameters: {
+            type: "object",
+            properties: {
+              serverName: {
+                type: "string",
+                description: "The name (or a unique part of the name) of the game server to start",
+              },
+            },
+            required: ["serverName"],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "manageGameServer",
+          description: "Restart or stop a running game server (Pelican-managed) on behalf of the user. Only members with the server manager role may do this; the tool checks the role itself and reports if the user lacks it. ALWAYS confirm the server and the action with the member before calling this, because it disconnects anyone playing on that server.",
+          parameters: {
+            type: "object",
+            properties: {
+              serverName: {
+                type: "string",
+                description: "The name (or a unique part of the name) of the game server",
+              },
+              action: {
+                type: "string",
+                enum: ["restart", "stop"],
+                description: "The power action to perform",
+              },
+            },
+            required: ["serverName", "action"],
+          },
+        },
+      },
     ];
 
     this.systemInstructionText =
@@ -209,6 +248,8 @@ export class OllamaAI {
       "- When a member asks to set or change their timezone, use the setTimezone tool with a valid IANA timezone name (e.g. Europe/Brussels, America/New_York).\n" +
       "- When a member asks what their current timezone is, or wants to check it before changing it, use the getTimezone tool. If they then want to change it, chain directly into the setTimezone tool without re-asking.\n" +
       "- When a member asks about a video game (what it's about, its price, whether it's on Steam), use the getSteamGameInfo tool with the game's name.\n" +
+      "- When a member asks to start a game server, call the startGameServer tool with the server's name. If you're unsure which server they mean, use getGameServerStatus to list them and ask.\n" +
+      "- When a member asks to restart or stop a game server, confirm the server and the action with them first (it disconnects anyone playing), then call the manageGameServer tool after they confirm.\n" +
       "Conversation context: You can remember previous messages in a conversation, but only when the member uses Discord's reply feature to reply to your messages. " +
       "If a member sends a follow-up message without replying to your previous response, you will not have the context of the earlier exchange. " +
       "Always remind members to reply to your message if they want to ask a follow-up question, especially after actions that require confirmation (like creating or joining a raid).";
@@ -416,6 +457,10 @@ export class OllamaAI {
         return await this.leaveRaidString(call.arguments, authorId || "");
       case "getSteamGameInfo":
         return await this.getSteamGameInfoString(call.arguments);
+      case "startGameServer":
+        return await this.startGameServerString(call.arguments, authorId || "");
+      case "manageGameServer":
+        return await this.manageGameServerString(call.arguments, authorId || "");
       default:
         return "Tool not found.";
     }
@@ -578,6 +623,79 @@ export class OllamaAI {
     }
 
     return string;
+  }
+
+  private async startGameServerString(rawArgs: string | object, authorId: string): Promise<string> {
+    let args: any;
+    try {
+      args = typeof rawArgs === "string" ? JSON.parse(rawArgs) : rawArgs;
+    } catch {
+      return "Invalid arguments for startGameServer.";
+    }
+    const serverName = args?.serverName;
+    if (!serverName || typeof serverName !== "string") {
+      return "Please provide the name of the game server to start.";
+    }
+
+    // Server managers may also start servers
+    const roleIds = [process.env.PELICAN_START_ROLE_ID, process.env.PELICAN_MANAGE_ROLE_ID].filter(Boolean) as string[];
+    if (roleIds.length === 0) {
+      return "Starting game servers through Kraken is not enabled.";
+    }
+
+    const denied = await this.checkMemberHasAnyRole(authorId, roleIds, "start game servers");
+    if (denied) return denied;
+
+    const result = await PelicanStatusMonitor.powerServer(serverName, "start");
+    log.info(`User ${authorId} asked to start game server "${serverName}": ${result}`);
+    return result;
+  }
+
+  private async manageGameServerString(rawArgs: string | object, authorId: string): Promise<string> {
+    let args: any;
+    try {
+      args = typeof rawArgs === "string" ? JSON.parse(rawArgs) : rawArgs;
+    } catch {
+      return "Invalid arguments for manageGameServer.";
+    }
+    const serverName = args?.serverName;
+    const action = args?.action;
+    if (!serverName || typeof serverName !== "string") {
+      return "Please provide the name of the game server.";
+    }
+    if (action !== "restart" && action !== "stop") {
+      return 'The action must be either "restart" or "stop".';
+    }
+
+    const roleId = process.env.PELICAN_MANAGE_ROLE_ID;
+    if (!roleId) {
+      return "Restarting or stopping game servers through Kraken is not enabled.";
+    }
+
+    const denied = await this.checkMemberHasAnyRole(authorId, [roleId], "restart or stop game servers");
+    if (denied) return denied;
+
+    const result = await PelicanStatusMonitor.powerServer(serverName, action);
+    log.info(`User ${authorId} asked to ${action} game server "${serverName}": ${result}`);
+    return result;
+  }
+
+  /**
+   * Returns null when the guild member has at least one of `roleIds`,
+   * otherwise a message for the model explaining why the action was refused.
+   */
+  private async checkMemberHasAnyRole(authorId: string, roleIds: string[], actionLabel: string): Promise<string | null> {
+    try {
+      const guild = await global.client.guilds.fetch(process.env.GUILD_ID!);
+      const member = await guild.members.fetch(authorId).catch(() => null);
+      if (!member || !roleIds.some((id) => member.roles.cache.has(id))) {
+        return `This member does not have the role required to ${actionLabel}. Tell them to ask an admin.`;
+      }
+      return null;
+    } catch (err: any) {
+      log.error("Failed to verify game server role:", err);
+      return "Couldn't verify the member's permissions right now. Please try again later.";
+    }
   }
 
   private async getGameServerStatusString(): Promise<string> {
