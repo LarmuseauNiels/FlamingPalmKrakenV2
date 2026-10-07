@@ -101,7 +101,7 @@ export class OllamaAI {
         type: "function",
         function: {
           name: "getGameServerStatus",
-          description: "Get the current status of all game servers (Pelican-managed). Shows server name, online state, address, uptime, CPU and RAM usage. Use this when a member asks if a game server is up or about server status.",
+          description: "Get the current status of all game servers (Pelican-managed). Shows server name, online state, address, uptime, CPU and RAM usage, and live player count and player names where available. Use this when a member asks if a game server is up, about server status, or how many / which players are online.",
         },
       },
       {
@@ -242,7 +242,7 @@ export class OllamaAI {
       "Default to 4 minimum players if the member doesn't specify. Only call createRaid after the member confirms.\n" +
       "- When a member asks for a Discord timestamp or wants to convert a time, use the getTimestamp tool with their date/time input.\n" +
       "- When a member asks about their palm tree points balance, use the getMemberPoints tool.\n" +
-      "- When a member asks about game server status (e.g. 'is the Minecraft server up?'), use the getGameServerStatus tool.\n" +
+      "- When a member asks about game server status (e.g. 'is the Minecraft server up?'), use the getGameServerStatus tool. Also use it when they ask who or how many people are playing on a server.\n" +
       "- When a member asks to join a raid, confirm which raid they want to join, then use getRaids to find the raid ID if needed, and call joinRaid after they confirm. Only join raids that are open (Status 1).\n" +
       "- When a member asks to leave a raid, confirm which raid they want to leave, then use getRaids or getRaidDetails to find the raid ID if needed, and call leaveRaid after they confirm.\n" +
       "- When a member asks to set or change their timezone, use the setTimezone tool with a valid IANA timezone name (e.g. Europe/Brussels, America/New_York).\n" +

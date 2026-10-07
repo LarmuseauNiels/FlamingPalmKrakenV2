@@ -204,6 +204,19 @@ The project deploys via **CapRover** using the `captain-definition` file. The Do
 
 ---
 
+## Game Server Player Counts
+
+`modules/PelicanStatusMonitor.ts` queries live player counts with [GameDig](https://github.com/gamedig/node-gamedig) for running servers that opt in through their **Pelican server description**:
+
+```
+gamedig: valheim          # GameDig game ID (see node_modules/gamedig/GAMES_LIST.md)
+gamedig_port: 27016       # optional — query port, when it differs from the primary allocation port
+```
+
+Use `protocol-valve` for Steam games GameDig doesn't list (generic A2S query). Servers without a tag show no player count; a failed query shows as "Unknown". Counts appear in the status channel embeds and in the AI's `getGameServerStatus` tool.
+
+---
+
 ## Code Conventions
 
 ### Naming

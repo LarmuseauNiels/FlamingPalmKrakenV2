@@ -1,5 +1,6 @@
 import cron from "node-cron";
 import axios from "axios";
+import { GameDig } from "gamedig";
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -12,6 +13,9 @@ import { createLogger } from "../utils/logger";
 
 const log = createLogger("PelicanStatus");
 
+// Public hostname players connect to; also used for player-count queries.
+const PUBLIC_HOST = "server.flamingpalm.com";
+
 interface Allocation {
   address: string; // "host:port" or "ip:port"
 }
@@ -21,10 +25,25 @@ interface ServerVariable {
   server_value: string;
 }
 
+// Which GameDig game type to query for player counts, read from the
+// server's Pelican description: "gamedig: valheim" and optionally
+// "gamedig_port: 27016" when the query port differs from the game port.
+interface PlayerQueryConfig {
+  type: string;
+  port: number;
+}
+
+interface PlayerInfo {
+  online: number;
+  max: number;
+  names: string[];
+}
+
 interface PelicanServer {
   identifier: string;
   name: string;
   node: string;
+  playerQuery: PlayerQueryConfig | null;
   limits: {
     memory: number; // MB, 0 = unlimited
     disk: number;   // MB, 0 = unlimited
@@ -54,6 +73,7 @@ interface LastBackup {
 
 interface ServerExtra {
   lastBackup: LastBackup | null;
+  players: PlayerInfo | null;
 }
 
 // ── Formatters ────────────────────────────────────────────────────────────────
@@ -112,7 +132,7 @@ async function fetchServers(baseUrl: string, apiKey: string): Promise<PelicanSer
       const allocs = s.attributes.relationships?.allocations?.data ?? [];
       const primary = allocs.find((a: any) => a.attributes.is_default) ?? allocs[0];
       const allocation: Allocation | null = primary
-        ? { address: `server.flamingpalm.com:${primary.attributes.port}` }
+        ? { address: `${PUBLIC_HOST}:${primary.attributes.port}` }
         : null;
 
       const variables: ServerVariable[] = (s.attributes.relationships?.variables?.data ?? [])
@@ -122,11 +142,55 @@ async function fetchServers(baseUrl: string, apiKey: string): Promise<PelicanSer
         identifier: s.attributes.identifier,
         name:       s.attributes.name,
         node:       s.attributes.node?.trim() ?? "Unknown",
+        playerQuery: parsePlayerQueryConfig(s.attributes.description, primary?.attributes.port),
         limits:     s.attributes.limits,
         allocation,
         variables,
       };
     });
+}
+
+function parsePlayerQueryConfig(description: string | null | undefined, gamePort: number | undefined): PlayerQueryConfig | null {
+  const type = description?.match(/gamedig:\s*([a-z0-9_-]+)/i)?.[1];
+  if (!type) return null;
+  const queryPort = description.match(/gamedig_port:\s*(\d+)/i)?.[1];
+  const port = queryPort ? Number(queryPort) : gamePort;
+  return port ? { type: type.toLowerCase(), port } : null;
+}
+
+/**
+ * Queries the live player count via GameDig. Returns null when the server
+ * has no gamedig tag or the query fails (unknown, not empty).
+ */
+async function fetchPlayers(server: PelicanServer): Promise<PlayerInfo | null> {
+  if (!server.playerQuery) return null;
+  try {
+    const state = await GameDig.query({
+      type: server.playerQuery.type,
+      host: PUBLIC_HOST,
+      port: server.playerQuery.port,
+      socketTimeout: 2000,
+      attemptTimeout: 5000,
+      maxRetries: 1,
+      checkOldIDs: true,
+    });
+    return {
+      online: state.numplayers ?? state.players.length,
+      max: state.maxplayers,
+      names: state.players.map((p) => p.name).filter(Boolean),
+    };
+  } catch (err: any) {
+    log.debug(`Player query failed for ${server.name} (${server.playerQuery.type}:${server.playerQuery.port}): ${err.message || err}`);
+    return null;
+  }
+}
+
+function formatPlayers(players: PlayerInfo): string {
+  const count = players.max > 0 ? `${players.online}/${players.max}` : `${players.online}`;
+  if (players.names.length === 0) return count;
+  const shown = players.names.slice(0, 10).join(", ");
+  const more = players.names.length > 10 ? ` +${players.names.length - 10} more` : "";
+  return `${count} (${shown}${more})`;
 }
 
 async function fetchResources(baseUrl: string, apiKey: string, id: string): Promise<ServerResources> {
@@ -215,8 +279,23 @@ function buildServerEmbed(
     : res.current_state.charAt(0).toUpperCase() + res.current_state.slice(1);
   embed.addFields({ name: "State", value: stateValue, inline: true });
 
-  // Blank for layout
-  embed.addFields({ name: "\u200b", value: "\u200b", inline: true });
+  // Players (blank keeps the 3-column layout when the server has no gamedig tag)
+  if (server.playerQuery) {
+    const players = extra?.players;
+    const value = players
+      ? `\`${players.max > 0 ? `${players.online}/${players.max}` : players.online}\``
+      : "Unknown";
+    embed.addFields({ name: "Players", value, inline: true });
+  } else {
+    embed.addFields({ name: "\u200b", value: "\u200b", inline: true });
+  }
+
+  if (extra?.players?.names.length) {
+    const names = extra.players.names;
+    const shown = names.slice(0, 20).join(", ");
+    const more = names.length > 20 ? ` +${names.length - 20} more` : "";
+    embed.addFields({ name: "Online", value: `${shown}${more}`.slice(0, 1024), inline: false });
+  }
 
   // CPU · RAM · Disk
   embed.addFields({
@@ -378,12 +457,22 @@ module.exports = async function (client: FpgClient) {
           await Promise.all(
             servers.map(async (server) => {
               const lastBackup = await fetchLastBackup(baseUrl, apiKey, server.identifier);
-              map.set(server.identifier, { lastBackup });
+              map.set(server.identifier, { lastBackup, players: null });
             })
           );
           return map;
         })(),
       ]);
+
+      // Player counts only make sense for running servers
+      await Promise.all(
+        servers
+          .filter((server) => resourceMap.get(server.identifier)?.current_state === "running")
+          .map(async (server) => {
+            const extra = extrasMap.get(server.identifier);
+            if (extra) extra.players = await fetchPlayers(server);
+          })
+      );
 
       const channel = (await client.channels.fetch(channelId)) as TextChannel;
 
@@ -447,10 +536,16 @@ module.exports.getServerStatuses = async function (): Promise<string> {
     const servers = await fetchServers(baseUrl, apiKey);
 
     const resourceMap = new Map<string, ServerResources>();
+    const playerMap = new Map<string, PlayerInfo>();
     await Promise.all(
       servers.map(async (server) => {
         try {
-          resourceMap.set(server.identifier, await fetchResources(baseUrl, apiKey, server.identifier));
+          const res = await fetchResources(baseUrl, apiKey, server.identifier);
+          resourceMap.set(server.identifier, res);
+          if (res.current_state === "running") {
+            const players = await fetchPlayers(server);
+            if (players) playerMap.set(server.identifier, players);
+          }
         } catch {
           // Resource fetch failed for this server — skip it
         }
@@ -477,7 +572,11 @@ module.exports.getServerStatuses = async function (): Promise<string> {
       const uptime = state === "running" ? formatUptime(res.resources.uptime) : "—";
       const cpu = res.resources.cpu_absolute.toFixed(1);
       const ram = formatBytes(res.resources.memory_bytes);
-      string += `${server.name}: ${state} | Address: ${address} | Uptime: ${uptime} | CPU: ${cpu}% | RAM: ${ram}\n`;
+      const players = playerMap.get(server.identifier);
+      const playerText = players
+        ? ` | Players: ${formatPlayers(players)}`
+        : server.playerQuery && state === "running" ? " | Players: unknown" : "";
+      string += `${server.name}: ${state} | Address: ${address} | Uptime: ${uptime} | CPU: ${cpu}% | RAM: ${ram}${playerText}\n`;
     });
 
     return string || "No game servers found.";
