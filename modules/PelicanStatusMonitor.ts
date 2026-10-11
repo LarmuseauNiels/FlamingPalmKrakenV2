@@ -10,6 +10,7 @@ import {
 } from "discord.js";
 import { FpgClient } from "../components/FpgClient";
 import { createLogger } from "../utils/logger";
+import { ValheimPlayerTracker, watchServerConsole } from "./ValheimPlayerLog";
 
 const log = createLogger("PelicanStatus");
 
@@ -44,6 +45,7 @@ interface PelicanServer {
   name: string;
   node: string;
   playerQuery: PlayerQueryConfig | null;
+  statusChannelId: string | null;
   limits: {
     memory: number; // MB, 0 = unlimited
     disk: number;   // MB, 0 = unlimited
@@ -75,6 +77,9 @@ interface ServerExtra {
   lastBackup: LastBackup | null;
   players: PlayerInfo | null;
 }
+
+// Console-log player trackers for Valheim servers, by Pelican identifier
+const playerTrackers = new Map<string, ValheimPlayerTracker>();
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 
@@ -143,6 +148,7 @@ async function fetchServers(baseUrl: string, apiKey: string): Promise<PelicanSer
         name:       s.attributes.name,
         node:       s.attributes.node?.trim() ?? "Unknown",
         playerQuery: parsePlayerQueryConfig(s.attributes.description, primary?.attributes.port),
+        statusChannelId: s.attributes.description?.match(/discord_channel:\s*(\d+)/i)?.[1] ?? null,
         limits:     s.attributes.limits,
         allocation,
         variables,
@@ -174,11 +180,12 @@ async function fetchPlayers(server: PelicanServer): Promise<PlayerInfo | null> {
       maxRetries: 1,
       checkOldIDs: true,
     });
-    return {
-      online: state.numplayers ?? state.players.length,
-      max: state.maxplayers,
-      names: state.players.map((p) => p.name).filter(Boolean),
-    };
+    const online = state.numplayers ?? state.players.length;
+    let names = state.players.map((p) => p.name).filter(Boolean);
+    // Valheim reports blank names over A2S; fall back to the console tracker
+    const tracker = playerTrackers.get(server.identifier);
+    if (names.length === 0 && tracker) names = tracker.namesFor(online) ?? [];
+    return { online, max: state.maxplayers, names };
   } catch (err: any) {
     log.debug(`Player query failed for ${server.name} (${server.playerQuery.type}:${server.playerQuery.port}): ${err.message || err}`);
     return null;
@@ -382,6 +389,63 @@ function buildServerButtons(
   return new ActionRowBuilder<ButtonBuilder>().addComponents(startBtn, restartBtn, stopBtn, controlPanelBtn);
 }
 
+// ── Per-server text channel (name + topic) ──────────────────────────────────
+
+// Discord allows 2 name/topic edits per channel per 10 minutes, so edits are
+// spaced out and only sent when something changed; the next tick catches up.
+const CHANNEL_EDIT_INTERVAL_MS = 5 * 60 * 1000;
+const STATUS_LINE_RE = /^(🟢|🟡|🟠|🔴) /u;
+const channelEdits = new Map<string, { lastEdit: number; inFlight: boolean }>();
+
+function buildStatusLine(res: ServerResources | undefined, players: PlayerInfo | null): string {
+  const state = res?.is_suspended ? "suspended" : res?.current_state;
+  if (state === "starting") return "🟡 Starting…";
+  if (state === "stopping") return "🟠 Stopping…";
+  if (state !== "running") return "🔴 Offline";
+  if (players.online === 0) return "🟢 Online · nobody playing";
+  if (players.names.length === 0) return `🟢 ${players.online} online`;
+  return `🟢 ${players.online} online: ${players.names.join(", ")}`;
+}
+
+/**
+ * Mirrors a server's player count into its channel name ("valheim-3") and who
+ * is online into the first line of the channel topic. Enabled per server with
+ * "discord_channel: <channel id>" in the Pelican description.
+ */
+async function updateServerChannel(
+  client: FpgClient,
+  server: PelicanServer,
+  res: ServerResources | undefined,
+  players: PlayerInfo | null
+): Promise<void> {
+  // A failed player query on a running server: keep the last known state
+  // rather than flapping the channel name
+  if (res?.current_state === "running" && !players) return;
+
+  const channelId = server.statusChannelId;
+  const edits = channelEdits.get(channelId) ?? { lastEdit: 0, inFlight: false };
+  channelEdits.set(channelId, edits);
+  if (edits.inFlight || Date.now() - edits.lastEdit < CHANNEL_EDIT_INTERVAL_MS) return;
+
+  const channel = (await client.channels.fetch(channelId)) as TextChannel;
+  const baseName = channel.name.replace(/-\d+$/, "");
+  const name = res?.current_state === "running" ? `${baseName}-${players.online}` : baseName;
+
+  const rest = (channel.topic ?? "").split("\n");
+  if (STATUS_LINE_RE.test(rest[0])) rest.shift();
+  const topic = [buildStatusLine(res, players), ...rest].join("\n").trim().slice(0, 1024);
+
+  if (name === channel.name && topic === (channel.topic ?? "")) return;
+
+  edits.inFlight = true;
+  try {
+    await channel.edit({ name, topic });
+    edits.lastEdit = Date.now();
+  } finally {
+    edits.inFlight = false;
+  }
+}
+
 // ── Module entry ──────────────────────────────────────────────────────────────
 
 module.exports = async function (client: FpgClient) {
@@ -433,6 +497,14 @@ module.exports = async function (client: FpgClient) {
     try {
       const servers = await fetchServers(baseUrl, apiKey);
 
+      for (const server of servers) {
+        if (server.playerQuery?.type === "valheim" && !playerTrackers.has(server.identifier)) {
+          const tracker = new ValheimPlayerTracker();
+          playerTrackers.set(server.identifier, tracker);
+          watchServerConsole(baseUrl, apiKey, server.identifier, tracker);
+        }
+      }
+
       // Fetch resources and backups in parallel for all servers
       const [resourceMap, extrasMap] = await Promise.all([
         (async () => {
@@ -473,6 +545,14 @@ module.exports = async function (client: FpgClient) {
             if (extra) extra.players = await fetchPlayers(server);
           })
       );
+
+      // Not awaited: a rate-limited channel edit must not hold up the embeds
+      for (const server of servers.filter((s) => s.statusChannelId)) {
+        const players = extrasMap.get(server.identifier)?.players ?? null;
+        updateServerChannel(client, server, resourceMap.get(server.identifier), players).catch((err) =>
+          log.error(`Failed to update channel for ${server.name}:`, err.message || err)
+        );
+      }
 
       const channel = (await client.channels.fetch(channelId)) as TextChannel;
 
