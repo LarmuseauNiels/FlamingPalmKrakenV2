@@ -1,5 +1,6 @@
 import type { Session } from "../auth";
 import {
+  createRaid,
   getRaidBoard,
   getRaids,
   joinRaid,
@@ -36,12 +37,23 @@ async function showList(view: HTMLElement, session: Session): Promise<void> {
   const raids = await getRaids(session.token);
 
   const toolbar = el("div", "toolbar");
-  toolbar.append(el("h2", undefined, "Raids"));
+  const newRaid = el("button", undefined, "+ New raid");
+  toolbar.append(el("h2", undefined, "Raids"), newRaid);
+
+  const form = createForm(session, () => {
+    showList(view, session).catch((err) => renderError(describe(err), view));
+  });
+  form.hidden = true;
+  newRaid.addEventListener("click", () => {
+    form.hidden = !form.hidden;
+    newRaid.textContent = form.hidden ? "+ New raid" : "Cancel";
+    if (!form.hidden) form.querySelector("input")?.focus();
+  });
 
   const scheduling = raids.filter((r) => r.status === RaidStatus.Scheduling);
   const open = raids.filter((r) => r.status === RaidStatus.Open);
 
-  const sections: HTMLElement[] = [toolbar];
+  const sections: HTMLElement[] = [toolbar, form];
   sections.push(
     listSection(
       "Picking a time",
@@ -78,6 +90,53 @@ async function showList(view: HTMLElement, session: Session): Promise<void> {
   );
 
   view.replaceChildren(...sections);
+}
+
+/** The same two fields as /create-raid. */
+function createForm(session: Session, onCreated: () => void): HTMLFormElement {
+  const form = el("form", "create-raid");
+
+  const titleLabel = el("label", undefined, "Game or raid");
+  const title = el("input");
+  title.required = true;
+  title.maxLength = 100;
+  title.placeholder = "e.g. Minecraft Hardcore";
+  titleLabel.append(title);
+
+  const playersLabel = el("label", "narrow", "Min. players");
+  const players = el("input");
+  players.type = "number";
+  players.required = true;
+  players.min = "1";
+  players.max = "50";
+  players.value = "4";
+  playersLabel.append(players);
+
+  const submit = el("button", undefined, "Create");
+  submit.type = "submit";
+
+  const hint = el(
+    "p",
+    "muted",
+    "You'll be signed up as the first player. Once enough people join, the board opens to pick a time."
+  );
+
+  form.append(titleLabel, playersLabel, submit, hint);
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    submit.disabled = true;
+    createRaid(session.token, title.value.trim(), Number(players.value))
+      .then(() => {
+        toast(`Created ${title.value.trim()} — you're in.`);
+        onCreated();
+      })
+      .catch((err) => {
+        toast(describe(err), "bad");
+        submit.disabled = false;
+      });
+  });
+  return form;
 }
 
 function listSection(

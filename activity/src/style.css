@@ -341,6 +341,44 @@ button.ghost:hover {
 
 /* ── Raid list ── */
 
+.create-raid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 12px;
+  margin-bottom: 20px;
+  background: var(--surface);
+  border-radius: 8px;
+}
+
+.create-raid label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 200px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.create-raid label.narrow {
+  flex: 0 0 110px;
+}
+
+.create-raid input {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.create-raid .muted {
+  flex-basis: 100%;
+  margin: 0;
+}
+
 .raid-section {
   margin-bottom: 20px;
 }
