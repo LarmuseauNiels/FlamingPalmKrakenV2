@@ -111,6 +111,50 @@ export function activityEndPoints(app) {
     }
   });
 
+  // GET /api/activity/images/reward/:id — a reward's image, fetched by us.
+  //
+  // The Activity's CSP only lets the page load from our own mapped origin, and
+  // reward art lives on arbitrary hosts (Steam, imgur, …) that we can't all
+  // add as portal URL mappings. So the page asks for the image *by reward ID*
+  // and we fetch the stored URL server-side. Taking an ID rather than a URL
+  // keeps this from being an open proxy: it can only ever fetch URLs an admin
+  // put on a reward. No auth — an <img> can't send a bearer token, and these
+  // images are public on the website anyway.
+  app.get(apiPrefix + "images/reward/:id", async function (req, res) {
+    const rewardId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(rewardId)) return res.sendStatus(400);
+
+    try {
+      const reward = await global.client.prisma.reward.findUnique({
+        where: { RewardID: rewardId },
+        select: { imageurl: true, visible: true },
+      });
+      if (!reward?.visible || !reward.imageurl) return res.sendStatus(404);
+      await sendProxiedImage(reward.imageurl, res);
+    } catch (err) {
+      log.error("Failed to proxy reward image " + rewardId + ":", err);
+      if (!res.headersSent) res.sendStatus(500);
+    }
+  });
+
+  // GET /api/activity/images/avatar/:userId/:hash — a Discord avatar. The host
+  // is fixed and both path parts are validated, so nothing else is reachable.
+  app.get(apiPrefix + "images/avatar/:userId/:hash", async function (req, res) {
+    const { userId, hash } = req.params;
+    if (!/^\d{5,25}$/.test(userId) || !/^(a_)?[0-9a-f]{32}$/.test(hash)) {
+      return res.sendStatus(400);
+    }
+    try {
+      await sendProxiedImage(
+        `https://cdn.discordapp.com/avatars/${userId}/${hash}.png?size=64`,
+        res
+      );
+    } catch (err) {
+      log.error("Failed to proxy avatar for " + userId + ":", err);
+      if (!res.headersSent) res.sendStatus(500);
+    }
+  });
+
   // Static hosting for the built SPA.
   //
   // Discord loads an Activity from the ROOT of the domain named in the root URL
@@ -181,4 +225,57 @@ async function recordActivityLogin(profile) {
   });
 
   log.info(`Logged activity login: ${profile.username} ${result.Id}`);
+}
+
+const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+
+/**
+ * Fetches an image and relays it. Only http(s), only responses that really are
+ * images (so a bad URL can't be used to read some other page through us), and
+ * capped in size. Upstream failures become a 404 — the page drops broken
+ * images anyway, and a dead Steam link isn't our error to page Bugsnag about.
+ */
+async function sendProxiedImage(url: string, res): Promise<void> {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    res.sendStatus(404);
+    return;
+  }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    res.sendStatus(404);
+    return;
+  }
+
+  let upstream;
+  try {
+    upstream = await axios.get<ArrayBuffer>(parsed.toString(), {
+      responseType: "arraybuffer",
+      timeout: HTTP_TIMEOUT_MS,
+      maxContentLength: IMAGE_MAX_BYTES,
+      maxRedirects: 3,
+    });
+  } catch (err) {
+    log.warn(`Image fetch failed for ${parsed.host}:`, (err as any)?.message);
+    res.sendStatus(404);
+    return;
+  }
+
+  const type = String(upstream.headers["content-type"] ?? "");
+  // SVG can carry script, and we'd be serving it from our own origin — refuse.
+  if (!type.startsWith("image/") || type.includes("svg")) {
+    log.warn(`Refusing to proxy non-image (${type || "no type"}) from ${parsed.host}`);
+    res.sendStatus(404);
+    return;
+  }
+
+  res.set({
+    "Content-Type": type,
+    // Rewards and avatars rarely change; let the client and Discord's proxy
+    // cache them so each store load doesn't refetch every image through us.
+    "Cache-Control": "public, max-age=86400",
+    "X-Content-Type-Options": "nosniff",
+  });
+  res.send(Buffer.from(upstream.data));
 }

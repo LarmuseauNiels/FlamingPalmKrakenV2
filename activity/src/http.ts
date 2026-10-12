@@ -16,8 +16,13 @@ export class ApiError extends Error {
   }
 }
 
+/** Full URL for a path on our API, for places that can't use fetch (e.g. <img src>). */
+export function apiUrl(path: string): string {
+  return `${API_BASE}${path}`;
+}
+
 async function request(path: string, init: RequestInit = {}): Promise<Response> {
-  const response = await fetch(`${API_BASE}${path}`, init);
+  const response = await fetch(apiUrl(path), init);
 
   if (!response.ok) {
     // The bot's API replies with plain-text error bodies, not JSON.

@@ -11,6 +11,7 @@ import {
   type RaidOption,
   type RaidSummary,
 } from "../api";
+import { apiUrl } from "../http";
 import type { Feature } from "../shell";
 import { describe, renderError, renderStatus, toast } from "../ui";
 
@@ -332,10 +333,11 @@ function avatar(person: RaidAttendee): HTMLElement {
   if (!person.avatar) return initial;
 
   const img = el("img", "avatar");
-  img.src = `https://cdn.discordapp.com/avatars/${person.id}/${person.avatar}.png?size=64`;
+  // Through our API: the Activity's CSP blocks Discord's CDN directly.
+  img.src = apiUrl(`/api/activity/images/avatar/${person.id}/${person.avatar}`);
   img.alt = "";
   img.loading = "lazy";
-  // The Discord proxy may block the CDN; fall back to the initial.
+  // Deleted or changed avatars 404; fall back to the initial.
   img.addEventListener("error", () => img.replaceWith(initial));
   return img;
 }

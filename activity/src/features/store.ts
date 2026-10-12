@@ -1,5 +1,6 @@
 import type { Session } from "../auth";
 import { getPoints, getShopItems, redeemItem, type ShopItem } from "../api";
+import { apiUrl } from "../http";
 import type { Feature } from "../shell";
 import { describe, renderStatus, toast } from "../ui";
 
@@ -85,12 +86,12 @@ function renderCard(item: ShopItem, points: number, onRedeem: RedeemHandler): HT
 
   if (item.image) {
     const img = document.createElement("img");
-    img.src = item.image;
+    // Reward art lives on arbitrary hosts the Activity's CSP blocks, so the
+    // API fetches it for us by reward ID. Still drop a dead link rather than
+    // showing a torn-page icon.
+    img.src = apiUrl(`/api/activity/images/reward/${item.id}`);
     img.alt = "";
     img.loading = "lazy";
-    // Reward art is hosted outside Discord, so it needs a URL mapping in the
-    // developer portal. Until that's in place the proxy blocks it — drop the
-    // broken image rather than showing a torn-page icon.
     img.addEventListener("error", () => img.remove());
     card.append(img);
   }

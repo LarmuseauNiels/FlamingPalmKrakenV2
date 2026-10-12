@@ -998,6 +998,24 @@ website's `/login` JWT does not expire).
 | `403` | Authenticated user is not a member of `GUILD_ID` |
 | `502` | Discord returned no access token or no user |
 
+#### `GET /api/activity/images/reward/:id`
+
+The reward's `imageurl`, fetched and relayed by the API, because the Activity's
+CSP blocks every host but its own. Looked up by reward ID — the endpoint never
+takes a URL, so it can only fetch images an admin put on a (visible) reward.
+
+- **Auth:** None (an `<img>` can't send a bearer token; the images are public)
+- **Response:** the image bytes with the upstream `Content-Type`, `Cache-Control: public, max-age=86400`
+- **Errors:** `400` bad id · `404` reward missing/hidden, upstream failed, not an image, SVG, or over 5 MB
+
+#### `GET /api/activity/images/avatar/:userId/:hash`
+
+A Discord avatar (`cdn.discordapp.com/avatars/:userId/:hash.png?size=64`) relayed
+the same way, for the raid board. Both path parts are validated.
+
+- **Auth:** None
+- **Errors:** `400` malformed id or hash · `404` avatar not found
+
 #### `GET /` and `GET /activity/*`
 
 Static hosting for the built SPA (`activity/dist`).
