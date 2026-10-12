@@ -1,5 +1,6 @@
 import type { Feature } from "../shell";
 import { raids } from "./raids";
+import { servers } from "./servers";
 import { store } from "./store";
 
 /**
@@ -12,5 +13,5 @@ import { store } from "./store";
 export const features: Feature[] = [
   raids,
   store,
-  { id: "servers", label: "Servers", icon: "🖥️", comingSoon: true, mount() {} },
+  servers,
 ];

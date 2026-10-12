@@ -296,6 +296,61 @@ that already exists just counts the caller in (no DMs or announcement).
 
 ---
 
+### Game Servers
+
+Base prefix: `/members/servers`
+
+Backs the Activity's Servers tab, built on the same Pelican data as the status
+channel (`modules/PelicanStatusMonitor.ts`).
+
+#### `GET /members/servers`
+
+Live status of every Pelican server, plus what the caller may do. Results are
+cached for 8 seconds across all callers. Server **variables are not included**
+(they can hold passwords).
+
+- **Auth:** Required
+- **Response:**
+
+```json
+{
+  "canStart": true,
+  "canManage": false,
+  "servers": [
+    {
+      "id": "a1b2c3d4", "name": "Valheim", "state": "running", "suspended": false,
+      "address": "server.flamingpalm.com:2456", "uptimeMs": 7260000,
+      "cpuPercent": 12.4, "memoryBytes": 3221225472, "memoryLimitMb": 8192,
+      "diskBytes": 2147483648, "diskLimitMb": 0,
+      "players": { "online": 2, "max": 10, "names": ["A", "B"] },
+      "tracksPlayers": true,
+      "lastBackup": { "age": "3h ago", "size": "1.4GB" }
+    }
+  ]
+}
+```
+
+`state` is `running`, `starting`, `stopping`, `offline`, `missing` or `unknown`. Limits of `0` mean unlimited. `players` is `null` unless the server is running, has a `gamedig` tag and answered the query.
+
+- **Errors:** `503` — Pelican not configured · `502` — panel unreachable
+
+`canStart` / `canManage` are the union of the existing controls: **Manage
+Messages** (status-channel buttons) or `PELICAN_MANAGE_ROLE_ID` → both;
+`PELICAN_START_ROLE_ID` → start only.
+
+#### `POST /members/servers/:id/power`
+
+- **Auth:** Required — `start` needs `canStart`, `restart`/`stop` need `canManage`
+- **Body:** `{ "signal": "start" | "restart" | "stop" }`
+- **Response:** `{ "message": "Valheim is starting. It may take a minute or two before it is joinable. Address: …" }`
+- **Errors:**
+  - `400` — unknown signal
+  - `403` — missing permission
+  - `409` — refused: wrong state (e.g. start while running), suspended, machine offline, busy, or unknown server
+  - `502` — Pelican request failed
+
+---
+
 ### Shop / Points
 
 Base prefix: `/members/`
