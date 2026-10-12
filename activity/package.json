@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "FlamingPalm Discord Activity — points storefront spike",
+  "description": "FlamingPalm Discord Activity — tabbed hub (store, more to come)",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
