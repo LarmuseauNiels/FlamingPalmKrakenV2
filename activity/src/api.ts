@@ -107,3 +107,40 @@ export function setAvailability(
 export function suggestTime(token: string, raidId: number, time: Date): Promise<{ id: number }> {
   return postJson<{ id: number }>(`/members/raids/${raidId}/options`, { time: time.toISOString() }, token);
 }
+
+export interface GameServer {
+  id: string;
+  name: string;
+  /** running | starting | stopping | offline | missing | unknown */
+  state: string;
+  suspended: boolean;
+  address: string | null;
+  uptimeMs: number;
+  cpuPercent: number;
+  memoryBytes: number;
+  /** 0 = unlimited */
+  memoryLimitMb: number;
+  diskBytes: number;
+  diskLimitMb: number;
+  players: { online: number; max: number; names: string[] } | null;
+  tracksPlayers: boolean;
+  lastBackup: { age: string; size: string } | null;
+}
+
+export interface GameServerList {
+  canStart: boolean;
+  canManage: boolean;
+  servers: GameServer[];
+}
+
+export type PowerSignal = "start" | "restart" | "stop";
+
+/** GET /members/servers — live status of every game server. */
+export function getServers(token: string): Promise<GameServerList> {
+  return getJson<GameServerList>("/members/servers", token);
+}
+
+/** POST /members/servers/:id/power — needs the matching role. */
+export function powerServer(token: string, serverId: string, signal: PowerSignal): Promise<{ message: string }> {
+  return postJson<{ message: string }>(`/members/servers/${encodeURIComponent(serverId)}/power`, { signal }, token);
+}

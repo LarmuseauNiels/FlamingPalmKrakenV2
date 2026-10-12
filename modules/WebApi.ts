@@ -14,6 +14,7 @@ import bodyParser from "body-parser";
 import { adminEndPoints } from "./ApiFunctions/AdminEndPoints";
 import { raidEndPoints } from "./ApiFunctions/RaidEndPoints";
 import { raidBoardEndPoints } from "./ApiFunctions/RaidBoardEndPoints";
+import { gameServerEndPoints } from "./ApiFunctions/GameServerEndPoints";
 import { activityEndPoints } from "./ApiFunctions/ActivityEndPoints";
 import { Strategy as DiscordStrategy } from "passport-discord-auth";
 const app = express();
@@ -94,6 +95,7 @@ export class WebApi {
     adminEndPoints(app);
     raidEndPoints(app);
     raidBoardEndPoints(app);
+    gameServerEndPoints(app);
     activityEndPoints(app);
 
     app.use(function (err, req, res, next) {

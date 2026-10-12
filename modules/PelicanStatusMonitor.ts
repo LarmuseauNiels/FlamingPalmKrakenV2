@@ -673,6 +673,56 @@ const POWER_SIGNALS: Record<string, { allowedStates: string[]; done: string }> =
 };
 
 /**
+ * Checks the server's current state allows `signal`, then sends it. Shared by
+ * the AI assistant (by name) and the Activity's server page (by identifier).
+ * Pelican's 409 "busy" is thrown to the caller.
+ */
+async function sendPowerSignal(
+  baseUrl: string,
+  apiKey: string,
+  server: PelicanServer,
+  signal: string
+): Promise<{ ok: boolean; message: string }> {
+  const signalInfo = POWER_SIGNALS[signal];
+  const res = await fetchResources(baseUrl, apiKey, server.identifier);
+  if (res.is_suspended) {
+    return { ok: false, message: `${server.name} is suspended and cannot be controlled.` };
+  }
+  if (res.current_state === "missing") {
+    return { ok: false, message: `${server.name} cannot be controlled because its machine is offline.` };
+  }
+  if (!signalInfo.allowedStates.includes(res.current_state)) {
+    return {
+      ok: false,
+      message: `${server.name} is currently ${res.current_state}, so it can't be sent "${signal}".`,
+    };
+  }
+
+  await axios.post(
+    `${baseUrl}/api/client/servers/${server.identifier}/power`,
+    { signal },
+    {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      timeout: 10000,
+    }
+  );
+  snapshotCache = null; // the next dashboard read should show the new state
+
+  const address = server.allocation?.address ?? "no address configured";
+  return {
+    ok: true,
+    message:
+      signal === "stop"
+        ? `${server.name} ${signalInfo.done}`
+        : `${server.name} ${signalInfo.done} Address: ${address}`,
+  };
+}
+
+/**
  * Sends a power signal (start, restart or stop) to the game server whose name
  * matches `query`. Matching is case-insensitive: an exact name match wins,
  * otherwise a unique partial match is used. Returns a human-readable result
@@ -704,40 +754,119 @@ module.exports.powerServer = async function (query: string, signal: string): Pro
       return `"${query}" matches several servers: ${matches.map((s) => s.name).join(", ")}. Ask the member which one they mean.`;
     }
 
-    const server = matches[0];
-    const res = await fetchResources(baseUrl, apiKey, server.identifier);
-    if (res.is_suspended) {
-      return `${server.name} is suspended and cannot be controlled.`;
-    }
-    if (res.current_state === "missing") {
-      return `${server.name} cannot be controlled because its machine is offline.`;
-    }
-    if (!signalInfo.allowedStates.includes(res.current_state)) {
-      return `${server.name} is currently ${res.current_state}, so it can't be sent "${signal}".`;
-    }
-
-    await axios.post(
-      `${baseUrl}/api/client/servers/${server.identifier}/power`,
-      { signal },
-      {
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        timeout: 10000,
-      }
-    );
-
-    const address = server.allocation?.address ?? "no address configured";
-    return signal === "stop"
-      ? `${server.name} ${signalInfo.done}`
-      : `${server.name} ${signalInfo.done} Address: ${address}`;
+    return (await sendPowerSignal(baseUrl, apiKey, matches[0], signal)).message;
   } catch (err: any) {
     if (err.response?.status === 409) {
       return "That server is busy or already changing state. Try again in a moment.";
     }
     log.error(`powerServer (${signal}) failed:`, err.message || err);
     return `Failed to ${signal} the game server. Please try again later.`;
+  }
+};
+
+// ── Structured snapshot for the Activity's server page ──────────────────────
+
+interface ServerSnapshot {
+  id: string;
+  name: string;
+  /** Pelican state: running, starting, stopping, offline, missing — or "unknown". */
+  state: string;
+  suspended: boolean;
+  address: string | null;
+  uptimeMs: number;
+  cpuPercent: number;
+  memoryBytes: number;
+  memoryLimitMb: number;
+  diskBytes: number;
+  diskLimitMb: number;
+  /** null when the server has no gamedig tag, isn't running, or the query failed. */
+  players: PlayerInfo | null;
+  tracksPlayers: boolean;
+  lastBackup: LastBackup | null;
+}
+
+// Several members can have the page open at once and each polls; Pelican,
+// backups and GameDig are shared across all of them for this long.
+const SNAPSHOT_TTL_MS = 8000;
+let snapshotCache: { at: number; data: Promise<ServerSnapshot[]> } | null = null;
+
+/**
+ * Every Pelican server with live state, resources, players and last backup.
+ * Deliberately leaves out server variables — they can hold passwords, and this
+ * is readable by every member. Returns null when Pelican isn't configured.
+ */
+module.exports.getServerSnapshot = function (): Promise<ServerSnapshot[]> | null {
+  const baseUrl = process.env.PELICAN_URL?.replace(/\/$/, "");
+  const apiKey = process.env.PELICAN_API_KEY;
+  if (!baseUrl || !apiKey) return null;
+
+  if (snapshotCache && Date.now() - snapshotCache.at < SNAPSHOT_TTL_MS) {
+    return snapshotCache.data;
+  }
+
+  const data = (async () => {
+    const servers = await fetchServers(baseUrl, apiKey);
+    return Promise.all(
+      servers.map(async (server): Promise<ServerSnapshot> => {
+        const [res, lastBackup] = await Promise.all([
+          fetchResources(baseUrl, apiKey, server.identifier).catch((err) => {
+            log.debug(`Snapshot: no resources for ${server.name}: ${err.message || err}`);
+            return undefined;
+          }),
+          fetchLastBackup(baseUrl, apiKey, server.identifier),
+        ]);
+        const running = res?.current_state === "running" && !res.is_suspended;
+        return {
+          id: server.identifier,
+          name: server.name,
+          state: res?.current_state ?? "unknown",
+          suspended: res?.is_suspended ?? false,
+          address: server.allocation?.address ?? null,
+          uptimeMs: running ? res.resources.uptime : 0,
+          cpuPercent: res?.resources.cpu_absolute ?? 0,
+          memoryBytes: res?.resources.memory_bytes ?? 0,
+          memoryLimitMb: server.limits.memory,
+          diskBytes: res?.resources.disk_bytes ?? 0,
+          diskLimitMb: server.limits.disk,
+          players: running ? await fetchPlayers(server) : null,
+          tracksPlayers: !!server.playerQuery,
+          lastBackup,
+        };
+      })
+    );
+  })();
+
+  snapshotCache = { at: Date.now(), data };
+  // Don't cache a failure — the next poll should try again.
+  data.catch(() => {
+    if (snapshotCache?.data === data) snapshotCache = null;
+  });
+  return data;
+};
+
+/**
+ * Power signal by Pelican identifier, for the Activity. `ok: false` means the
+ * request was refused for a reason worth showing (wrong state, busy, unknown
+ * server); unexpected failures throw.
+ */
+module.exports.powerServerById = async function (
+  identifier: string,
+  signal: string
+): Promise<{ ok: boolean; message: string }> {
+  const baseUrl = process.env.PELICAN_URL?.replace(/\/$/, "");
+  const apiKey = process.env.PELICAN_API_KEY;
+  if (!baseUrl || !apiKey) return { ok: false, message: "Game server control is not configured." };
+  if (!POWER_SIGNALS[signal]) return { ok: false, message: `Unknown power action "${signal}".` };
+
+  const server = (await fetchServers(baseUrl, apiKey)).find((s) => s.identifier === identifier);
+  if (!server) return { ok: false, message: "Server not found." };
+
+  try {
+    return await sendPowerSignal(baseUrl, apiKey, server, signal);
+  } catch (err: any) {
+    if (err.response?.status === 409) {
+      return { ok: false, message: "That server is busy or already changing state. Try again in a moment." };
+    }
+    throw err;
   }
 };

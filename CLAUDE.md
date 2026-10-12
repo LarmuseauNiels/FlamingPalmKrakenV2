@@ -62,6 +62,8 @@ FlamingPalmKrakenV2/
 │       ├── ShopEndPoints.ts
 │       ├── LegacyEndPoints.ts
 │       ├── ActivityEndPoints.ts
+│       ├── RaidBoardEndPoints.ts
+│       ├── GameServerEndPoints.ts
 │       ├── Helpers.ts
 │       └── ViewModels/       # DTOs (DashBoardModel, ShopItem, User, etc.)
 ├── interfaces/

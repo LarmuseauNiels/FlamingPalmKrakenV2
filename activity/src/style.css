@@ -586,3 +586,152 @@ button.ghost:hover {
 [hidden] {
   display: none !important;
 }
+
+/* ── Servers ── */
+
+.server-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.server {
+  --state: var(--danger);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--state);
+  border-radius: 8px;
+}
+
+.server.state-running {
+  --state: var(--ok);
+}
+
+.server.state-starting,
+.server.state-stopping {
+  --state: #f0b232;
+}
+
+.server.state-suspended,
+.server.state-unknown {
+  --state: var(--text-muted);
+}
+
+.server .muted,
+.server p {
+  margin: 0;
+}
+
+.server-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.server-head h3 {
+  margin: 0;
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.server-state {
+  flex: none;
+  color: var(--state);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+button.server-address {
+  align-self: flex-start;
+  padding: 3px 8px;
+  background: var(--bg);
+  color: var(--text-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+button.server-address:hover {
+  color: var(--text);
+  filter: none;
+}
+
+.server-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  font-variant-numeric: tabular-nums;
+}
+
+.fact .muted {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.server-players {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: var(--ok);
+}
+
+.bar-fill.hot {
+  background: var(--danger);
+}
+
+.server-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.server-actions button {
+  padding: 6px 12px;
+}
+
+button.secondary {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+button.danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+button.secondary:disabled,
+button.danger:disabled {
+  background: var(--surface-hover);
+  color: var(--text-muted);
+  opacity: 0.6;
+}
