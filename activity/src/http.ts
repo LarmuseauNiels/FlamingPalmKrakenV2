@@ -25,12 +25,27 @@ async function request(path: string, init: RequestInit = {}): Promise<Response> 
   const response = await fetch(apiUrl(path), init);
 
   if (!response.ok) {
-    // The bot's API replies with plain-text error bodies, not JSON.
-    const body = await response.text().catch(() => "");
-    throw new ApiError(body || `Request failed (${response.status})`, response.status);
+    throw new ApiError(await errorMessage(response), response.status);
   }
 
   return response;
+}
+
+/**
+ * The bot's API replies with short plain-text error bodies, which are meant to
+ * be shown as-is. Anything else — Cloudflare's or CapRover's HTML error page
+ * while the bot is down or redeploying — gets a readable message instead.
+ */
+async function errorMessage(response: Response): Promise<string> {
+  const type = response.headers.get("content-type") ?? "";
+  const body = await response.text().catch(() => "");
+  const isPlainText = body && !type.includes("html") && !body.trimStart().startsWith("<");
+
+  if (isPlainText) return body;
+  if (response.status >= 502 && response.status <= 504) {
+    return "The FlamingPalm bot is restarting or unreachable. Try again in a minute.";
+  }
+  return `Request failed (${response.status})`;
 }
 
 function authHeaders(token?: string): HeadersInit {
