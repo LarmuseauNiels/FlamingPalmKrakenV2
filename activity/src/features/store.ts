@@ -6,14 +6,34 @@ import { describe, renderStatus, toast } from "../ui";
 
 type RedeemHandler = (item: ShopItem, button: HTMLButtonElement) => void;
 
-async function loadShop(view: HTMLElement, session: Session): Promise<void> {
+/** Search and sort, matching the website's store page. */
+interface Filters {
+  query: string;
+  sort: "desc" | "asc";
+}
+
+/** Title or description contains the query; sorted by price. */
+function applyFilters(items: ShopItem[], filters: Filters): ShopItem[] {
+  const q = filters.query.trim().toLowerCase();
+  const result = q
+    ? items.filter(
+        (item) =>
+          item.title.toLowerCase().includes(q) ||
+          (item.description ?? "").toLowerCase().includes(q)
+      )
+    : [...items];
+  result.sort((a, b) => (filters.sort === "desc" ? b.price - a.price : a.price - b.price));
+  return result;
+}
+
+async function loadShop(view: HTMLElement, session: Session, filters: Filters): Promise<void> {
   const [points, items] = await Promise.all([
     getPoints(session.token),
     getShopItems(session.token),
   ]);
 
-  renderShop(view, points, items, (item, button) => {
-    handleRedeem(view, session, item, button).catch((err) => {
+  renderShop(view, points, items, filters, (item, button) => {
+    handleRedeem(view, session, filters, item, button).catch((err) => {
       toast(describe(err), "bad");
     });
   });
@@ -22,6 +42,7 @@ async function loadShop(view: HTMLElement, session: Session): Promise<void> {
 async function handleRedeem(
   view: HTMLElement,
   session: Session,
+  filters: Filters,
   item: ShopItem,
   button: HTMLButtonElement
 ): Promise<void> {
@@ -39,7 +60,7 @@ async function handleRedeem(
     // Stock and balance both moved (or the attempt failed and we want the real
     // numbers back), so re-read rather than patching state locally. Swallow any
     // refresh failure here so it can't mask the redemption error.
-    await loadShop(view, session).catch((err) =>
+    await loadShop(view, session, filters).catch((err) =>
       console.error("Failed to refresh the store", err)
     );
   }
@@ -49,6 +70,7 @@ function renderShop(
   view: HTMLElement,
   points: number,
   items: ShopItem[],
+  filters: Filters,
   onRedeem: RedeemHandler
 ): void {
   const toolbar = document.createElement("div");
@@ -66,18 +88,99 @@ function renderShop(
   const grid = document.createElement("div");
   grid.className = "grid";
 
-  if (items.length === 0) {
-    const empty = document.createElement("p");
-    empty.className = "status";
-    empty.textContent = "The store is empty right now.";
-    grid.append(empty);
-  }
+  // Only the grid redraws as you type or re-sort, so the search box keeps focus.
+  const drawGrid = (): void => {
+    const visible = applyFilters(items, filters);
 
-  for (const item of items) {
-    grid.append(renderCard(item, points, onRedeem));
-  }
+    if (visible.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "status";
+      empty.textContent =
+        items.length === 0
+          ? "The store is empty right now."
+          : `No items match "${filters.query.trim()}".`;
+      grid.replaceChildren(empty);
+      return;
+    }
 
-  view.replaceChildren(toolbar, grid);
+    grid.replaceChildren(...visible.map((item) => renderCard(item, points, onRedeem)));
+  };
+
+  view.replaceChildren(toolbar, renderControls(filters, drawGrid), grid);
+  drawGrid();
+}
+
+function renderControls(filters: Filters, onChange: () => void): HTMLElement {
+  const bar = document.createElement("div");
+  bar.className = "controls";
+
+  const search = document.createElement("div");
+  search.className = "search";
+
+  const input = document.createElement("input");
+  input.type = "search";
+  input.placeholder = "Search items…";
+  input.setAttribute("aria-label", "Search store items");
+  input.value = filters.query;
+
+  const clear = document.createElement("button");
+  clear.type = "button";
+  clear.className = "search-clear";
+  clear.textContent = "✕";
+  clear.setAttribute("aria-label", "Clear search");
+  clear.hidden = !filters.query;
+
+  input.addEventListener("input", () => {
+    filters.query = input.value;
+    clear.hidden = !input.value;
+    onChange();
+  });
+  clear.addEventListener("click", () => {
+    input.value = "";
+    filters.query = "";
+    clear.hidden = true;
+    input.focus();
+    onChange();
+  });
+  search.append(input, clear);
+
+  const sort = document.createElement("div");
+  sort.className = "sort";
+  sort.setAttribute("role", "group");
+  sort.setAttribute("aria-label", "Sort by price");
+
+  const label = document.createElement("span");
+  label.className = "muted";
+  label.textContent = "Price:";
+  sort.append(label);
+
+  const pills: [Filters["sort"], string][] = [
+    ["desc", "High → Low"],
+    ["asc", "Low → High"],
+  ];
+  const buttons = pills.map(([order, text]) => {
+    const pill = document.createElement("button");
+    pill.type = "button";
+    pill.className = "pill-toggle";
+    pill.textContent = text;
+    pill.addEventListener("click", () => {
+      filters.sort = order;
+      for (const [i, b] of buttons.entries()) {
+        const on = pills[i][0] === order;
+        b.classList.toggle("active", on);
+        b.setAttribute("aria-pressed", String(on));
+      }
+      onChange();
+    });
+    const on = filters.sort === order;
+    pill.classList.toggle("active", on);
+    pill.setAttribute("aria-pressed", String(on));
+    return pill;
+  });
+  sort.append(...buttons);
+
+  bar.append(search, sort);
+  return bar;
 }
 
 function renderCard(item: ShopItem, points: number, onRedeem: RedeemHandler): HTMLElement {
@@ -139,6 +242,8 @@ export const store: Feature = {
   icon: "🛒",
   async mount(view, session) {
     renderStatus("Loading the store…", view);
-    await loadShop(view, session);
+    // Lives for this visit to the tab, so a redeem (which reloads the grid)
+    // keeps whatever you'd searched and sorted by.
+    await loadShop(view, session, { query: "", sort: "desc" });
   },
 };
