@@ -139,7 +139,7 @@ async function showServers(view: HTMLElement, session: Session): Promise<void> {
         // Start is harmless; Restart/Stop kick players, so ask for a second click.
         if (signal !== "start" && button.dataset.armed !== "1") {
           button.dataset.armed = "1";
-          button.textContent = `Really ${signal}?`;
+          button.textContent = "Confirm?";
           setTimeout(() => {
             if (!button.isConnected) return;
             delete button.dataset.armed;
