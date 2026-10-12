@@ -10,7 +10,7 @@ import { store } from "./store";
  * flag and give them a real `mount` once they're built.
  */
 export const features: Feature[] = [
-  store,
   raids,
+  store,
   { id: "servers", label: "Servers", icon: "🖥️", comingSoon: true, mount() {} },
 ];

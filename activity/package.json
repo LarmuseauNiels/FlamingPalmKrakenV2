@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "FlamingPalm Discord Activity — tabbed hub (store, more to come)",
+  "description": "FlamingPalm Discord Activity — tabbed hub (raid board, store, more to come)",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
