@@ -591,7 +591,7 @@ button.ghost:hover {
 
 .server-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 12px;
 }
 
@@ -710,13 +710,19 @@ button.server-address:hover {
 
 .server-actions {
   display: flex;
-  flex-wrap: wrap;
   gap: 6px;
   margin-top: 4px;
 }
 
+/* Always one row: the buttons share the card width equally. */
 .server-actions button {
-  padding: 6px 12px;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 6px 4px;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 button.secondary {
