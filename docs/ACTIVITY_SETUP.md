@@ -73,11 +73,10 @@ and a more reliable answer.
    > `{"uptime": …}` — that is the old health check answering at `/`, meaning
    > the deployed build predates this change or the mapping target is off.
 
-3. **Reward images.** Shop items carry absolute `imageurl` values. Anything not
-   covered by a mapping is blocked by CSP, and the cards drop the image rather
-   than showing a broken one. Add a mapping for wherever the art is hosted
-   (e.g. `/img` → `flamingpalm.com`) and rewrite `imageurl` to that prefix, or
-   proxy the images through the API.
+3. **Images need no mapping.** The CSP blocks every host but our own, so the
+   API fetches reward art and Discord avatars for the page
+   (`/api/activity/images/reward/:id`, `/api/activity/images/avatar/:userId/:hash`).
+   They ride on the same root mapping as everything else.
 
 4. Set `ACTIVITY_ENABLED=true` in the CapRover app config and run
    `npm run deploy` to register the `/shop` entry point command.
@@ -115,9 +114,10 @@ the `.discordsays.com` host.
 - **No `rpc.activities.write` scope**, so no `setActivity()` presence ("Shopping
   in the store" in the member list). Adding it means a second scope on the
   consent screen — worth it for Islander, not for a storefront.
-- **No shared/multiplayer state.** The storefront is single-player by nature.
-  `getInstanceConnectedParticipants` is what the raid-scheduling Activity would
-  be built on.
+- **Raid board is live by polling, not by SDK presence.** The Raids tab re-reads
+  `GET /members/raids/:id/board` every 4s while it is on screen. It doesn't use
+  `getInstanceConnectedParticipants` yet, so it can't highlight who is in the
+  Activity right now.
 - **Port mismatch untouched.** `WebApi.ts` listens on 3000 while
   `captain-definition` declares `ENV PORT 80` / `EXPOSE 80`. Presumably
   CapRover's container port setting bridges it — worth confirming before this

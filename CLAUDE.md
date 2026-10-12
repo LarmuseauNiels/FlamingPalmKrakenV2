@@ -41,7 +41,7 @@ FlamingPalmKrakenV2/
 │   ├── contextmenus/         # 3 right-click context menu handlers
 │   └── disabledCommands/     # Archived/disabled commands (not loaded)
 ├── activity/                 # Discord Activity SPA (Vite + TS) — see docs/ACTIVITY_SETUP.md
-│   └── src/                  # http/auth/api/ui modules; builds to activity/dist
+│   └── src/                  # shell.ts (tab bar) + features/<name>.ts per tab; builds to activity/dist
 ├── modules/
 │   ├── RaidModule.ts         # Raid CRUD, attendance, subscriptions
 │   ├── RaidScheduler.ts      # Automatic scheduling lifecycle

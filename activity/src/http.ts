@@ -16,8 +16,13 @@ export class ApiError extends Error {
   }
 }
 
+/** Full URL for a path on our API, for places that can't use fetch (e.g. <img src>). */
+export function apiUrl(path: string): string {
+  return `${API_BASE}${path}`;
+}
+
 async function request(path: string, init: RequestInit = {}): Promise<Response> {
-  const response = await fetch(`${API_BASE}${path}`, init);
+  const response = await fetch(apiUrl(path), init);
 
   if (!response.ok) {
     // The bot's API replies with plain-text error bodies, not JSON.
@@ -44,4 +49,13 @@ export async function postJson<T>(path: string, body: unknown, token?: string): 
     body: JSON.stringify(body),
   });
   return response.json() as Promise<T>;
+}
+
+/** POST for endpoints that answer with an empty or plain-text body. */
+export async function post(path: string, body: unknown, token?: string): Promise<void> {
+  await request(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders(token) },
+    body: JSON.stringify(body),
+  });
 }
