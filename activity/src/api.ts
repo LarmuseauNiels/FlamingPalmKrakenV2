@@ -78,6 +78,11 @@ export function getRaids(token: string): Promise<RaidSummary[]> {
   return getJson<RaidSummary[]>("/members/raids", token);
 }
 
+/** POST /members/raids — create a raid; you're signed up as its first player. */
+export function createRaid(token: string, title: string, minPlayers: number): Promise<{ id: number }> {
+  return postJson<{ id: number }>("/members/raids", { title, minPlayers }, token);
+}
+
 /** POST /members/raids/:id/join — sign up for an open raid. */
 export function joinRaid(token: string, raidId: number): Promise<void> {
   return post(`/members/raids/${raidId}/join`, {}, token);

@@ -4,9 +4,14 @@ import {
   RaidRuleError,
   RaidScheduler,
 } from "../RaidScheduler";
+import { RaidModule } from "../RaidModule";
 import { createLogger } from "../../utils/logger";
 
 const log = createLogger("RaidBoardEndPoints");
+
+/** Raids.Title is VARCHAR(100). */
+const MAX_TITLE_LENGTH = 100;
+const MAX_MIN_PLAYERS = 50;
 
 /**
  * Member-facing raid endpoints behind the Activity's live scheduling board.
@@ -41,6 +46,27 @@ export function raidBoardEndPoints(app) {
     } catch (err) {
       log.error("Failed to list raids:", err);
       res.status(500).send("Failed to load raids");
+    }
+  });
+
+  // POST /members/raids — { title, minPlayers } creates a raid, creator joined.
+  app.post(apiPrefix, authenticateToken, async function (req, res) {
+    try {
+      const title = typeof req.body?.title === "string" ? req.body.title.trim() : "";
+      const minPlayers = Number(req.body?.minPlayers);
+
+      if (!title || title.length > MAX_TITLE_LENGTH) {
+        return res.status(400).send(`Give the raid a name of up to ${MAX_TITLE_LENGTH} characters`);
+      }
+      if (!Number.isInteger(minPlayers) || minPlayers < 1 || minPlayers > MAX_MIN_PLAYERS) {
+        return res.status(400).send(`Minimum players must be between 1 and ${MAX_MIN_PLAYERS}`);
+      }
+
+      const raid = await RaidModule.CreateRaid(title, minPlayers, req.user.id);
+      res.status(201).send(jsonify({ id: raid.ID }));
+    } catch (err) {
+      log.error("Failed to create raid:", err);
+      res.status(500).send("Failed to create the raid");
     }
   });
 

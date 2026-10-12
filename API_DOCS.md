@@ -229,6 +229,17 @@ Raids that are open for sign-ups (Status 1) or picking a time (Status 2), newest
 ]
 ```
 
+#### `POST /members/raids`
+
+Creates a raid, exactly like `/create-raid`: the caller is signed up as the first
+player, the raid channel gets a "New raid created" update, and the scheduling
+check runs (so a 1-player raid goes straight to scheduling).
+
+- **Auth:** Required
+- **Body:** `{ "title": "Minecraft Hardcore", "minPlayers": 4 }`
+- **Response (201):** `{ "id": 13 }`
+- **Errors:** `400` — title empty or over 100 characters, or `minPlayers` not an integer from 1 to 50
+
 #### `GET /members/raids/:id/board`
 
 Everything one board needs. Any member may read it (non-attendees watch); the
