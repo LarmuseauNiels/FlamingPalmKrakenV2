@@ -45,3 +45,12 @@ export async function postJson<T>(path: string, body: unknown, token?: string): 
   });
   return response.json() as Promise<T>;
 }
+
+/** POST for endpoints that answer with an empty or plain-text body. */
+export async function post(path: string, body: unknown, token?: string): Promise<void> {
+  await request(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders(token) },
+    body: JSON.stringify(body),
+  });
+}

@@ -53,17 +53,7 @@ export default class RaidVoteHandler implements IHandler {
       });
 
       // 3. Trigger a re-check of consensus
-      const raid = await global.client.prisma.raids.findFirst({
-        include: {
-          RaidAttendees: true,
-          RaidSchedulingOption: true,
-        },
-        where: { ID: raidId },
-      });
-
-      if (raid && raid.Status === 2) {
-        await RaidScheduler.scheduleRaid(raid as any);
-      }
+      await RaidScheduler.recheckRaid(raidId);
     } catch (error) {
       log.error("Error handling raid vote:", error);
       if (interaction.replied || interaction.deferred) {

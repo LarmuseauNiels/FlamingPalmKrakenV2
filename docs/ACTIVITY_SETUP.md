@@ -115,9 +115,10 @@ the `.discordsays.com` host.
 - **No `rpc.activities.write` scope**, so no `setActivity()` presence ("Shopping
   in the store" in the member list). Adding it means a second scope on the
   consent screen — worth it for Islander, not for a storefront.
-- **No shared/multiplayer state.** The storefront is single-player by nature.
-  `getInstanceConnectedParticipants` is what the raid-scheduling Activity would
-  be built on.
+- **Raid board is live by polling, not by SDK presence.** The Raids tab re-reads
+  `GET /members/raids/:id/board` every 4s while it is on screen. It doesn't use
+  `getInstanceConnectedParticipants` yet, so it can't highlight who is in the
+  Activity right now.
 - **Port mismatch untouched.** `WebApi.ts` listens on 3000 while
   `captain-definition` declares `ENV PORT 80` / `EXPOSE 80`. Presumably
   CapRover's container port setting bridges it — worth confirming before this

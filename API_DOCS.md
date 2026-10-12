@@ -207,6 +207,84 @@ Joins the authenticated user to the specified raid.
 
 ---
 
+### Raid Board
+
+Base prefix: `/members/raids`
+
+Backs the live scheduling board in the Discord Activity. Votes and suggestions
+go through the same `RaidScheduler` paths as the DM select menu and the
+"Suggest Custom Time" modal, so consensus checks, DMs and LFG announcements are
+identical either way.
+
+#### `GET /members/raids`
+
+Raids that are open for sign-ups (Status 1) or picking a time (Status 2), newest first.
+
+- **Auth:** Required
+- **Response:**
+
+```json
+[
+  { "id": 12, "title": "Deep Rock", "minPlayers": 4, "status": 2, "attendeeCount": 5, "attending": true }
+]
+```
+
+#### `GET /members/raids/:id/board`
+
+Everything one board needs. Any member may read it (non-attendees watch); the
+Activity polls it every few seconds.
+
+- **Auth:** Required
+- **Response:**
+
+```json
+{
+  "id": 12,
+  "title": "Deep Rock",
+  "minPlayers": 4,
+  "status": 2,
+  "maxOptions": 25,
+  "attending": true,
+  "attendees": [{ "id": "1234", "name": "Niels", "avatar": "a_abc123" }],
+  "options": [
+    { "id": 88, "time": "2026-10-14T17:00:00.000Z", "selected": false, "voters": ["1234"] }
+  ]
+}
+```
+
+`avatar` is the Discord avatar hash (or `null`); `selected` marks the slot the raid was locked in on.
+
+- **Errors:** `404` — raid not found
+
+#### `POST /members/raids/:id/availability`
+
+Marks the caller available (or not) for one slot, then re-checks consensus — the
+raid can lock in as a result of this call.
+
+- **Auth:** Required — caller must be signed up for the raid
+- **Body:** `{ "optionId": 88, "available": true }`
+- **Response:** `204 No Content`
+- **Errors:**
+  - `400` — malformed body
+  - `403` — caller isn't signed up for this raid
+  - `404` — raid not found, or the option isn't part of it
+  - `409` — raid isn't in scheduling (Status ≠ 2)
+
+#### `POST /members/raids/:id/options`
+
+Suggests a new slot. The caller is counted in on it, every attendee gets a fresh
+DM voting menu, LFG is notified, and consensus is re-checked. Suggesting a time
+that already exists just counts the caller in (no DMs or announcement).
+
+- **Auth:** Required — caller must be signed up for the raid
+- **Body:** `{ "time": "2026-10-15T18:30:00.000Z" }` (seconds are dropped)
+- **Response (201):** `{ "id": 89 }`
+- **Errors:**
+  - `400` — malformed time, time in the past, or the raid already has 25 slots (the DM select-menu limit)
+  - `403` / `404` / `409` — as above
+
+---
+
 ### Shop / Points
 
 Base prefix: `/members/`
@@ -859,7 +937,7 @@ back to a live Discord API fetch if the cache is empty.
 
 Base prefix: `/api/activity/`
 
-Endpoints for the Discord Activity (the storefront that runs inside Discord).
+Endpoints for the Discord Activity (the tabbed store / raid board that runs inside Discord).
 See `docs/ACTIVITY_SETUP.md` for the developer-portal configuration.
 
 An Activity runs in a sandboxed iframe and cannot use the redirect-based

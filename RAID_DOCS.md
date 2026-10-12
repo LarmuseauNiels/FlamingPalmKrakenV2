@@ -96,6 +96,17 @@ Voting closes at midnight (00:00) on the day before the first time slot (i.e. th
 
 ---
 
+### The raid board (Discord Activity)
+
+Instead of the DM menu you can open the FlamingPalm Activity in a voice channel
+and go to the **⚔️ Raids** tab. Pick a raid under *Picking a time* to get a live
+board: every proposed time in your own timezone, grouped by day, turning greener
+as more people mark it. Tap a time to mark yourself in or out, or use
+*Suggest time* to add a new one (you're counted in on it automatically). Votes
+from the board and from the DM menu are the same votes. Members who aren't
+signed up can watch the board but not vote; open raids can be joined from the
+same tab.
+
 ## When a Time Is Confirmed
 
 The bot continuously checks whether any slot has been voted for by **all** participants. As soon as one is found:

@@ -11,6 +11,15 @@ import { createLogger } from "../utils/logger";
 
 const log = createLogger("RaidScheduler");
 
+/**
+ * Discord select menus hold at most 25 options, and the DM voting menu lists
+ * every option of a raid — so that's the cap on suggestions per raid.
+ */
+export const MAX_SCHEDULING_OPTIONS = 25;
+
+/** A rule the caller broke (not a server fault) — safe to show to the user. */
+export class RaidRuleError extends Error {}
+
 export abstract class RaidScheduler {
   static async getRaid(raidId: number) {
     return global.client.prisma.raids.findFirst({
@@ -149,6 +158,88 @@ export abstract class RaidScheduler {
       }
       throw error;
     }
+  }
+
+  /**
+   * Adds a member-suggested time to a scheduling raid and counts the suggester
+   * in on it. Shared by the DM "Suggest Custom Time" modal and the Activity
+   * board. Everyone gets a fresh DM menu (Discord won't update menus that were
+   * already sent) and LFG hears about it; then consensus is re-checked, since
+   * the suggester's own vote may have been the last one a slot needed.
+   */
+  static async suggestTime(raidId: number, memberId: string, timestamp: Date) {
+    const raid = await this.getRaid(raidId);
+    if (raid == null) {
+      throw new RaidRuleError("This raid is not in scheduling.");
+    }
+    if (timestamp.getTime() <= Date.now()) {
+      throw new RaidRuleError("That time is in the past.");
+    }
+    const exists = raid.RaidSchedulingOption.some(
+      (o) => o.Timestamp?.getTime() === timestamp.getTime()
+    );
+    if (!exists && raid.RaidSchedulingOption.length >= MAX_SCHEDULING_OPTIONS) {
+      throw new RaidRuleError(
+        `This raid already has ${MAX_SCHEDULING_OPTIONS} times to pick from.`
+      );
+    }
+
+    const option = await this.AddSingleSchedulingOptionToRaid(raidId, timestamp);
+
+    // upsert keeps it idempotent if the option already existed and they'd
+    // already voted (composite PK SchedulingOptionId + MemberId).
+    await global.client.prisma.raidAvailability.upsert({
+      where: {
+        SchedulingOptionId_MemberId: {
+          SchedulingOptionId: option.ID,
+          MemberId: memberId,
+        },
+      },
+      create: { SchedulingOptionId: option.ID, MemberId: memberId },
+      update: {},
+    });
+
+    if (!exists) {
+      await this.SendSchedulingDMs(raidId);
+      const unix = Math.floor(timestamp.getTime() / 1000);
+      global.client.lfg
+        .send({
+          content: `<@${memberId}> suggested a new time for **${raid.Title}**: <t:${unix}:F>! Check your DMs or the raid board to update your vote.`,
+        })
+        .catch((e) => log.error("Failed to send custom time suggestion to lfg:", e));
+    }
+
+    await this.recheckRaid(raidId);
+    return option;
+  }
+
+  /** Marks one member available (or not) for one option, then re-checks consensus. */
+  static async setAvailability(
+    raidId: number,
+    memberId: string,
+    optionId: number,
+    available: boolean
+  ) {
+    if (available) {
+      await global.client.prisma.raidAvailability.upsert({
+        where: {
+          SchedulingOptionId_MemberId: { SchedulingOptionId: optionId, MemberId: memberId },
+        },
+        create: { SchedulingOptionId: optionId, MemberId: memberId },
+        update: {},
+      });
+    } else {
+      await global.client.prisma.raidAvailability.deleteMany({
+        where: { SchedulingOptionId: optionId, MemberId: memberId },
+      });
+    }
+    await this.recheckRaid(raidId);
+  }
+
+  /** Runs the consensus check for one raid right away, if it is still scheduling. */
+  static async recheckRaid(raidId: number) {
+    const raid = await this.getRaid(raidId);
+    if (raid) await this.scheduleRaid(raid);
   }
 
   static async SendSchedulingMessage(raidId: number) {
@@ -387,13 +478,20 @@ export abstract class RaidScheduler {
       RaidSchedulingOption: RaidSchedulingOption[];
     }
   ) {
+    // Claim the raid atomically: votes now arrive from the DM menu, the board
+    // and the periodic check, and two of those can reach consensus at the same
+    // moment. Only the caller that flips 2 → 3 sends the confirmations.
+    const claimed = await global.client.prisma.raids.updateMany({
+      where: { ID: raid.ID, Status: 2 },
+      data: { Status: 3 },
+    });
+    if (claimed.count === 0) {
+      log.info("Raid " + raid.ID + " was already scheduled by another check");
+      return;
+    }
     await global.client.prisma.raidSchedulingOption.update({
       where: { ID: key.ID },
       data: { IsSelected: true },
-    });
-    await global.client.prisma.raids.update({
-      where: { ID: raid.ID },
-      data: { Status: 3 },
     });
 
     // Surface the confirmed raid on the server's Events tab. External events
