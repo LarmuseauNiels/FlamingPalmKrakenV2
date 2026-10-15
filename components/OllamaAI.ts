@@ -5,17 +5,42 @@ import { RaidScheduler } from "../modules/RaidScheduler";
 import { ChannelUpdates } from "../islander/ChannelUpdates";
 import { TimeParser } from "../utils/TimeParser";
 import { getSteamGameInfo } from "../modules/SteamModule";
+import { RaidRuleError } from "../modules/RaidScheduler";
+import { PendingAction } from "./AiConversationStore";
+import moment from "moment-timezone";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const PelicanStatusMonitor: any = require("../modules/PelicanStatusMonitor.js");
 
 const log = createLogger("OllamaAI");
 
+/** Who is asking and what conversation they are continuing. */
+export interface AskContext {
+  authorId: string;
+  authorName: string;
+  isDM: boolean;
+  /** Stored conversation being continued (no system prompt), if any. */
+  history?: any[];
+}
+
+export interface AskResult {
+  response: string;
+  /** The conversation to store for the next turn (no system prompt). */
+  messages: any[];
+  /** Actions waiting for the member to press a Confirm button. */
+  pendingActions: PendingAction[];
+}
+
+/** Per-request state the tools need. */
+interface ToolContext {
+  authorId: string;
+  timezone: string | null;
+  pendingActions: PendingAction[];
+}
+
 export class OllamaAI {
   private openai: OpenAI;
   private tools: any[] = [];
   private systemInstructionText: string = "";
-  private conversationContexts: Map<string, { messages: any[]; timestamp: number }> = new Map();
-  private readonly CONTEXT_TTL_MS = 30 * 60 * 1000; // 30 minutes
   private readonly model = process.env.OLLAMA_MODEL || "gemma4:cloud";
 
   constructor() {
@@ -56,7 +81,7 @@ export class OllamaAI {
         type: "function",
         function: {
           name: "createRaid",
-          description: "Create a new raid. Only use this after confirming the title and minimum players with the user. The raid creator is automatically set to the user who requested it.",
+          description: "Create a new raid. This does not create it straight away: it shows the member a Confirm button under your reply. The raid creator is automatically set to the user who requested it.",
           parameters: {
             type: "object",
             properties: {
@@ -108,7 +133,7 @@ export class OllamaAI {
         type: "function",
         function: {
           name: "joinRaid",
-          description: "Join an open raid on behalf of the user. Only use this after confirming with the user which raid they want to join. The user must provide or confirm the raid name, then use getRaids to find the raid ID if needed before calling this tool.",
+          description: "Join an open raid on behalf of the user. This shows the member a Confirm button under your reply; they are only signed up once they press it. Use getRaids to find the raid ID if needed before calling this tool.",
           parameters: {
             type: "object",
             properties: {
@@ -149,7 +174,7 @@ export class OllamaAI {
         type: "function",
         function: {
           name: "leaveRaid",
-          description: "Remove the user from a raid they are signed up for. Only use this after confirming with the user which raid they want to leave. Use getRaids or getRaidDetails to find the raid ID if needed before calling this tool.",
+          description: "Remove the user from a raid they are signed up for. This shows the member a Confirm button under your reply; they only leave once they press it. Use getMyRaids, getRaids or getRaidDetails to find the raid ID if needed before calling this tool.",
           parameters: {
             type: "object",
             properties: {
@@ -200,7 +225,7 @@ export class OllamaAI {
         type: "function",
         function: {
           name: "manageGameServer",
-          description: "Restart or stop a running game server (Pelican-managed) on behalf of the user. Only members with the server manager role may do this; the tool checks the role itself and reports if the user lacks it. ALWAYS confirm the server and the action with the member before calling this, because it disconnects anyone playing on that server.",
+          description: "Restart or stop a running game server (Pelican-managed) on behalf of the user. Only members with the server manager role may do this; the tool checks the role itself and reports if the user lacks it. This shows the member a Confirm button under your reply (it disconnects anyone playing), so the action only happens once they press it.",
           parameters: {
             type: "object",
             properties: {
@@ -215,6 +240,61 @@ export class OllamaAI {
               },
             },
             required: ["serverName", "action"],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "getMyRaids",
+          description: "Get the raids the member who asked is signed up for: open raids still gathering players, raids in scheduling (with each time option, its letter, and whether the member has voted on it yet) and upcoming scheduled raids. Use this when a member asks what they're signed up for, when their next raid is, or what they still need to vote on.",
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "setRaidAvailability",
+          description: "Record which time options the member can or cannot make for a raid in scheduling (Status 2), the same as voting in the scheduling DM or on the raid board. Options are identified by their letter from getRaidDetails or getMyRaids. Only the options listed are changed; others keep their current vote. Use this when a member tells you when they are (or aren't) available for a raid.",
+          parameters: {
+            type: "object",
+            properties: {
+              raidId: {
+                type: "number",
+                description: "The numeric ID of the raid",
+              },
+              available: {
+                type: "array",
+                items: { type: "string" },
+                description: "Letters of the time options the member CAN make, e.g. [\"A\", \"C\"]",
+              },
+              unavailable: {
+                type: "array",
+                items: { type: "string" },
+                description: "Letters of the time options the member can NOT make",
+              },
+            },
+            required: ["raidId"],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "suggestRaidTime",
+          description: "Suggest a new time option for a raid in scheduling (Status 2) when none of the existing options suit the member. The member is counted as available for it and every attendee is notified. This shows the member a Confirm button with the parsed time first. Pass the time in the member's own words.",
+          parameters: {
+            type: "object",
+            properties: {
+              raidId: {
+                type: "number",
+                description: "The numeric ID of the raid",
+              },
+              datetime: {
+                type: "string",
+                description: "The date and time to suggest, e.g. 'Friday 20:00', '17/10 19:30', 'tomorrow 9pm'",
+              },
+            },
+            required: ["raidId", "datetime"],
           },
         },
       },
@@ -238,21 +318,27 @@ export class OllamaAI {
       "- Members earn 'palm tree' points for participating in events, redeemable at https://flamingpalm.com.\n" +
       "- Use the tools provided to fetch real-time data about events, raids, the store, and scheduled raids when asked. " +
       "If a member mentions a raid by name or asks about a specific raid, use getRaids first to find the raid ID, then use getRaidDetails for full information.\n" +
-      "- When a member asks you to create a new raid, ALWAYS confirm the title and minimum number of players with them before calling the createRaid tool. " +
-      "Default to 4 minimum players if the member doesn't specify. Only call createRaid after the member confirms.\n" +
+      "- Confirm buttons: createRaid, joinRaid, leaveRaid, manageGameServer and suggestRaidTime never act straight away. Calling them puts a Confirm button under your reply, and the action only happens when the member presses it. " +
+      "So call them as soon as the member's intent is clear — only ask a question first when something is genuinely ambiguous (e.g. which of two raids they mean) — and then tell them to press the button. " +
+      "Never say one of these actions is done; say it is waiting for their confirmation.\n" +
+      "- When a member asks you to create a new raid, call createRaid. Default to 4 minimum players if the member doesn't specify.\n" +
       "- When a member asks for a Discord timestamp or wants to convert a time, use the getTimestamp tool with their date/time input.\n" +
       "- When a member asks about their palm tree points balance, use the getMemberPoints tool.\n" +
       "- When a member asks about game server status (e.g. 'is the Minecraft server up?'), use the getGameServerStatus tool. Also use it when they ask who or how many people are playing on a server.\n" +
-      "- When a member asks to join a raid, confirm which raid they want to join, then use getRaids to find the raid ID if needed, and call joinRaid after they confirm. Only join raids that are open (Status 1).\n" +
-      "- When a member asks to leave a raid, confirm which raid they want to leave, then use getRaids or getRaidDetails to find the raid ID if needed, and call leaveRaid after they confirm.\n" +
+      "- When a member asks to join a raid, use getRaids to find the raid ID if needed, then call joinRaid. Only join raids that are open (Status 1).\n" +
+      "- When a member asks to leave a raid, use getMyRaids or getRaids to find the raid ID if needed, then call leaveRaid.\n" +
+      "- When a member asks what they're signed up for, when their next raid is, or what they still have to vote on, use getMyRaids.\n" +
+      "- When a member says when they can or can't play for a raid that is in scheduling, look up its time options (getMyRaids or getRaidDetails), match what they said to the option letters in their timezone, and call setRaidAvailability. " +
+      "If no existing option fits and they named a specific time, offer to suggest it with suggestRaidTime.\n" +
       "- When a member asks to set or change their timezone, use the setTimezone tool with a valid IANA timezone name (e.g. Europe/Brussels, America/New_York).\n" +
       "- When a member asks what their current timezone is, or wants to check it before changing it, use the getTimezone tool. If they then want to change it, chain directly into the setTimezone tool without re-asking.\n" +
       "- When a member asks about a video game (what it's about, its price, whether it's on Steam), use the getSteamGameInfo tool with the game's name.\n" +
       "- When a member asks to start a game server, call the startGameServer tool with the server's name. If you're unsure which server they mean, use getGameServerStatus to list them and ask.\n" +
-      "- When a member asks to restart or stop a game server, confirm the server and the action with them first (it disconnects anyone playing), then call the manageGameServer tool after they confirm.\n" +
-      "Conversation context: You can remember previous messages in a conversation, but only when the member uses Discord's reply feature to reply to your messages. " +
-      "If a member sends a follow-up message without replying to your previous response, you will not have the context of the earlier exchange. " +
-      "Always remind members to reply to your message if they want to ask a follow-up question, especially after actions that require confirmation (like creating or joining a raid).";
+      "- When a member asks to restart or stop a game server, call the manageGameServer tool (it asks them to confirm with a button).\n\n" +
+      "Times: tool results give times in the member's timezone followed by a Discord timestamp tag like <t:1760000000:F>. When you mention a specific time, include that tag — Discord shows it to every reader in their own timezone.\n\n" +
+      "Formatting: you are writing Discord messages. Use Discord markdown (bold, lists, code) but no tables, and keep answers short — a few lines unless the member asked for detail.\n\n" +
+      "Conversation context: in direct messages the conversation continues by itself for 30 minutes. In server channels you only see earlier messages when the member uses Discord's reply feature on one of your messages; " +
+      "if a follow-up in a server channel seems to be missing context, briefly mention they can reply to your message to continue the conversation.";
   }
 
   /**
@@ -331,36 +417,58 @@ export class OllamaAI {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  private cleanupExpiredContexts(): void {
-    const now = Date.now();
-    for (const [key, entry] of this.conversationContexts) {
-      if (now - entry.timestamp > this.CONTEXT_TTL_MS) {
-        this.conversationContexts.delete(key);
-      }
+  /** Builds the per-turn context the model can't know by itself: now, who's asking, their timezone. */
+  private buildContextPrompt(ctx: AskContext, timezone: string | null): string {
+    const zone = timezone ?? "UTC";
+    const now = moment.tz(zone);
+    let text = "Current context:\n";
+    text += `- Now: ${now.format("dddd D MMMM YYYY, HH:mm")} in ${zone} (${now.toISOString()})\n`;
+    text += `- Member talking to you: ${ctx.authorName} (Discord ID ${ctx.authorId})\n`;
+    text += timezone
+      ? `- Their timezone: ${timezone}. Interpret times they mention in this timezone.\n`
+      : "- Their timezone: not set, so times are shown in UTC. If they talk about times, suggest setting their timezone (you can do it with setTimezone).\n";
+    text += ctx.isDM ? "- Channel: direct message with you\n" : "- Channel: a server channel, visible to other members\n";
+    return text;
+  }
+
+  private async getMemberTimezone(authorId: string): Promise<string | null> {
+    try {
+      const member = await globalThis.client.prisma.members.findUnique({
+        where: { ID: authorId },
+        select: { Timezone: true },
+      });
+      const validTimezones: string[] = (Intl as any).supportedValuesOf("timeZone");
+      return member?.Timezone && validTimezones.includes(member.Timezone) ? member.Timezone : null;
+    } catch (err) {
+      log.error("Failed to fetch member timezone:", err);
+      return null;
     }
   }
 
-  public storeContext(messageId: string, messages: any[]): void {
-    this.conversationContexts.set(messageId, { messages, timestamp: Date.now() });
+  /** "Fri 17 Oct 2026 19:00 Europe/Brussels (<t:...:F>)" — readable for the model, tagged for Discord. */
+  private formatTime(date: Date, timezone: string | null): string {
+    const zone = timezone ?? "UTC";
+    const unix = Math.floor(date.getTime() / 1000);
+    return `${moment.tz(date, zone).format("ddd D MMM YYYY HH:mm")} ${zone} (<t:${unix}:F>)`;
   }
 
-  public hasContext(messageId: string): boolean {
-    return this.conversationContexts.has(messageId);
-  }
-
-  public async ask(question: string, contextId?: string, authorId?: string): Promise<{ response: string; messages: any[] }> {
-    this.cleanupExpiredContexts();
-
-    // Load existing conversation context if this is a reply to a bot message
-    let messages: any[];
-    if (contextId && this.conversationContexts.has(contextId)) {
-      messages = [...this.conversationContexts.get(contextId)!.messages];
-      log.debug(`Loaded conversation context from message ${contextId} (${messages.length} messages)`);
-    } else {
-      messages = [{ role: "system", content: this.systemInstructionText }];
-    }
-
-    messages.push({ role: "user", content: question });
+  /**
+   * Answers a member's message. `ctx.history` is the stored conversation being
+   * continued (without system prompt). The returned `messages` are what to store
+   * for the next turn; `pendingActions` need a Confirm button under the reply.
+   */
+  public async ask(question: string, ctx: AskContext): Promise<AskResult> {
+    const timezone = await this.getMemberTimezone(ctx.authorId);
+    const history = ctx.history ?? [];
+    const messages: any[] = [
+      { role: "system", content: this.systemInstructionText },
+      { role: "system", content: this.buildContextPrompt(ctx, timezone) },
+      ...history,
+      { role: "user", content: question },
+    ];
+    // Everything after the two system messages is the conversation to store.
+    const conversation = () => messages.slice(2);
+    const toolCtx: ToolContext = { authorId: ctx.authorId, timezone, pendingActions: [] };
 
     let retries = 0;
     const maxRetries = 1;
@@ -383,7 +491,8 @@ export class OllamaAI {
           // No more tool calls — return the final text response
           return {
             response: responseMessage.content || "I'm sorry, I generated a response but couldn't format it as text.",
-            messages,
+            messages: conversation(),
+            pendingActions: toolCtx.pendingActions,
           };
         }
 
@@ -391,7 +500,7 @@ export class OllamaAI {
 
         for (const call of responseMessage.tool_calls) {
           if (call.type === "function") {
-            const output = await this.handleFunctionCall(call.function, authorId);
+            const output = await this.handleFunctionCall(call.function, toolCtx);
             messages.push({
               tool_call_id: call.id,
               role: "tool",
@@ -416,53 +525,172 @@ export class OllamaAI {
         log.error("Error in Ollama ask method:", error);
         return {
           response: "Sorry, I encountered an error while processing your request.",
-          messages,
+          messages: conversation(),
+          pendingActions: [],
         };
       }
     }
 
     return {
       response: "Sorry, I reached the maximum number of tool calls without getting a final answer. Please try rephrasing your question.",
-      messages,
+      messages: conversation(),
+      pendingActions: [],
     };
   }
 
-  private async handleFunctionCall(call: any, authorId?: string): Promise<string> {
-    switch (call.name) {
+  private async handleFunctionCall(call: any, ctx: ToolContext): Promise<string> {
+    if (OllamaAI.CONFIRMED_TOOLS.has(call.name)) {
+      return await this.requestConfirmation(call.name, call.arguments, ctx);
+    }
+    return await this.runTool(call.name, call.arguments, ctx);
+  }
+
+  /** Runs an action the member confirmed with its button. Returns a message for the member. */
+  public async runConfirmedAction(action: PendingAction): Promise<string> {
+    const timezone = await this.getMemberTimezone(action.userId);
+    return await this.runTool(action.tool, action.args, { authorId: action.userId, timezone, pendingActions: [] });
+  }
+
+  private async runTool(name: string, args: any, ctx: ToolContext): Promise<string> {
+    const authorId = ctx.authorId;
+    switch (name) {
       case "getEvents":
-        return await this.getEventsString();
+        return await this.getEventsString(ctx.timezone);
       case "getRaids":
         return await this.getRaidsString();
       case "getStore":
         return await this.getStoreString();
       case "getRaidDetails":
-        return await this.getRaidDetailsString(call.arguments);
+        return await this.getRaidDetailsString(args, ctx);
       case "getUpcomingRaids":
-        return await this.getUpcomingRaidsString();
+        return await this.getUpcomingRaidsString(ctx.timezone);
       case "createRaid":
-        return await this.createRaidString(call.arguments, authorId || "");
+        return await this.createRaidString(args, authorId || "");
       case "getTimestamp":
-        return await this.getTimestampString(call.arguments, authorId || "");
+        return await this.getTimestampString(args, authorId || "");
       case "getMemberPoints":
         return await this.getMemberPointsString(authorId || "");
       case "getGameServerStatus":
         return await this.getGameServerStatusString();
       case "joinRaid":
-        return await this.joinRaidString(call.arguments, authorId || "");
+        return await this.joinRaidString(args, authorId || "");
       case "setTimezone":
-        return await this.setTimezoneString(call.arguments, authorId || "");
+        return await this.setTimezoneString(args, authorId || "");
       case "getTimezone":
         return await this.getTimezoneString(authorId || "");
       case "leaveRaid":
-        return await this.leaveRaidString(call.arguments, authorId || "");
+        return await this.leaveRaidString(args, authorId || "");
       case "getSteamGameInfo":
-        return await this.getSteamGameInfoString(call.arguments);
+        return await this.getSteamGameInfoString(args);
       case "startGameServer":
-        return await this.startGameServerString(call.arguments, authorId || "");
+        return await this.startGameServerString(args, authorId || "");
       case "manageGameServer":
-        return await this.manageGameServerString(call.arguments, authorId || "");
+        return await this.manageGameServerString(args, authorId || "");
+      case "getMyRaids":
+        return await this.getMyRaidsString(ctx);
+      case "setRaidAvailability":
+        return await this.setRaidAvailabilityString(args, ctx);
+      case "suggestRaidTime":
+        return await this.suggestRaidTimeString(args, ctx);
       default:
         return "Tool not found.";
+    }
+  }
+
+  /** Tools that change something for the member only run after they press a Confirm button. */
+  private static readonly CONFIRMED_TOOLS = new Set(["createRaid", "joinRaid", "leaveRaid", "manageGameServer", "suggestRaidTime"]);
+  private static readonly MAX_PENDING_ACTIONS = 4;
+
+  /**
+   * Checks a confirmable action up front (so the member never gets a button
+   * that is bound to fail) and queues its Confirm button. The tool runs for
+   * real — re-checking everything — when the button is pressed.
+   */
+  private async requestConfirmation(name: string, rawArgs: string | object, ctx: ToolContext): Promise<string> {
+    const args = this.parseArgs(rawArgs);
+    if (!args) return `Invalid arguments for ${name}.`;
+    if (!ctx.authorId) return "Unable to determine which member is asking.";
+
+    let checked: { error: string } | { label: string; args: any };
+    try {
+      checked = await this.checkConfirmable(name, args, ctx);
+    } catch (err) {
+      log.error(`Failed to check ${name}:`, err);
+      return "Something went wrong preparing that action. Please try again later.";
+    }
+    if ("error" in checked) return checked.error;
+
+    const key = name + JSON.stringify(checked.args);
+    if (ctx.pendingActions.some((a) => a.tool + JSON.stringify(a.args) === key)) {
+      return `A Confirm button for "${checked.label}" is already queued.`;
+    }
+    if (ctx.pendingActions.length >= OllamaAI.MAX_PENDING_ACTIONS) {
+      return "Too many actions to confirm at once. Ask the member to confirm these first, then do the rest.";
+    }
+    ctx.pendingActions.push({ tool: name, args: checked.args, label: checked.label, userId: ctx.authorId });
+    return `Waiting for confirmation: a Confirm button labelled ${checked.label} will be shown under your reply. Tell the member to press it. The action has NOT happened yet.`;
+  }
+
+  private async checkConfirmable(name: string, args: any, ctx: ToolContext): Promise<{ error: string } | { label: string; args: any }> {
+    switch (name) {
+      case "createRaid": {
+        const title = typeof args.title === "string" ? args.title.trim() : "";
+        if (!title) return { error: "A raid title is required." };
+        const minPlayers = typeof args.minPlayers === "number" && args.minPlayers >= 1 ? Math.floor(args.minPlayers) : 4;
+        return { label: `Create raid "${title}" (min ${minPlayers})`, args: { title, minPlayers } };
+      }
+      case "joinRaid":
+      case "leaveRaid": {
+        if (typeof args.raidId !== "number") return { error: "A valid numeric raid ID is required." };
+        const raid = await globalThis.client.prisma.raids.findFirst({
+          where: { ID: args.raidId },
+          include: { RaidAttendees: { where: { MemberId: ctx.authorId } } },
+        });
+        if (!raid) return { error: `Raid ${args.raidId} not found.` };
+        const signedUp = raid.RaidAttendees.length > 0;
+        if (name === "joinRaid") {
+          if (raid.Status !== 1) return { error: `Cannot join "${raid.Title}" — it is no longer open for sign-ups.` };
+          if (signedUp) return { error: `The member is already signed up for "${raid.Title}".` };
+          return { label: `Join "${raid.Title}"`, args: { raidId: raid.ID } };
+        }
+        if (!signedUp) return { error: `The member is not signed up for "${raid.Title}".` };
+        return { label: `Leave "${raid.Title}"`, args: { raidId: raid.ID } };
+      }
+      case "manageGameServer": {
+        if (typeof args.serverName !== "string" || !args.serverName) return { error: "Please provide the name of the game server." };
+        if (args.action !== "restart" && args.action !== "stop") return { error: 'The action must be either "restart" or "stop".' };
+        const roleId = process.env.PELICAN_MANAGE_ROLE_ID;
+        if (!roleId) return { error: "Restarting or stopping game servers through Kraken is not enabled." };
+        const denied = await this.checkMemberHasAnyRole(ctx.authorId, [roleId], "restart or stop game servers");
+        if (denied) return { error: denied };
+        const verb = args.action === "restart" ? "Restart" : "Stop";
+        return { label: `${verb} ${args.serverName}`, args: { serverName: args.serverName, action: args.action } };
+      }
+      case "suggestRaidTime": {
+        if (typeof args.raidId !== "number") return { error: "A valid numeric raid ID is required." };
+        if (typeof args.datetime !== "string" || !args.datetime) return { error: "A date/time to suggest is required." };
+        const denied = await this.checkSchedulingAttendee(args.raidId, ctx.authorId);
+        if (denied) return { error: denied };
+        const zone = ctx.timezone ?? "UTC";
+        const parsed = await TimeParser.parse(args.datetime, zone);
+        if (!parsed.isValid()) return { error: `Could not understand "${args.datetime}" as a date/time (timezone ${zone}).` };
+        if (parsed.valueOf() <= Date.now()) return { error: `${this.formatTime(parsed.toDate(), ctx.timezone)} is in the past.` };
+        return {
+          label: `Suggest ${parsed.clone().tz(zone).format("ddd D MMM HH:mm")} (${zone})`,
+          args: { raidId: args.raidId, timestamp: parsed.toISOString() },
+        };
+      }
+      default:
+        return { error: "Tool not found." };
+    }
+  }
+
+  private parseArgs(rawArgs: string | object): any {
+    try {
+      const args = typeof rawArgs === "string" ? JSON.parse(rawArgs || "{}") : rawArgs;
+      return args && typeof args === "object" ? args : null;
+    } catch {
+      return null;
     }
   }
 
@@ -485,7 +713,7 @@ export class OllamaAI {
     }
   }
 
-  private async getRaidDetailsString(rawArgs: string | object): Promise<string> {
+  private async getRaidDetailsString(rawArgs: string | object, ctx: ToolContext): Promise<string> {
     let args: any;
     try {
       args = typeof rawArgs === "string" ? JSON.parse(rawArgs) : rawArgs;
@@ -522,7 +750,7 @@ export class OllamaAI {
     string += `Status: ${statusText}\n`;
     string += `Creator: ${global.client.idToName(raid.Creator) ?? raid.Creator}\n`;
     string += `Min Players: ${raid.MinPlayers ?? 4}\n`;
-    string += `Created: ${new Date(raid.CreationTime ?? Date.now()).toLocaleString()}\n`;
+    string += `Created: ${this.formatTime(new Date(raid.CreationTime ?? Date.now()), ctx.timezone)}\n`;
 
     // Attendees
     string += `\nAttendees (${raid.RaidAttendees.length}):\n`;
@@ -537,19 +765,22 @@ export class OllamaAI {
 
     // Scheduling options
     if (raid.RaidSchedulingOption && raid.RaidSchedulingOption.length > 0) {
-      string += `\nScheduling Options:\n`;
-      raid.RaidSchedulingOption.forEach((opt: any) => {
-        const time = new Date(opt.Timestamp).toLocaleString();
-        const selected = opt.IsSelected ? " [SELECTED]" : "";
-        const voteCount = opt.RaidAvailability?.length ?? 0;
-        string += `  ${time}${selected} — ${voteCount} vote(s)\n`;
-      });
+      string += `\nScheduling Options (letter — time — who can make it):\n`;
+      [...raid.RaidSchedulingOption]
+        .sort((a: any, b: any) => (a.Timestamp?.getTime() ?? 0) - (b.Timestamp?.getTime() ?? 0))
+        .forEach((opt: any) => {
+          const time = opt.Timestamp ? this.formatTime(opt.Timestamp, ctx.timezone) : "Unknown time";
+          const selected = opt.IsSelected ? " [SELECTED]" : "";
+          const voters = (opt.RaidAvailability ?? []).map((v: any) => global.client.idToName(v.MemberId) ?? v.MemberId);
+          const mine = (opt.RaidAvailability ?? []).some((v: any) => v.MemberId === ctx.authorId) ? " [you voted for this]" : "";
+          string += `  ${opt.Option ?? "?"} — ${time}${selected}${mine} — ${voters.length} vote(s)${voters.length ? ": " + voters.join(", ") : ""}\n`;
+        });
     }
 
     return string;
   }
 
-  private async getUpcomingRaidsString(): Promise<string> {
+  private async getUpcomingRaidsString(timezone: string | null): Promise<string> {
     const now = new Date();
     const raids = await globalThis.client.prisma.raids.findMany({
       where: { Status: 3 },
@@ -579,7 +810,7 @@ export class OllamaAI {
     let string = "";
     upcoming.forEach((raid) => {
       const selectedOpt = raid.RaidSchedulingOption.find((o) => o.IsSelected);
-      const time = selectedOpt ? new Date(selectedOpt.Timestamp).toLocaleString() : "Unknown time";
+      const time = selectedOpt ? this.formatTime(selectedOpt.Timestamp, timezone) : "Unknown time";
       string += `Raid: ${raid.Title} - ID: ${raid.ID} - When: ${time} - Attendees: ${raid.RaidAttendees.length}/${raid.MinPlayers ?? 4}\n`;
     });
     return string;
@@ -1010,14 +1241,15 @@ export class OllamaAI {
     return string || "No open raids found.";
   }
 
-  private async getEventsString(): Promise<string> {
+  private async getEventsString(timezone: string | null): Promise<string> {
     let string = "";
     if (globalThis.client.events) {
       for (let e of globalThis.client.events) {
         let event = globalThis.client.events.get(e[0]);
-        string += `Event: ${event.name} - Date: ${new Date(
-          event.scheduledStartTimestamp
-        ).toString()} - Description: ${event.description} - Link: ${event.url} \n`;
+        string += `Event: ${event.name} - Date: ${this.formatTime(
+          new Date(event.scheduledStartTimestamp),
+          timezone
+        )} - Description: ${event.description} - Link: ${event.url} \n`;
       }
     }
     return string || "No upcoming events found.";
@@ -1041,5 +1273,150 @@ export class OllamaAI {
       }
     });
     return string || "Store is currently empty.";
+  }
+
+  /** Voting is for signed-up members of a raid that is still in scheduling (same rule as the raid board). */
+  private async checkSchedulingAttendee(raidId: number, memberId: string): Promise<string | null> {
+    const raid = await globalThis.client.prisma.raids.findUnique({
+      where: { ID: raidId },
+      include: { RaidAttendees: { where: { MemberId: memberId } } },
+    });
+    if (!raid) return `Raid ${raidId} not found.`;
+    if (raid.Status !== 2) return `"${raid.Title}" is not in scheduling, so there are no times to vote on.`;
+    if (raid.RaidAttendees.length === 0) return `Only members signed up for "${raid.Title}" can vote on its times.`;
+    return null;
+  }
+
+  private async getMyRaidsString(ctx: ToolContext): Promise<string> {
+    if (!ctx.authorId) return "Unable to determine which member is asking.";
+
+    const raids = await globalThis.client.prisma.raids.findMany({
+      where: { Status: { in: [1, 2, 3] }, RaidAttendees: { some: { MemberId: ctx.authorId } } },
+      include: {
+        RaidAttendees: true,
+        RaidSchedulingOption: { include: { RaidAvailability: true } },
+      },
+    });
+
+    const now = Date.now();
+    const open = raids.filter((r) => r.Status === 1);
+    const scheduling = raids.filter((r) => r.Status === 2);
+    const scheduled = raids
+      .map((r) => ({ raid: r, time: r.RaidSchedulingOption.find((o) => o.IsSelected)?.Timestamp }))
+      .filter((r) => r.time && r.time.getTime() > now)
+      .sort((a, b) => a.time.getTime() - b.time.getTime());
+
+    if (open.length + scheduling.length + scheduled.length === 0) {
+      return "The member is not signed up for any open, scheduling or upcoming raids.";
+    }
+
+    let string = "";
+    if (scheduled.length > 0) {
+      string += "Upcoming scheduled raids:\n";
+      scheduled.forEach(({ raid, time }) => {
+        string += `  ${raid.Title} (ID ${raid.ID}) — ${this.formatTime(time, ctx.timezone)} — ${raid.RaidAttendees.length} attendees\n`;
+      });
+    }
+    if (scheduling.length > 0) {
+      string += "\nRaids in scheduling (voting on times):\n";
+      scheduling.forEach((raid) => {
+        const voted = raid.RaidSchedulingOption.some((o) => o.RaidAvailability.some((v) => v.MemberId === ctx.authorId));
+        string += `  ${raid.Title} (ID ${raid.ID})${voted ? "" : " — THE MEMBER HAS NOT VOTED YET"}\n`;
+        [...raid.RaidSchedulingOption]
+          .sort((a, b) => (a.Timestamp?.getTime() ?? 0) - (b.Timestamp?.getTime() ?? 0))
+          .forEach((opt) => {
+            const mine = opt.RaidAvailability.some((v) => v.MemberId === ctx.authorId) ? " [member is available]" : "";
+            const time = opt.Timestamp ? this.formatTime(opt.Timestamp, ctx.timezone) : "Unknown time";
+            string += `    ${opt.Option ?? "?"} — ${time} — ${opt.RaidAvailability.length}/${raid.RaidAttendees.length} available${mine}\n`;
+          });
+      });
+    }
+    if (open.length > 0) {
+      string += "\nOpen raids still gathering players:\n";
+      open.forEach((raid) => {
+        string += `  ${raid.Title} (ID ${raid.ID}) — ${raid.RaidAttendees.length}/${raid.MinPlayers ?? 4} players\n`;
+      });
+    }
+    return string.trim();
+  }
+
+  private async setRaidAvailabilityString(rawArgs: string | object, ctx: ToolContext): Promise<string> {
+    const args = this.parseArgs(rawArgs);
+    if (!args) return "Invalid arguments for setRaidAvailability.";
+    const raidId = args.raidId;
+    if (typeof raidId !== "number") return "A valid numeric raid ID is required.";
+    if (!ctx.authorId) return "Unable to determine which member is voting.";
+
+    const toLetters = (v: any): string[] => (Array.isArray(v) ? v.map((x) => String(x).trim().toUpperCase()).filter(Boolean) : []);
+    const available = toLetters(args.available);
+    const unavailable = toLetters(args.unavailable);
+    if (available.length + unavailable.length === 0) return "Give at least one option letter in available or unavailable.";
+    if (available.some((l) => unavailable.includes(l))) return "An option can't be both available and unavailable.";
+
+    const denied = await this.checkSchedulingAttendee(raidId, ctx.authorId);
+    if (denied) return denied;
+
+    const options = await globalThis.client.prisma.raidSchedulingOption.findMany({ where: { RaidId: raidId } });
+    const byLetter = new Map(options.map((o) => [String(o.Option).toUpperCase(), o]));
+    const unknown = [...available, ...unavailable].filter((l) => !byLetter.has(l));
+    if (unknown.length > 0) {
+      return `Unknown option letter(s): ${unknown.join(", ")}. Valid options are: ${[...byLetter.keys()].sort().join(", ")}.`;
+    }
+
+    try {
+      for (const letter of available) {
+        const optionId = byLetter.get(letter).ID;
+        await globalThis.client.prisma.raidAvailability.upsert({
+          where: { SchedulingOptionId_MemberId: { SchedulingOptionId: optionId, MemberId: ctx.authorId } },
+          create: { SchedulingOptionId: optionId, MemberId: ctx.authorId },
+          update: {},
+        });
+      }
+      if (unavailable.length > 0) {
+        await globalThis.client.prisma.raidAvailability.deleteMany({
+          where: { MemberId: ctx.authorId, SchedulingOptionId: { in: unavailable.map((l) => byLetter.get(l).ID) } },
+        });
+      }
+      await RaidScheduler.recheckRaid(raidId);
+    } catch (err) {
+      log.error("Failed to set raid availability:", err);
+      return "Failed to save the vote. Please try again, or vote in the scheduling DM or on the raid board.";
+    }
+
+    let string = "Vote saved.";
+    if (available.length) string += ` Available: ${available.join(", ")}.`;
+    if (unavailable.length) string += ` Not available: ${unavailable.join(", ")}.`;
+
+    // The vote may have been the one that settled the time.
+    const raid = await globalThis.client.prisma.raids.findUnique({
+      where: { ID: raidId },
+      include: { RaidSchedulingOption: { where: { IsSelected: true } } },
+    });
+    const selected = raid?.RaidSchedulingOption[0]?.Timestamp;
+    if (raid?.Status === 3 && selected) {
+      string += ` That completed the vote: "${raid.Title}" is now scheduled for ${this.formatTime(selected, ctx.timezone)} and everyone has been notified.`;
+    }
+    return string;
+  }
+
+  private async suggestRaidTimeString(rawArgs: string | object, ctx: ToolContext): Promise<string> {
+    const args = this.parseArgs(rawArgs);
+    const raidId = args?.raidId;
+    const timestamp = args?.timestamp ? new Date(args.timestamp) : null;
+    if (typeof raidId !== "number" || !timestamp || isNaN(timestamp.getTime())) {
+      return "Invalid arguments for suggestRaidTime.";
+    }
+
+    const denied = await this.checkSchedulingAttendee(raidId, ctx.authorId);
+    if (denied) return denied;
+
+    try {
+      const option = await RaidScheduler.suggestTime(raidId, ctx.authorId, timestamp);
+      return `Suggested ${this.formatTime(timestamp, ctx.timezone)} as option ${option.Option} and marked you available for it. The other attendees have been notified.`;
+    } catch (err) {
+      if (err instanceof RaidRuleError) return err.message;
+      log.error("Failed to suggest raid time:", err);
+      return "Failed to suggest that time. Please try again, or use the raid board.";
+    }
   }
 }

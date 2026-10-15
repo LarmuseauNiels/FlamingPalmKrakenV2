@@ -373,3 +373,18 @@ model i_Raid {
   @@index([DefenderID], map: "i_Raid_DefenderID_index")
   @@index([TimeStamp], map: "i_Raid_TimeStamp_index")
 }
+
+/// Kraken AI chat history, keyed by the bot's reply message: replying to that
+/// message continues the conversation, and in DMs the latest row per channel is
+/// picked up automatically. PendingActions holds the Confirm buttons under it.
+model AiConversation {
+  MessageId      String   @id @db.VarChar(25)
+  ChannelId      String   @db.VarChar(25)
+  UserId         String   @db.VarChar(25)
+  Messages       String   @db.LongText
+  PendingActions String?  @db.Text
+  UpdatedAt      DateTime @default(now()) @updatedAt @db.DateTime(0)
+
+  @@index([ChannelId, UpdatedAt])
+  @@index([UpdatedAt])
+}

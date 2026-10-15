@@ -32,7 +32,8 @@ FlamingPalmKrakenV2/
 │   └── migrations/           # Prisma migration history
 ├── components/
 │   ├── FpgClient.ts          # Extended Discord.js Client — core hub class
-│   └── OllamaAI.ts           # Ollama AI wrapper (OpenAI-compatible API) with tool-calling
+│   ├── OllamaAI.ts           # Ollama AI wrapper (OpenAI-compatible API) with tool-calling
+│   └── AiConversationStore.ts # Persists AI conversations + pending Confirm buttons (AiConversation table)
 ├── events/                   # Discord.js event handlers (8 files)
 ├── interactionHandlers/
 │   ├── commands/             # 23 slash command handlers
@@ -228,6 +229,17 @@ With `discord_channel`, the channel name gets the player count as a suffix (`val
 
 ---
 
+## Kraken AI Assistant
+
+`events/messageCreate.ts` answers DMs, @-mentions and replies to an earlier AI answer via `OllamaAI.ask()`.
+
+- **Context:** each turn rebuilds the system prompt plus a context message (current date/time in the member's timezone, their name, DM vs. channel). Only the conversation after those is stored, in `AiConversation`, under every message the answer was sent as. Replying to one continues it for 24h; in DMs a plain message continues the latest conversation for 30 min.
+- **Long answers** are split into ≤2000-char messages (`utils/DiscordText.ts`).
+- **Confirm buttons:** `createRaid`, `joinRaid`, `leaveRaid`, `manageGameServer` and `suggestRaidTime` (`CONFIRMED_TOOLS`) never act when the model calls them. They are pre-checked, queued as `PendingAction`s and shown as buttons (`aiConfirm_<index>` / `aiConfirm_cancel`, handled in `interactionHandlers/buttons/aiConfirm.ts`). Only the requesting member can press them; the tool runs (and re-validates) on press. To make a new tool need confirmation, add it to `CONFIRMED_TOOLS` and give it a case in `checkConfirmable`.
+- **Times** in tool output use `formatTime()`: member-local time plus a `<t:…:F>` Discord tag.
+
+---
+
 ## Code Conventions
 
 ### Naming
@@ -324,6 +336,7 @@ Key models and their purpose:
 | `Presence` | Game activity tracking |
 | `i_Island` / `i_Building` / `i_Unit` | Island game mechanics |
 | `Login_History` | Web login audit trail |
+| `AiConversation` | Kraken AI chat history + pending Confirm-button actions, keyed by bot message ID (pruned after 24h) |
 
 ---
 
