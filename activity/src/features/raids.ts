@@ -407,11 +407,31 @@ function toLocalInputValue(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+/**
+ * A raid board link from a scheduling DM (discord.com/activities/<app>?custom_id=raid-<id>)
+ * opens straight onto that raid's board — once. Coming back to the tab later
+ * shows the normal list.
+ */
+let deepLinkHandled = false;
+
+function deepLinkedRaidId(session: Session): number | null {
+  if (deepLinkHandled) return null;
+  deepLinkHandled = true;
+  const match = /^raid-(\d+)$/.exec(session.sdk.customId ?? "");
+  return match ? Number(match[1]) : null;
+}
+
 export const raids: Feature = {
   id: "raids",
   label: "Raids",
   icon: "⚔️",
   mount(view, session) {
-    return showList(view, session);
+    const raidId = deepLinkedRaidId(session);
+    if (raidId === null) return showList(view, session);
+    // A stale link (raid deleted, or not visible to this member) falls back to the list.
+    return showBoard(view, session, raidId).catch((err) => {
+      console.warn(`Deep-linked raid ${raidId} failed to open`, err);
+      return showList(view, session);
+    });
   },
 };

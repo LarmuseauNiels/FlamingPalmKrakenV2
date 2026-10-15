@@ -1,4 +1,6 @@
 import {
+  ActionRowBuilder,
+  ButtonBuilder,
   EmbedBuilder,
   GuildScheduledEventEntityType,
   GuildScheduledEventPrivacyLevel,
@@ -200,7 +202,11 @@ export abstract class RaidScheduler {
     });
 
     if (!exists) {
-      await this.SendSchedulingDMs(raidId);
+      if (RaidEmbeds.raidBoardUrl(raidId)) {
+        await this.SendNewTimeDMs(raid, timestamp, memberId);
+      } else {
+        await this.SendSchedulingDMs(raidId);
+      }
       const unix = Math.floor(timestamp.getTime() / 1000);
       global.client.lfg
         .send({
@@ -265,8 +271,12 @@ export abstract class RaidScheduler {
           "https://flamingpalm.com/assets/images/logo/FlamingPalmLogoSmall.png",
       })
       .setColor("#0099ff");
+    const board = RaidEmbeds.buildRaidBoardButton(raid.ID);
     global.client.lfg
-      .send({ embeds: [updateEmbed] })
+      .send({
+        embeds: [updateEmbed],
+        components: board ? [new ActionRowBuilder<ButtonBuilder>().addComponents(board)] : [],
+      })
       .catch((err) => log.error("Failed to send scheduling update to lfg:", err));
   }
 
@@ -303,26 +313,15 @@ export abstract class RaidScheduler {
       log.warn("Raid not found for scheduling DMs: " + raidId);
       return;
     }
-    let embed = RaidEmbeds.buildSchedulingMessage(raid);
-    let row = RaidEmbeds.buildSchedulingActionRow(raid.ID);
-    const optionIds = raid.RaidSchedulingOption.map((o) => o.ID);
 
     raid.RaidAttendees.forEach((attendee) => {
-      this.getMemberSelectedOptionIds(attendee.MemberId, optionIds)
-        .then((selected) => {
-          const selectMenu = RaidEmbeds.buildSchedulingSelectMenu(
-            raid.ID,
-            raid.RaidSchedulingOption,
-            selected
-          );
+      this.buildSchedulingDM(raid, attendee.MemberId)
+        .then((dm) => {
           return global.client.users
             .fetch(attendee.MemberId)
             .then((user) => {
               user
-                .send({
-                  embeds: [embed],
-                  components: [selectMenu, row],
-                } as MessageCreateOptions)
+                .send(dm)
                 .catch((err) => {
                   global.client.log(
                     "Error sending scheduling message for raid " +
@@ -349,27 +348,49 @@ export abstract class RaidScheduler {
     });
   }
 
+  /**
+   * The full scheduling DM for one member: embed, voting menu with their
+   * existing votes pre-selected, and the action row (incl. raid board link).
+   */
+  static async buildSchedulingDM(
+    raid: Raids & { RaidSchedulingOption: RaidSchedulingOption[]; RaidAttendees: RaidAttendees[] },
+    memberId: string
+  ): Promise<MessageCreateOptions> {
+    const optionIds = raid.RaidSchedulingOption.map((o) => o.ID);
+    const selected = await this.getMemberSelectedOptionIds(memberId, optionIds);
+    return {
+      embeds: [RaidEmbeds.buildSchedulingMessage(raid)],
+      components: [
+        RaidEmbeds.buildSchedulingSelectMenu(raid.ID, raid.RaidSchedulingOption, selected),
+        RaidEmbeds.buildSchedulingActionRow(raid.ID),
+      ],
+    } as MessageCreateOptions;
+  }
+
+  /**
+   * Tells every attendee (except the suggester) about a new time with a link
+   * to the raid board, instead of re-sending each of them a full voting menu.
+   */
+  static async SendNewTimeDMs(raid: Raids & { RaidAttendees: RaidAttendees[] }, timestamp: Date, suggesterId: string) {
+    const notice = RaidEmbeds.buildNewTimeNotice(raid, timestamp, suggesterId);
+    for (const attendee of raid.RaidAttendees) {
+      if (attendee.MemberId === suggesterId) continue;
+      global.client.users
+        .fetch(attendee.MemberId)
+        .then((user) => user.send(notice))
+        .catch((err) => log.error("Failed to send new-time notice to " + attendee.MemberId + ":", err));
+    }
+  }
+
   static async resendRaid(raidID: number, user: User) {
     let raid = await this.getRaid(raidID);
     if (raid == null) {
       log.warn("Raid not found for resend: " + raidID);
       return "Raid not found";
     }
-    let embed = RaidEmbeds.buildSchedulingMessage(raid);
-    let row = RaidEmbeds.buildSchedulingActionRow(raid.ID);
-    const optionIds = raid.RaidSchedulingOption.map((o) => o.ID);
-    const selected = await this.getMemberSelectedOptionIds(user.id, optionIds);
-    let selectMenu = RaidEmbeds.buildSchedulingSelectMenu(
-      raid.ID,
-      raid.RaidSchedulingOption,
-      selected
-    );
 
     user
-      .send({
-        embeds: [embed],
-        components: [selectMenu, row],
-      } as MessageCreateOptions)
+      .send(await this.buildSchedulingDM(raid, user.id))
       .catch((err: any) => {
         log.error("Failed to resend scheduling message:", err);
         return err.toString();

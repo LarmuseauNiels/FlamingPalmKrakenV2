@@ -55,6 +55,8 @@ FlamingPalmKrakenV2/
 │   ├── ValheimPlayerLog.ts   # Valheim online-player tracking from the Pelican console websocket
 │   ├── NotificationLevels.ts # User notification preferences
 │   ├── PartyNightReminder.ts # Weekly DM reminder to admins about Party Night points
+│   ├── RaidReminders.ts      # "Raid starts soon" DM to attendees (cron, once per raid)
+│   ├── TimezonePrompt.ts     # One-click timezone picker (locale-hinted select menu)
 │   ├── profile.js            # Profile image generation (legacy JS)
 │   └── ApiFunctions/         # Organized Express route handlers
 │       ├── AdminEndPoints.ts
@@ -159,7 +161,9 @@ const raids = await global.client.prisma.raids.findMany(...);
 | `BUGSNAG_API_KEY` | Bugsnag error tracking key |
 | `LOG_LEVEL` | Logger level: DEBUG, INFO, WARN, ERROR |
 | `DISABLE` | Set to skip startup (optional) |
-| `ACTIVITY_ENABLED` | `true` to register the Activity entry point command and show the in-Discord store button (optional, default off) |
+| `ACTIVITY_ENABLED` | `true` to register the Activity entry point command and show the in-Discord store button (optional, default off). Also adds "Open raid board" links to scheduling DMs/LFG and replaces full menu re-sends on new time suggestions with a short notice |
+| `RAID_REMINDER_MINUTES` | Minutes before a scheduled raid that attendees get the "starts soon" DM (optional, default 30) |
+| `RAID_VOICE_CHANNEL_ID` | Voice channel linked in raid reminders (optional; falls back to the LFG channel) |
 | `ISLANDER_AWARD_POINTS` | `true` to award community Points for Islander milestones (optional, default off) |
 | `ISLANDER_POINTS_EXCHANGE` | `true` to enable the Points→island-Currency exchange button (optional, default off) |
 | `CAPROVER_GIT_COMMIT_SHA` | Version tracking (optional) |
@@ -308,6 +312,8 @@ await interaction.editReply({ content: '...' });
 | `modules/WebApi.ts` | Express app, Passport OAuth, JWT auth middleware |
 | `modules/PelicanStatusMonitor.ts` | Pelican panel game server status + Discord embeds |
 | `modules/PartyNightReminder.ts` | Saturday 21:00 Europe/Brussels DM reminder to `ADMIN_IDS` |
+| `modules/RaidReminders.ts` | Every minute: DMs attendees of raids starting within `RAID_REMINDER_MINUTES`, claimed via `Raids.ReminderSent`; DM failures are pinged in LFG |
+| `modules/TimezonePrompt.ts` | Timezone picker shown once after a first sign-up/vote (`Members.TimezonePromptedAt`) and before "Suggest Custom Time" when no timezone is set; handled by `selects/timezonePick.ts`. Zone names must be in `Intl.supportedValuesOf("timeZone")` (Node uses legacy names like `Europe/Kiev`) |
 | `modules/ApiFunctions/` | Route handlers organized by domain |
 | `modules/ApiFunctions/ActivityEndPoints.ts` | Discord Activity OAuth code exchange + static hosting of `activity/dist` |
 | `activity/` | Discord Activity SPA — separate Vite build, excluded from the bot's `tsc` |

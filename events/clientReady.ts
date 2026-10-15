@@ -36,6 +36,7 @@ export default class ready implements IEvent {
     require("../modules/VintageStoryStatus.js")(client);
     require("../modules/PelicanStatusMonitor.js")(client);
     require("../modules/PartyNightReminder.js")(client);
+    require("../modules/RaidReminders.js")(client);
     // Collection is an enhanced Map which we are going to save our invites to.
     const guildInvites: Collection<string, any> = new Collection();
     client.invites = guildInvites;

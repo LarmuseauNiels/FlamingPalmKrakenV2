@@ -6,6 +6,7 @@ import {
   StringSelectMenuInteraction,
 } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
+import { offerTimezoneOnce } from "../../modules/TimezonePrompt";
 
 export default class RaidSignupHandler implements IHandler {
   name = "raidsignup";
@@ -55,10 +56,11 @@ export default class RaidSignupHandler implements IHandler {
       interaction.user.id,
       parseInt(interaction.values[0])
     );
-    interaction.reply({
+    await interaction.reply({
       content:
         "You've successfully enlisted for the raid! Type /raids again to view any updates or changes.",
       ephemeral: true,
     });
+    await offerTimezoneOnce(interaction);
   }
 }

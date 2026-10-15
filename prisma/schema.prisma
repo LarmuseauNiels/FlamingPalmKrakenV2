@@ -23,6 +23,8 @@ model Members {
   Blocked                               Boolean?              @default(false)
   NotifyLevel                           Int?                  @default(0)
   Timezone                              String?               @db.VarChar(50)
+  /// When the member was last offered the one-click timezone picker.
+  TimezonePromptedAt                    DateTime?             @db.DateTime(0)
   Achievement_History                   Achievement_History[]
   PointHistory                          PointHistory[]
   Points                                Points?
@@ -221,6 +223,8 @@ model Raids {
   Creator              String                 @db.VarChar(25)
   CreationTime         DateTime?              @default(now()) @db.DateTime(0)
   Status               Int?                   @default(1) @db.TinyInt
+  /// Set once the "starts soon" DM went out, so each raid is reminded once.
+  ReminderSent         Boolean                @default(false)
   RaidAttendees        RaidAttendees[]
   RaidSchedulingOption RaidSchedulingOption[]
   Members              Members                @relation(fields: [Creator], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "PocketEvents_Members_ID_fk")

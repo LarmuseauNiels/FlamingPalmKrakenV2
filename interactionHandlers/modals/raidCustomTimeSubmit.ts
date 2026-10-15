@@ -56,7 +56,7 @@ export default class RaidCustomTimeSubmitHandler implements IHandler {
       await RaidScheduler.suggestTime(raidId, interaction.user.id, parsed.toDate());
 
       await interaction.editReply({
-        content: `Successfully added <t:${parsed.unix()}:F> to the raid options! Participants have been sent an updated voting menu in their DMs.`,
+        content: `Successfully added <t:${parsed.unix()}:F> to the raid options! The other participants have been notified.`,
       });
     } catch (error) {
       if (error instanceof RaidRuleError) {

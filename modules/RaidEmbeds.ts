@@ -126,8 +126,26 @@ export abstract class RaidEmbeds {
     }
   }
 
+  /**
+   * Activity link that opens straight onto this raid's scheduling board (the
+   * Activity reads custom_id via discordSdk.customId). Null when Activities
+   * are off, so callers fall back to the DM voting menu.
+   */
+  static raidBoardUrl(raidId: number): string | null {
+    if (process.env.ACTIVITY_ENABLED !== "true" || !process.env.CLIENT_ID) return null;
+    return `https://discord.com/activities/${process.env.CLIENT_ID}?custom_id=raid-${raidId}`;
+  }
+
+  static buildRaidBoardButton(raidId: number, label = "Open raid board"): ButtonBuilder | null {
+    const url = this.raidBoardUrl(raidId);
+    return url ? new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel(label).setEmoji("🗓️").setURL(url) : null;
+  }
+
   static buildSchedulingActionRow(raidId: number) {
-    return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    const row = new ActionRowBuilder<ButtonBuilder>();
+    const board = this.buildRaidBoardButton(raidId);
+    if (board) row.addComponents(board);
+    return row.addComponents(
       new ButtonBuilder()
         .setCustomId(`raidVotes_${raidId}`)
         .setLabel("View Participants' Chosen Times")
@@ -137,6 +155,27 @@ export abstract class RaidEmbeds {
         .setLabel("Suggest Custom Time")
         .setStyle(ButtonStyle.Primary)
     );
+  }
+
+  /**
+   * Short DM for a newly suggested time when the raid board is available:
+   * points at the live board instead of re-sending every attendee a full
+   * voting menu (Discord can't update menus in DMs that were already sent).
+   */
+  static buildNewTimeNotice(raid: Raids, timestamp: Date, suggesterId: string) {
+    const unix = Math.floor(timestamp.getTime() / 1000);
+    const embed = new EmbedBuilder()
+      .setTitle("New time suggested: " + raid.Title)
+      .setDescription(`<@${suggesterId}> suggested <t:${unix}:F> (<t:${unix}:R>). Can you make it?`)
+      .setColor("#0099ff");
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      this.buildRaidBoardButton(raid.ID, "Vote on the raid board"),
+      new ButtonBuilder()
+        .setCustomId(`raidResendMenu_${raid.ID}`)
+        .setLabel("Vote here instead")
+        .setStyle(ButtonStyle.Secondary)
+    );
+    return { embeds: [embed], components: [row] };
   }
 
   static buildSchedulingSelectMenu(
