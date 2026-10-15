@@ -70,7 +70,9 @@ A Discord bot for the FlamingPalm gaming community, providing raid scheduling, a
    | `BUGSNAG_API_KEY` | Bugsnag error tracking key |
    | `LOG_LEVEL` | Logger verbosity: `DEBUG`, `INFO`, `WARN`, `ERROR` |
    | `DISABLE` | Set to skip startup (optional) |
-   | `ACTIVITY_ENABLED` | `true` to enable the Discord Activity storefront (optional) |
+   | `ACTIVITY_ENABLED` | `true` to enable the Discord Activity (store, raid board links in scheduling DMs) (optional) |
+   | `RAID_REMINDER_MINUTES` | Minutes before a raid that attendees get a reminder DM (optional, default 30) |
+   | `RAID_VOICE_CHANNEL_ID` | Voice channel linked in raid reminders (optional, defaults to LFG) |
 | `CAPROVER_GIT_COMMIT_SHA` | Version tracking (optional) |
 
 4. **Run database migrations**

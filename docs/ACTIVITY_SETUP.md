@@ -125,6 +125,23 @@ the `.discordsays.com` host.
 
 ---
 
+## Deep links into the raid board
+
+Scheduling DMs and the LFG "entered scheduling" message carry an **Open raid
+board** link button (`RaidEmbeds.raidBoardUrl`):
+
+```
+https://discord.com/activities/<CLIENT_ID>?custom_id=raid-<raidId>
+```
+
+Discord passes `custom_id` to the Activity as `discordSdk.customId`; the Raids
+tab (`features/raids.ts`) opens that raid's board on first mount, falling back
+to the list if it can't load. When a member suggests a new time, attendees get
+a short notice with this link plus a **Vote here instead** button
+(`buttons/raidResendMenu.ts`) rather than a whole new voting menu each.
+
+---
+
 ## Manual test checklist
 
 - [ ] `npm run build` (bot) and `npm --prefix activity run build` both succeed
@@ -137,3 +154,4 @@ the `.discordsays.com` host.
 - [ ] Balance and stock are correct; redeeming deducts points and posts to the
       purchase channel, exactly as the website does
 - [ ] A non-member of the guild gets 403, not a store
+- [ ] "Open raid board" in a scheduling DM launches the Activity on that raid's board

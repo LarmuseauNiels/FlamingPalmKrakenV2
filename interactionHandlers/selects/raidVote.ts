@@ -2,6 +2,7 @@ import { StringSelectMenuInteraction } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
 import { RaidScheduler } from "../../modules/RaidScheduler";
 import { createLogger } from "../../utils/logger";
+import { offerTimezoneOnce } from "../../modules/TimezonePrompt";
 
 const log = createLogger("RaidVoteHandler");
 
@@ -54,6 +55,7 @@ export default class RaidVoteHandler implements IHandler {
 
       // 3. Trigger a re-check of consensus
       await RaidScheduler.recheckRaid(raidId);
+      await offerTimezoneOnce(interaction);
     } catch (error) {
       log.error("Error handling raid vote:", error);
       if (interaction.replied || interaction.deferred) {
