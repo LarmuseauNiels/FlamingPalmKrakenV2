@@ -6,24 +6,33 @@ const log = createLogger("ValheimPlayerLog");
 
 // Valheim's Steam query (A2S) returns a correct player count but blank player
 // names, so the names are read from the server console instead. Relevant lines:
-//   "Got character ZDOID from Niels : -123456:1"  → Niels spawned (join / respawn)
-//   "Got character ZDOID from Niels : 0:0"        → Niels died
-//   "... Steam_76561198000000000 ..."             → platform ID, logged just before the ZDOID line
-//   "Closing socket 76561198000000000"            → that player left
-//   "Load world: <name>"                          → server (re)started, nobody online
+//   "Got character ZDOID from Big Bob : -438505887:1"  → Big Bob spawned (join / respawn);
+//                                                        -438505887 is their peer (owner) ID
+//   "Got character ZDOID from Big Bob : 0:0"           → Big Bob died
+//   "Destroying abandoned non persistent zdo -438505887:1 owner -438505887"
+//                                                      → that peer left (Steam and crossplay)
+//   "... Steam_76561198000000000 ..."                  → platform ID, logged just before the ZDOID line
+//   "Closing socket 76561198000000000"                 → that player left (Steam only, not crossplay)
+//   "Load world: <name>"                               → server (re)started, nobody online
 const ZDOID_RE = /Got character ZDOID from (.+?) : (-?\d+):(-?\d+)/;
+const ABANDONED_RE = /Destroying abandoned non persistent zdo \S+ owner (-?\d+)/;
 const STEAM_ID_RE = /\b(?:Steam_)?(7656119\d{10})\b/;
 const LEAVE_RE = /clos|disconnect|dispos/i;
 const WORLD_LOAD_RE = /Load world:/;
 const ANSI_RE = /\x1b\[[0-9;]*[A-Za-z]/g;
 
+interface OnlinePlayer {
+  name: string;
+  steamId: string | null;
+}
+
 /**
- * Tracks who is online on a Valheim server from its console output. Leave
- * lines are matched by Steam ID, which isn't always available (crossplay), so
- * callers should check `namesFor(count)` against the authoritative A2S count.
+ * Tracks who is online on a Valheim server from its console output. A missed
+ * leave line leaves a stale entry behind, so callers should check
+ * `namesFor(count)` against the authoritative A2S count.
  */
 export class ValheimPlayerTracker {
-  private online = new Map<string, string | null>(); // name → Steam ID (if known)
+  private online = new Map<string, OnlinePlayer>(); // peer (owner) ID → player
   private pendingId: string | null = null;
 
   feed(rawLine: string): void {
@@ -37,12 +46,21 @@ export class ValheimPlayerTracker {
 
     const zdoid = line.match(ZDOID_RE);
     if (zdoid) {
-      const [, name, id] = zdoid;
-      if (id === "0") return; // death, the player is still online
-      if (!this.online.has(name) || this.pendingId) {
-        this.online.set(name, this.pendingId ?? this.online.get(name) ?? null);
+      const [, name, owner] = zdoid;
+      if (owner === "0") return; // death, the player is still online
+      const previous = this.online.get(owner);
+      // A rejoin gets a new peer ID; drop the old entry in case its leave was missed
+      for (const [id, player] of Array.from(this.online)) {
+        if (id !== owner && player.name === name) this.online.delete(id);
       }
+      this.online.set(owner, { name, steamId: this.pendingId ?? previous?.steamId ?? null });
       this.pendingId = null;
+      return;
+    }
+
+    const abandoned = line.match(ABANDONED_RE);
+    if (abandoned) {
+      this.online.delete(abandoned[1]);
       return;
     }
 
@@ -50,8 +68,8 @@ export class ValheimPlayerTracker {
     if (!steamId) return;
 
     if (LEAVE_RE.test(line)) {
-      for (const [name, id] of Array.from(this.online)) {
-        if (id === steamId) this.online.delete(name);
+      for (const [id, player] of Array.from(this.online)) {
+        if (player.steamId === steamId) this.online.delete(id);
       }
       if (this.pendingId === steamId) this.pendingId = null;
     } else {
@@ -71,7 +89,7 @@ export class ValheimPlayerTracker {
    */
   namesFor(count: number): string[] | null {
     if (count === 0) this.reset();
-    return this.online.size === count ? Array.from(this.online.keys()) : null;
+    return this.online.size === count ? Array.from(this.online.values(), (p) => p.name) : null;
   }
 }
 

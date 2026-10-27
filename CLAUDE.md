@@ -229,7 +229,7 @@ discord_channel: 1234567890   # optional — text channel to mirror the server i
 
 With `discord_channel`, the channel name gets the player count as a suffix (`valheim` → `valheim-3`, base name restored when the server is offline) and the first line of the channel topic shows who is online (`🟢 3 online: A, B, C`). The rest of the topic is kept. Discord allows only 2 name/topic edits per channel per 10 minutes, so edits are spaced 5 minutes apart and only sent on change.
 
-**Valheim player names:** Valheim's A2S reply has a correct count but blank names, so for `gamedig: valheim` servers `modules/ValheimPlayerLog.ts` streams the console over the Pelican/Wings websocket and tracks `Got character ZDOID from <name>` (join) and `Closing socket <steamid>` (leave). Names are only shown when the tracked list matches the A2S count; otherwise only the count is shown.
+**Valheim player names:** Valheim's A2S reply has a correct count but blank names, so for `gamedig: valheim` servers `modules/ValheimPlayerLog.ts` streams the console over the Pelican/Wings websocket and tracks `Got character ZDOID from <name> : <owner>:<n>` (join, keyed by the owner/peer ID) and `Destroying abandoned non persistent zdo … owner <owner>` (leave). Crossplay servers log no `Closing socket <steamid>` line, so that's only a fallback for Steam players. Names are only shown when the tracked list matches the A2S count; otherwise only the count is shown.
 
 ---
 
