@@ -5,10 +5,15 @@ import {
   GuildScheduledEventEntityType,
   ForumChannel,
 } from "discord.js";
+import moment from "moment-timezone";
 import { IHandler } from "../../interfaces/IHandler";
 import { createLogger } from "../../utils/logger";
 
 const log = createLogger("CreatePartyCommand");
+
+const PARTY_TIMEZONE = "Europe/Brussels";
+const PARTY_DAY = 6; // Saturday
+const PARTY_START_HOUR = 20;
 
 export default class CreatePartyCommand implements IHandler {
   name: string = "create-party";
@@ -74,16 +79,7 @@ export default class CreatePartyCommand implements IHandler {
         "base64"
       )}`;
 
-      // Compute the upcoming Saturday at 8 PM
-      const now = new Date();
-      let daysUntilSaturday = (6 - now.getDay() + 7) % 7;
-      // If today is Saturday and it's already past 8 PM, schedule for next Saturday
-      if (daysUntilSaturday === 0 && now.getHours() >= 20) {
-        daysUntilSaturday = 7;
-      }
-      const eventDate = new Date(now);
-      eventDate.setDate(now.getDate() + daysUntilSaturday);
-      eventDate.setHours(18, 0, 0, 0);
+      const eventDate = this.getNextPartyStart();
 
       // Optionally, set an end time (here, 2 hours after the start)
       const eventEndDate = new Date(eventDate.getTime() + 2 * 60 * 60 * 1000);
@@ -125,9 +121,9 @@ export default class CreatePartyCommand implements IHandler {
       });
 
       await interaction.reply({
-        content: `Scheduled event "${
-          scheduledEvent.name
-        }" created for ${eventDate.toLocaleString()}.`,
+        content: `Scheduled event "${scheduledEvent.name}" created for <t:${Math.floor(
+          eventDate.getTime() / 1000
+        )}:F>.`,
       });
     } catch (error) {
       log.error("Error creating scheduled event:", error);
@@ -138,6 +134,22 @@ export default class CreatePartyCommand implements IHandler {
     }
   }
   isGuild?: boolean = true;
+
+  // The upcoming party slot in Brussels time, so it stays at the same wall-clock
+  // hour across DST changes whatever timezone the server runs in. Once this
+  // week's start has passed, it rolls over to next week.
+  private getNextPartyStart(now: Date = new Date()): Date {
+    const current = moment.tz(now, PARTY_TIMEZONE);
+    const start = current
+      .clone()
+      .day(PARTY_DAY)
+      .hour(PARTY_START_HOUR)
+      .startOf("hour");
+    if (!start.isAfter(current)) {
+      start.add(7, "days");
+    }
+    return start.toDate();
+  }
 
   private getWeekNumber(date: Date = new Date()): number {
     // Copy date to prevent modification
