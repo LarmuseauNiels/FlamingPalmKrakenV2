@@ -10,6 +10,7 @@ function toRaidDto(raid: any) {
     minPlayers: raid.MinPlayers,
     creationTime: raid.CreationTime,
     status: raid.Status,
+    lastActivity: raid.LastActivity,
     creatorId: raid.Creator,
     creatorName: raid.Members?.DisplayName ?? raid.Creator,
     attending: raid._count?.RaidAttendees ?? 0,
@@ -80,6 +81,9 @@ export function raidEndPoints(app) {
       if (title !== undefined) updateData.Title = title;
       if (minPlayers !== undefined) updateData.MinPlayers = parseInt(minPlayers, 10);
       if (status !== undefined) updateData.Status = parseInt(status, 10);
+      // An admin edit (e.g. reopening an expired raid) counts as activity, so
+      // the raid gets a fresh RAID_EXPIRY_DAYS instead of re-expiring at once.
+      updateData.LastActivity = new Date();
 
       const raid = await global.client.prisma.raids.update({
         where: { ID: raidId },

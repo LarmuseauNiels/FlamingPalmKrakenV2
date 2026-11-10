@@ -1,4 +1,5 @@
 import { IHandler } from "../../interfaces/IHandler";
+import { RaidModule } from "../../modules/RaidModule";
 
 export default class RaidUnsub implements IHandler {
   name = "raidunsub";
@@ -12,6 +13,7 @@ export default class RaidUnsub implements IHandler {
         },
       },
     });
+    await RaidModule.touchRaid(parseInt(raidId));
     interaction.reply({
       content: "Successfully unsubscribed from the raid!",
       ephemeral: true,

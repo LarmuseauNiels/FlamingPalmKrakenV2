@@ -225,6 +225,9 @@ model Raids {
   Status               Int?                   @default(1) @db.TinyInt
   /// Set once the "starts soon" DM went out, so each raid is reminded once.
   ReminderSent         Boolean                @default(false)
+  /// Last sign-up, leave, vote or time suggestion. Open/Scheduling raids idle
+  /// for RAID_EXPIRY_DAYS are expired (Status 4) by RaidScheduler.expireStaleRaids.
+  LastActivity         DateTime               @default(now()) @db.DateTime(0)
   RaidAttendees        RaidAttendees[]
   RaidSchedulingOption RaidSchedulingOption[]
   Members              Members                @relation(fields: [Creator], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "PocketEvents_Members_ID_fk")

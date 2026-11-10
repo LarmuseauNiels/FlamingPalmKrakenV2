@@ -44,6 +44,8 @@ export interface RaidSummary {
   status: number;
   attendeeCount: number;
   attending: boolean;
+  /** The viewer is an admin and may close this raid. */
+  canClose: boolean;
 }
 
 export interface RaidAttendee {
@@ -69,6 +71,8 @@ export interface RaidBoard {
   status: number;
   maxOptions: number;
   attending: boolean;
+  /** The viewer is an admin and the raid is still open or picking a time. */
+  canClose: boolean;
   attendees: RaidAttendee[];
   options: RaidOption[];
 }
@@ -106,6 +110,11 @@ export function setAvailability(
 /** POST /members/raids/:id/options — suggest a new slot (you're counted in on it). */
 export function suggestTime(token: string, raidId: number, time: Date): Promise<{ id: number }> {
   return postJson<{ id: number }>(`/members/raids/${raidId}/options`, { time: time.toISOString() }, token);
+}
+
+/** POST /members/raids/:id/close — admins only: cancel the raid and tell its players. */
+export function closeRaid(token: string, raidId: number): Promise<void> {
+  return post(`/members/raids/${raidId}/close`, {}, token);
 }
 
 export interface GameServer {

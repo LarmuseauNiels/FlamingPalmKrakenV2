@@ -9,6 +9,8 @@ import {
 } from "discord.js";
 import { RaidAttendees, Raids, RaidSchedulingOption } from "@prisma/client";
 import { RaidEmbeds } from "./RaidEmbeds";
+import { RaidModule } from "./RaidModule";
+import { ChannelUpdates } from "../islander/ChannelUpdates";
 import { createLogger } from "../utils/logger";
 
 const log = createLogger("RaidScheduler");
@@ -18,6 +20,9 @@ const log = createLogger("RaidScheduler");
  * every option of a raid — so that's the cap on suggestions per raid.
  */
 export const MAX_SCHEDULING_OPTIONS = 25;
+
+/** Open/Scheduling raids with no activity for this many days are expired. */
+export const RAID_EXPIRY_DAYS = parseInt(process.env.RAID_EXPIRY_DAYS || "21");
 
 /** A rule the caller broke (not a server fault) — safe to show to the user. */
 export class RaidRuleError extends Error {}
@@ -200,6 +205,7 @@ export abstract class RaidScheduler {
       create: { SchedulingOptionId: option.ID, MemberId: memberId },
       update: {},
     });
+    await RaidModule.touchRaid(raidId);
 
     if (!exists) {
       if (RaidEmbeds.raidBoardUrl(raidId)) {
@@ -239,6 +245,7 @@ export abstract class RaidScheduler {
         where: { SchedulingOptionId: optionId, MemberId: memberId },
       });
     }
+    await RaidModule.touchRaid(raidId);
     await this.recheckRaid(raidId);
   }
 
@@ -588,6 +595,104 @@ export abstract class RaidScheduler {
     global.client.lfg
       .send({ embeds: [embed] })
       .catch((err) => log.error("Failed to send raid scheduled embed to lfg:", err));
+  }
+
+  /**
+   * Expires Open (1) and Scheduling (2) raids with no activity for
+   * RAID_EXPIRY_DAYS: they move to Status 4, which drops them from /raids,
+   * the raid board and the scheduling check. Each raid is claimed with a
+   * conditional update, so a vote landing mid-run (or an overlapping instance
+   * during a deploy) keeps the raid alive and nobody is notified twice.
+   */
+  static async expireStaleRaids() {
+    const cutoff = new Date(Date.now() - RAID_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+    const stale = await global.client.prisma.raids.findMany({
+      include: { RaidAttendees: true },
+      where: { Status: { in: [1, 2] }, LastActivity: { lt: cutoff } },
+    });
+
+    let expiredOpen = false;
+    for (const raid of stale) {
+      const claimed = await global.client.prisma.raids.updateMany({
+        where: { ID: raid.ID, Status: raid.Status, LastActivity: { lt: cutoff } },
+        data: { Status: 4 },
+      });
+      if (claimed.count === 0) continue;
+      if (raid.Status === 1) expiredOpen = true;
+
+      log.info(`Expired raid ${raid.ID} (${raid.Title}): no activity since ${raid.LastActivity.toISOString()}`);
+      global.client.log(
+        `Raid ${raid.ID} expired after ${RAID_EXPIRY_DAYS} days without activity: ${raid.Title}`
+      );
+
+      const phase = raid.Status === 1 ? "sign-ups" : "time picking";
+      this.notifyClosed(
+        raid,
+        "Raid expired: " + raid.Title,
+        `Nothing happened on this raid (${phase}) for ${RAID_EXPIRY_DAYS} days, so it has been closed. ` +
+          "To try again, create a new raid with `/create-raid`."
+      );
+    }
+
+    // The raid channel's sign-up list is a snapshot; post a fresh one so the
+    // dropdown stops offering raids that are gone.
+    if (expiredOpen) {
+      ChannelUpdates.MessageWithRaid("Raids without activity for " + RAID_EXPIRY_DAYS + " days have been closed.").catch(
+        (err) => log.error("Failed to send raid channel update after expiry:", err)
+      );
+    }
+  }
+
+  /**
+   * An admin closes an Open or Scheduling raid from the raid board: it moves
+   * to Status 4 (gone from /raids, the board and the scheduling check) and
+   * everyone signed up is told. Claimed with a conditional update, so two
+   * admins pressing at once, or consensus landing first, close it at most once.
+   */
+  static async closeRaid(raidId: number, adminId: string) {
+    const raid = await global.client.prisma.raids.findUnique({
+      where: { ID: raidId },
+      include: { RaidAttendees: true },
+    });
+    if (!raid) throw new RaidRuleError("Raid not found.");
+
+    const claimed = await global.client.prisma.raids.updateMany({
+      where: { ID: raidId, Status: { in: [1, 2] } },
+      data: { Status: 4 },
+    });
+    if (claimed.count === 0) {
+      throw new RaidRuleError("This raid is no longer open or picking a time.");
+    }
+
+    log.info(`Raid ${raid.ID} (${raid.Title}) closed by admin ${adminId}`);
+    global.client.log(`Raid ${raid.ID} closed by <@${adminId}>: ${raid.Title}`);
+    this.notifyClosed(
+      raid,
+      "Raid closed: " + raid.Title,
+      "An admin has closed this raid. To try again, create a new raid with `/create-raid`."
+    );
+    if (raid.Status === 1) {
+      ChannelUpdates.MessageWithRaid(`Raid closed: ${raid.Title}`).catch((err) =>
+        log.error("Failed to send raid channel update after closing:", err)
+      );
+    }
+  }
+
+  /** DMs every attendee of a raid that was expired or closed. Fire-and-forget. */
+  private static notifyClosed(
+    raid: Raids & { RaidAttendees: RaidAttendees[] },
+    title: string,
+    description: string
+  ) {
+    const embed = new EmbedBuilder().setTitle(title).setDescription(description).setColor("#0099ff");
+    for (const attendee of raid.RaidAttendees) {
+      global.client.users
+        .fetch(attendee.MemberId)
+        .then((user) => user.send({ embeds: [embed] }))
+        .catch((err) =>
+          log.error("Failed to send raid closed DM to " + attendee.MemberId + ":", err)
+        );
+    }
   }
 
   static async cancelRaid(

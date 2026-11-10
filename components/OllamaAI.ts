@@ -1108,6 +1108,7 @@ export class OllamaAI {
           },
         },
       });
+      await RaidModule.touchRaid(raidId);
 
       // Post a channel update so the raid list reflects the change
       ChannelUpdates.MessageWithRaid(`<@${authorId}> has left the raid: ${raid.Title}`).catch((err) =>
@@ -1377,6 +1378,7 @@ export class OllamaAI {
           where: { MemberId: ctx.authorId, SchedulingOptionId: { in: unavailable.map((l) => byLetter.get(l).ID) } },
         });
       }
+      await RaidModule.touchRaid(raidId);
       await RaidScheduler.recheckRaid(raidId);
     } catch (err) {
       log.error("Failed to set raid availability:", err);

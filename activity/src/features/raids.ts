@@ -1,5 +1,6 @@
 import type { Session } from "../auth";
 import {
+  closeRaid,
   createRaid,
   getRaidBoard,
   getRaids,
@@ -18,6 +19,8 @@ import { describe, renderError, renderStatus, toast } from "../ui";
 
 /** How often an open board re-reads votes, so everyone sees each other live. */
 const POLL_MS = 4000;
+/** How long a "Confirm?" button stays armed after the first click. */
+const CONFIRM_MS = 4000;
 
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -53,12 +56,18 @@ async function showList(view: HTMLElement, session: Session): Promise<void> {
   const scheduling = raids.filter((r) => r.status === RaidStatus.Scheduling);
   const open = raids.filter((r) => r.status === RaidStatus.Open);
 
+  const reload = (): void => {
+    showList(view, session).catch((err) => renderError(describe(err), view));
+  };
+
   const sections: HTMLElement[] = [toolbar, form];
   sections.push(
     listSection(
       "Picking a time",
       scheduling,
       "No raids are picking a time right now.",
+      session,
+      reload,
       (raid) => {
         const button = el("button", undefined, "Open board");
         button.addEventListener("click", () => {
@@ -73,6 +82,8 @@ async function showList(view: HTMLElement, session: Session): Promise<void> {
       "Open for sign-ups",
       open,
       "No raids are open. Start one with /create-raid.",
+      session,
+      reload,
       (raid) => {
         const button = el("button", undefined, raid.attending ? "Joined" : "Join");
         button.disabled = raid.attending;
@@ -143,6 +154,8 @@ function listSection(
   heading: string,
   raids: RaidSummary[],
   emptyText: string,
+  session: Session,
+  onClosed: () => void,
   action: (raid: RaidSummary) => HTMLElement
 ): HTMLElement {
   const section = el("section", "raid-section");
@@ -165,7 +178,10 @@ function listSection(
         : `${raid.attendeeCount} signed up · needs ${raid.minPlayers} on one time`;
     text.append(title, el("span", "muted", meta));
 
-    row.append(text, action(raid));
+    const actions = el("div", "raid-actions");
+    actions.append(action(raid));
+    if (raid.canClose) actions.append(closeButton(session, raid.id, raid.title, onClosed));
+    row.append(text, actions);
     section.append(row);
   }
   return section;
@@ -195,7 +211,10 @@ async function showBoard(view: HTMLElement, session: Session, raidId: number): P
     showList(view, session).catch((err) => renderError(describe(err), view));
   });
   const title = el("h2");
-  toolbar.append(back, title);
+  const close = closeButton(session, raidId, board.title, () => {
+    showList(view, session).catch((err) => renderError(describe(err), view));
+  });
+  toolbar.append(back, title, close);
 
   const summary = el("p", "board-summary");
   const people = el("div", "people");
@@ -226,6 +245,7 @@ async function showBoard(view: HTMLElement, session: Session, raidId: number): P
     const names = new Map(board.attendees.map((a) => [a.id, a]));
 
     title.textContent = board.title;
+    close.hidden = !board.canClose;
     summary.textContent = describeBoard(board);
 
     // Who's signed up — dimmed until they've marked at least one time, so it's
@@ -366,6 +386,41 @@ async function showBoard(view: HTMLElement, session: Session, raidId: number): P
     if (document.hidden || pending.size > 0) return;
     refresh().catch((err) => console.error("Board refresh failed", err));
   }, POLL_MS);
+}
+
+/**
+ * Admin-only "Close raid" button. Closing cancels the raid for everyone, so it
+ * needs a second click within CONFIRM_MS, like Stop on the Servers tab.
+ */
+function closeButton(session: Session, raidId: number, title: string, onClosed: () => void): HTMLButtonElement {
+  const label = "Close raid";
+  const button = el("button", "danger", label);
+  button.title = "Cancel this raid and DM everyone signed up";
+  button.addEventListener("click", () => {
+    if (button.dataset.armed !== "1") {
+      button.dataset.armed = "1";
+      button.textContent = "Confirm?";
+      setTimeout(() => {
+        if (!button.isConnected) return;
+        delete button.dataset.armed;
+        button.textContent = label;
+      }, CONFIRM_MS);
+      return;
+    }
+    button.disabled = true;
+    closeRaid(session.token, raidId)
+      .then(() => {
+        toast(`Closed ${title}.`);
+        onClosed();
+      })
+      .catch((err) => {
+        toast(describe(err), "bad");
+        button.disabled = false;
+        delete button.dataset.armed;
+        button.textContent = label;
+      });
+  });
+  return button;
 }
 
 function describeBoard(board: RaidBoard): string {

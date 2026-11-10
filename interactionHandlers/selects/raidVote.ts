@@ -1,6 +1,7 @@
 import { StringSelectMenuInteraction } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
 import { RaidScheduler } from "../../modules/RaidScheduler";
+import { RaidModule } from "../../modules/RaidModule";
 import { createLogger } from "../../utils/logger";
 import { offerTimezoneOnce } from "../../modules/TimezonePrompt";
 
@@ -46,6 +47,7 @@ export default class RaidVoteHandler implements IHandler {
           })),
         });
       }
+      await RaidModule.touchRaid(raidId);
 
       await interaction.reply({
         content:

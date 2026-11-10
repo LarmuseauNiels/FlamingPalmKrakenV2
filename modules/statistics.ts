@@ -227,9 +227,12 @@ module.exports = async function (client: FpgClient) {
     }
 
     log.info("Running scheduling checker");
-    RaidScheduler.checkSchedules().catch((e) => {
-      log.error("Scheduling checker error:", e);
-    });
+    RaidScheduler.expireStaleRaids()
+      .catch((e) => log.error("Raid expiry error:", e))
+      .then(() => RaidScheduler.checkSchedules())
+      .catch((e) => {
+        log.error("Scheduling checker error:", e);
+      });
   });
 };
 

@@ -24,7 +24,7 @@ Open (1) → Scheduling (2) → Scheduled (3)
 | **Open** | Accepting sign-ups. Join before the minimum player count is reached. |
 | **Scheduling** | Enough players signed up. The bot is collecting time-slot votes via DM. |
 | **Scheduled** | A time with full consensus was found. The raid is confirmed. |
-| **Cancelled** | No time worked for everyone before the deadline. The raid is over. |
+| **Cancelled** | No time worked for everyone before the deadline, or the raid expired. The raid is over. |
 
 ---
 
@@ -130,6 +130,19 @@ If the scheduling deadline passes without any slot reaching full consensus, the 
 
 ---
 
+## When a Raid Expires
+
+A raid that sits untouched for **3 weeks** is closed automatically, whether it is
+still collecting sign-ups or picking a time. Anything counts as activity:
+someone joining or leaving, a vote from the DM menu or the raid board, or a
+suggested time.
+
+- Everyone signed up gets a DM saying the raid expired.
+- The raid disappears from `/raids`, the raid board and the scheduling check.
+- To try again, create a new raid with `/create-raid`.
+
+---
+
 ## Tips
 
 - **Vote for every slot you can make**, not just your favourite. The bot needs a slot where _everyone_ is available, so casting more votes makes scheduling more likely to succeed.
@@ -150,3 +163,11 @@ Resend the scheduling DM to a specific user for a raid that is currently in the 
 |--------|----------|-------------|
 | `raid` | Yes | The numeric raid ID. |
 | `user` | Yes | The Discord user to resend the message to. |
+
+### Closing a raid from the raid board
+
+Admins (`ADMIN_IDS`) see a red **Close raid** button on every raid in the
+Activity's **⚔️ Raids** tab, both in the list and on the board itself. Click it,
+then click **Confirm?** within 4 seconds. The raid is cancelled, everyone signed
+up gets a DM, and it disappears from `/raids` and the board. Only raids that are
+still open or picking a time can be closed.

@@ -1,4 +1,4 @@
-import { authenticateToken, jsonify } from "./Helpers";
+import { authenticateAdmin, authenticateToken, getAdminIds, jsonify } from "./Helpers";
 import {
   MAX_SCHEDULING_OPTIONS,
   RaidRuleError,
@@ -31,6 +31,7 @@ export function raidBoardEndPoints(app) {
         orderBy: { CreationTime: "desc" } as any,
       });
 
+      const canClose = getAdminIds().includes(req.user.id);
       res.send(
         jsonify(
           raids.map((raid) => ({
@@ -40,6 +41,7 @@ export function raidBoardEndPoints(app) {
             status: raid.Status,
             attendeeCount: raid.RaidAttendees.length,
             attending: raid.RaidAttendees.some((a) => a.MemberId === req.user.id),
+            canClose,
           }))
         )
       );
@@ -97,6 +99,8 @@ export function raidBoardEndPoints(app) {
           minPlayers: raid.MinPlayers,
           status: raid.Status,
           maxOptions: MAX_SCHEDULING_OPTIONS,
+          // Admins may close raids that are still open or picking a time.
+          canClose: getAdminIds().includes(req.user.id) && (raid.Status === 1 || raid.Status === 2),
           attending: raid.RaidAttendees.some((a) => a.MemberId === req.user.id),
           attendees: raid.RaidAttendees.map((a) => ({
             id: a.MemberId,
@@ -170,6 +174,24 @@ export function raidBoardEndPoints(app) {
       if (err instanceof RaidRuleError) return res.status(400).send(err.message);
       log.error("Failed to suggest raid time:", err);
       res.status(500).send("Failed to add that time");
+    }
+  });
+
+  // POST /members/raids/:id/close — admins only: cancel an open/scheduling raid.
+  app.post(apiPrefix + "/:id/close", authenticateAdmin, async function (req, res) {
+    try {
+      const raidId = parseInt(req.params.id, 10);
+      if (isNaN(raidId)) return res.status(400).send("Invalid raid ID");
+
+      await RaidScheduler.closeRaid(raidId, req.user.id);
+      res.status(204).send();
+    } catch (err) {
+      if (err instanceof RaidRuleError) {
+        const status = err.message === "Raid not found." ? 404 : 409;
+        return res.status(status).send(err.message);
+      }
+      log.error("Failed to close raid:", err);
+      res.status(500).send("Failed to close the raid");
     }
   });
 }

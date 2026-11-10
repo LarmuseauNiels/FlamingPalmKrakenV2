@@ -48,6 +48,7 @@ export abstract class RaidModule {
         RaidId: raidId,
       },
     });
+    await RaidModule.touchRaid(raidId);
     let raid = await global.client.prisma.raids.findFirst({
       where: { ID: raidId },
     });
@@ -58,12 +59,30 @@ export abstract class RaidModule {
   }
 
   static async AddAttendeeToRaid(raidId: number, id: string) {
-    return global.client.prisma.raidAttendees.create({
+    const attendee = await global.client.prisma.raidAttendees.create({
       data: {
         RaidId: raidId,
         MemberId: id,
       },
     });
+    await RaidModule.touchRaid(raidId);
+    return attendee;
+  }
+
+  /**
+   * Records activity on a raid (sign-up, leave, vote, suggested time) so it
+   * isn't expired by RaidScheduler.expireStaleRaids. Never throws: a failed
+   * timestamp must not fail the action that triggered it.
+   */
+  static async touchRaid(raidId: number) {
+    try {
+      await global.client.prisma.raids.updateMany({
+        where: { ID: raidId },
+        data: { LastActivity: new Date() },
+      });
+    } catch (err) {
+      log.error("Failed to record activity on raid " + raidId + ":", err);
+    }
   }
 
   static async getRaidMessage() {

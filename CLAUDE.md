@@ -163,6 +163,7 @@ const raids = await global.client.prisma.raids.findMany(...);
 | `DISABLE` | Set to skip startup (optional) |
 | `ACTIVITY_ENABLED` | `true` to register the Activity entry point command and show the in-Discord store button (optional, default off). Also adds "Open raid board" links to scheduling DMs/LFG and replaces full menu re-sends on new time suggestions with a short notice |
 | `RAID_REMINDER_MINUTES` | Minutes before a scheduled raid that attendees get the "starts soon" DM (optional, default 30) |
+| `RAID_EXPIRY_DAYS` | Days without activity (sign-up, leave, vote, time suggestion) after which an Open/Scheduling raid expires to Status 4 (optional, default 21) |
 | `RAID_VOICE_CHANNEL_ID` | Voice channel linked in raid reminders (optional; falls back to the LFG channel) |
 | `ISLANDER_AWARD_POINTS` | `true` to award community Points for Islander milestones (optional, default off) |
 | `ISLANDER_POINTS_EXCHANGE` | `true` to enable the Points→island-Currency exchange button (optional, default off) |
@@ -306,7 +307,7 @@ await interaction.editReply({ content: '...' });
 | `events/interactionCreate.ts` | Routes all interactions to the correct handler |
 | `events/clientReady.ts` | Post-login setup: channels, invites, event cache |
 | `modules/RaidModule.ts` | All raid database operations |
-| `modules/RaidScheduler.ts` | Scheduling lifecycle (polls → scheduling → confirmation) |
+| `modules/RaidScheduler.ts` | Scheduling lifecycle (polls → scheduling → confirmation); `expireStaleRaids()` closes raids idle for `RAID_EXPIRY_DAYS` (runs every 15 min from `statistics.ts`). Anything that changes a raid's attendees or votes must call `RaidModule.touchRaid()` |
 | `modules/RaidEmbeds.ts` | All raid-related Discord embeds |
 | `modules/AchievementsModule.ts` | Achievement logic + canvas profile image generation |
 | `modules/WebApi.ts` | Express app, Passport OAuth, JWT auth middleware |

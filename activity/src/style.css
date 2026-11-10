@@ -403,6 +403,12 @@ button.ghost:hover {
   border-radius: 8px;
 }
 
+.raid-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .raid-text {
   display: flex;
   flex-direction: column;

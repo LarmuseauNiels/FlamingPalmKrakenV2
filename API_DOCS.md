@@ -225,9 +225,11 @@ Raids that are open for sign-ups (Status 1) or picking a time (Status 2), newest
 
 ```json
 [
-  { "id": 12, "title": "Deep Rock", "minPlayers": 4, "status": 2, "attendeeCount": 5, "attending": true }
+  { "id": 12, "title": "Deep Rock", "minPlayers": 4, "status": 2, "attendeeCount": 5, "attending": true, "canClose": false }
 ]
 ```
+
+`canClose` is `true` when the caller is in `ADMIN_IDS` (see `POST /members/raids/:id/close`).
 
 #### `POST /members/raids`
 
@@ -255,6 +257,7 @@ Activity polls it every few seconds.
   "minPlayers": 4,
   "status": 2,
   "maxOptions": 25,
+  "canClose": false,
   "attending": true,
   "attendees": [{ "id": "1234", "name": "Niels", "avatar": "a_abc123" }],
   "options": [
@@ -264,6 +267,7 @@ Activity polls it every few seconds.
 ```
 
 `avatar` is the Discord avatar hash (or `null`); `selected` marks the slot the raid was locked in on.
+`canClose` is `true` when the caller is in `ADMIN_IDS` and the raid is Open or Scheduling.
 
 - **Errors:** `404` — raid not found
 
@@ -293,6 +297,21 @@ that already exists just counts the caller in (no DMs or announcement).
 - **Errors:**
   - `400` — malformed time, time in the past, or the raid already has 25 slots (the DM select-menu limit)
   - `403` / `404` / `409` — as above
+
+#### `POST /members/raids/:id/close`
+
+Admin-only. Closes an Open or Scheduling raid: it moves to Status 4 (Cancelled),
+drops out of `/raids`, the board and the scheduling check, and every attendee
+gets a DM. Closing an open raid also posts a fresh sign-up list in the raid
+channel. Unlike `DELETE /admin/raids/:id`, the raid's rows are kept.
+
+- **Auth:** Admin required (`ADMIN_IDS`)
+- **Body:** none
+- **Response:** `204 No Content`
+- **Errors:**
+  - `403` — caller isn't an admin
+  - `404` — raid not found
+  - `409` — raid is already scheduled, cancelled or expired
 
 ---
 
@@ -903,6 +922,7 @@ Returns all raids ordered by creation time descending, including attendee count 
     "minPlayers": 5,
     "creationTime": "2026-03-07T18:00:00.000Z",
     "status": 1,
+    "lastActivity": "2026-03-09T20:15:00.000Z",
     "creatorId": "534686392589221898",
     "creatorName": "Kraken",
     "attending": 3
@@ -917,6 +937,7 @@ Returns all raids ordered by creation time descending, including attendee count 
 | `minPlayers` | Minimum player target |
 | `creationTime` | When the raid was created |
 | `status` | `1` = active/open; `0` = inactive/closed |
+| `lastActivity` | Last sign-up, leave, vote, time suggestion or admin edit. Open/Scheduling raids idle for `RAID_EXPIRY_DAYS` (default 21) are moved to status `4` |
 | `creatorId` | Discord snowflake ID of the creator |
 | `creatorName` | Display name of the creator (falls back to `creatorId` if not found) |
 | `attending` | Number of signed-up attendees |
@@ -963,6 +984,9 @@ Updates one or more fields on an existing raid. All body fields are optional.
   "status": 0
 }
 ```
+
+Any update also resets `lastActivity` to now, so reopening an expired raid
+(`"status": 1`) gives it a fresh `RAID_EXPIRY_DAYS` before it can expire again.
 
 - **Response:** The updated `AdminRaid`
 - **Error responses:**
@@ -1268,6 +1292,8 @@ A community raid / event.
 | `Creator` | `String` | FK → `Members.ID` |
 | `CreationTime` | `DateTime?` | Creation timestamp |
 | `Status` | `Int?` | `1` = active / open; other values = closed/archived |
+| `ReminderSent` | `Boolean` | Set once the "starts soon" DM went out |
+| `LastActivity` | `DateTime` | Last sign-up, leave, vote or time suggestion; drives expiry after `RAID_EXPIRY_DAYS` |
 
 ---
 
