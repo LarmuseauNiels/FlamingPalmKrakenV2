@@ -16,7 +16,8 @@ function buildReminderEmbed(): EmbedBuilder {
     .setDescription(
       "Don't forget to hand out the Spark points!\n\n" +
         "Use `/give-event` with the hour the Spark started (24h, Brussels time) " +
-        "and `daysago: 0` to pick the attendees from voice presence."
+        "and `daysago: 0`, pick the **Saturday Spark** achievement, then select " +
+        "the attendees from voice presence."
     )
     .setColor("#FD8612")
     .setTimestamp();

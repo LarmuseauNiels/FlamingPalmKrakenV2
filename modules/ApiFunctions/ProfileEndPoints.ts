@@ -18,6 +18,7 @@ const VALID_BADGES = new Set([
   "raid5",
   "refReg1",
   "rocket",
+  "spark5",
   "ship",
   "silk_road",
   "sold",
@@ -220,7 +221,7 @@ export function profileEndPoints(app) {
     async function (req, res) {
       let member = await global.client.prisma.members.findFirst({
         where: { ID: req.user.id },
-        include: { Achievement_History: true },
+        include: { Achievement_History: { include: { Achievements: true } } },
       });
       let badges = global.client.achievementsModule.getBadgeUnlocks(
         member.Achievement_History

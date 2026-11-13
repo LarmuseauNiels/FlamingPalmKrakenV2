@@ -571,6 +571,10 @@ through achievements.
 - **Auth:** Required
 - **Response:** `string[]` — badge slugs the user may equip
 
+Each badge unlocks after more than 5 grants of its achievement: `party5`
+(Party Night, ID 1), `spark5` (the achievement named "Saturday Spark"),
+`arma5` (ID 16), `raid5` (ID 18) and `refReg1` (ID 11).
+
 ```json
 ["badge-veteran", "badge-raider", "badge-supporter"]
 ```

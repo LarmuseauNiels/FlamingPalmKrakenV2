@@ -3,6 +3,10 @@ import Rank from "./profile";
 import { ChannelUpdates } from "../islander/ChannelUpdates";
 import type * as Prisma from "@prisma/client";
 
+// Name of the weekly Saturday Spark achievement row (see the
+// add_saturday_spark_achievement migration). Admins hand it out with /give-event.
+export const SPARK_ACHIEVEMENT_NAME = "Saturday Spark";
+
 export class AchievementsModule {
   async GiveAchievement(
     memberID: string,
@@ -314,6 +318,16 @@ FROM (
     }
     if (achievements.filter((a) => a.AchievementID == 18).length > 5) {
       badgeUnlocks.push("raid5");
+    }
+    // The Saturday Spark achievement is added by a data migration, so its ID
+    // differs per database; match it by name instead. Needs the history rows
+    // to include their Achievements relation.
+    if (
+      achievements.filter(
+        (a) => a.Achievements?.Name === SPARK_ACHIEVEMENT_NAME
+      ).length > 5
+    ) {
+      badgeUnlocks.push("spark5");
     }
     if (achievements.filter((a) => a.AchievementID == 11).length > 5) {
       badgeUnlocks.push("refReg1");
