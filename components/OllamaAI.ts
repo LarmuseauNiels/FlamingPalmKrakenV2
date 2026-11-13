@@ -8,6 +8,11 @@ import { getSteamGameInfo } from "../modules/SteamModule";
 import { RaidRuleError } from "../modules/RaidScheduler";
 import { PendingAction } from "./AiConversationStore";
 import moment from "moment-timezone";
+import { GuildMember, GuildTextBasedChannel } from "discord.js";
+import { GuildMusicPlayer, LoopMode } from "../modules/Music/MusicPlayer";
+import { MusicSourceError, Track } from "../modules/Music/MusicSource";
+import { controllablePlayer, playForMember } from "../modules/Music/MusicService";
+import { escapeMarkdown, formatDuration } from "../modules/Music/MusicEmbeds";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const PelicanStatusMonitor: any = require("../modules/PelicanStatusMonitor.js");
 
@@ -18,6 +23,8 @@ export interface AskContext {
   authorId: string;
   authorName: string;
   isDM: boolean;
+  /** Channel the message was sent in (DM or server channel). */
+  channelId?: string;
   /** Stored conversation being continued (no system prompt), if any. */
   history?: any[];
 }
@@ -35,6 +42,9 @@ interface ToolContext {
   authorId: string;
   timezone: string | null;
   pendingActions: PendingAction[];
+  /** Where the member is talking to Kraken; absent for Confirm-button runs. */
+  channelId?: string;
+  isDM?: boolean;
 }
 
 export class OllamaAI {
@@ -298,6 +308,87 @@ export class OllamaAI {
           },
         },
       },
+      {
+        type: "function",
+        function: {
+          name: "playMusic",
+          description: "Play a song in the voice channel the member is in, or add it to the queue if music is already playing. Accepts a song name/description (searched on YouTube, first result) or a link (YouTube video or playlist, SoundCloud, Bandcamp). Works from DMs as long as the member is in a voice channel on the server. Acts immediately, no Confirm button.",
+          parameters: {
+            type: "object",
+            properties: {
+              query: {
+                type: "string",
+                description: "Song to search for, e.g. 'Daft Punk Get Lucky', or a link. Pass the member's words; add the artist if they mentioned one.",
+              },
+            },
+            required: ["query"],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "getMusicQueue",
+          description: "Get what the music player is playing right now (song, progress, who requested it, paused or not, volume, loop mode) and the upcoming queue with each song's position number. Use this for 'what song is this?', 'what's in the queue?', and to find the position of a song before removing it.",
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "controlMusic",
+          description: "Control the music player: skip the current song, pause, resume, stop (clears the queue and leaves the voice channel), shuffle the queue, clear all upcoming songs, or remove one song by its queue position. The member must be in the bot's voice channel. Acts immediately, no Confirm button.",
+          parameters: {
+            type: "object",
+            properties: {
+              action: {
+                type: "string",
+                enum: ["skip", "pause", "resume", "stop", "shuffle", "clear", "remove"],
+                description: "What to do",
+              },
+              position: {
+                type: "number",
+                description: "Only for action 'remove': the song's position number from getMusicQueue (1 = next up)",
+              },
+            },
+            required: ["action"],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "setMusicVolume",
+          description: "Set the music volume. 100 is the song's original loudness; the default is 50. 'A bit louder/quieter' means about 20 up or down from the current volume (see getMusicQueue). The member must be in the bot's voice channel.",
+          parameters: {
+            type: "object",
+            properties: {
+              percent: {
+                type: "number",
+                description: "New volume, 1 to 150",
+              },
+            },
+            required: ["percent"],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "setMusicLoop",
+          description: "Repeat the current song, repeat the whole queue, or turn repeating off. The member must be in the bot's voice channel.",
+          parameters: {
+            type: "object",
+            properties: {
+              mode: {
+                type: "string",
+                enum: ["off", "track", "queue"],
+                description: "'track' repeats the current song, 'queue' repeats the whole queue, 'off' stops repeating",
+              },
+            },
+            required: ["mode"],
+          },
+        },
+      },
     ];
 
     this.systemInstructionText =
@@ -334,7 +425,11 @@ export class OllamaAI {
       "- When a member asks what their current timezone is, or wants to check it before changing it, use the getTimezone tool. If they then want to change it, chain directly into the setTimezone tool without re-asking.\n" +
       "- When a member asks about a video game (what it's about, its price, whether it's on Steam), use the getSteamGameInfo tool with the game's name.\n" +
       "- When a member asks to start a game server, call the startGameServer tool with the server's name. If you're unsure which server they mean, use getGameServerStatus to list them and ask.\n" +
-      "- When a member asks to restart or stop a game server, call the manageGameServer tool (it asks them to confirm with a button).\n\n" +
+      "- When a member asks to restart or stop a game server, call the manageGameServer tool (it asks them to confirm with a button).\n" +
+      "- Music: when a member asks you to play a song, artist or playlist, call playMusic (they must be in a voice channel; it works from DMs too). " +
+      "Use controlMusic to skip, pause, resume, stop, shuffle, clear the queue or remove a song, setMusicVolume for louder/quieter, setMusicLoop for repeating, and getMusicQueue for what's playing or queued. " +
+      "These act immediately (no Confirm button), so after calling them say it's done. If a tool says the member must join a voice channel, tell them that. " +
+      "To remove a song by name, call getMusicQueue first to find its position. You cannot hear the music — only report what the tools tell you.\n\n" +
       "Times: tool results give times in the member's timezone followed by a Discord timestamp tag like <t:1760000000:F>. When you mention a specific time, include that tag — Discord shows it to every reader in their own timezone.\n\n" +
       "Formatting: you are writing Discord messages. Use Discord markdown (bold, lists, code) but no tables, and keep answers short — a few lines unless the member asked for detail.\n\n" +
       "Conversation context: in direct messages the conversation continues by itself for 30 minutes. In server channels you only see earlier messages when the member uses Discord's reply feature on one of your messages; " +
@@ -468,7 +563,13 @@ export class OllamaAI {
     ];
     // Everything after the two system messages is the conversation to store.
     const conversation = () => messages.slice(2);
-    const toolCtx: ToolContext = { authorId: ctx.authorId, timezone, pendingActions: [] };
+    const toolCtx: ToolContext = {
+      authorId: ctx.authorId,
+      timezone,
+      pendingActions: [],
+      channelId: ctx.channelId,
+      isDM: ctx.isDM,
+    };
 
     let retries = 0;
     const maxRetries = 1;
@@ -592,6 +693,14 @@ export class OllamaAI {
         return await this.setRaidAvailabilityString(args, ctx);
       case "suggestRaidTime":
         return await this.suggestRaidTimeString(args, ctx);
+      case "playMusic":
+        return await this.playMusicString(args, ctx);
+      case "getMusicQueue":
+        return this.getMusicQueueString();
+      case "controlMusic":
+      case "setMusicVolume":
+      case "setMusicLoop":
+        return await this.controlMusicString(name, args, ctx);
       default:
         return "Tool not found.";
     }
@@ -1419,6 +1528,176 @@ export class OllamaAI {
       if (err instanceof RaidRuleError) return err.message;
       log.error("Failed to suggest raid time:", err);
       return "Failed to suggest that time. Please try again, or use the raid board.";
+    }
+  }
+
+  /** The member on the FlamingPalm server, for voice-channel checks (works when asked from a DM). */
+  private async getGuildMember(authorId: string): Promise<GuildMember | null> {
+    const guild = await global.client.guilds.fetch(process.env.GUILD_ID!);
+    return await guild.members.fetch(authorId).catch(() => null);
+  }
+
+  /** Display name for tool output — never a <@id> mention, which the reply could turn into a ping. */
+  private memberName(userId: string): string {
+    const guild = global.client.guilds.cache.get(process.env.GUILD_ID!);
+    return guild?.members.cache.get(userId)?.displayName ?? global.client.idToName(userId) ?? "a member";
+  }
+
+  /** "Title" by Author (3:32) */
+  private describeTrack(track: Track): string {
+    const by = track.author ? ` by ${track.author}` : "";
+    return `"${track.title}"${by} (${formatDuration(track.duration, track.isLive)})`;
+  }
+
+  /**
+   * When the member asked from somewhere other than the music channel (e.g. a
+   * DM), tell the listeners who changed the music.
+   */
+  private announceMusicChange(music: GuildMusicPlayer, ctx: ToolContext, text: string) {
+    if (ctx.channelId === music.textChannelId) return;
+    music.announce(`${text} — <@${ctx.authorId}> via Kraken`);
+  }
+
+  private async playMusicString(rawArgs: string | object, ctx: ToolContext): Promise<string> {
+    const args = this.parseArgs(rawArgs);
+    const query = typeof args?.query === "string" ? args.query.trim().slice(0, 500) : "";
+    if (!query) return "Please provide a song name or link to play.";
+
+    try {
+      const member = await this.getGuildMember(ctx.authorId);
+      if (!member) return "The member is not on the FlamingPalm server.";
+      if (!member.voice.channel) {
+        return "The member is not in a voice channel. Tell them to join one on the server first, then ask again.";
+      }
+
+      // Asked in a server channel: post the now-playing message there.
+      // From a DM: keep the player's channel, or use the voice channel's chat.
+      let textChannel: GuildTextBasedChannel | null = null;
+      if (!ctx.isDM && ctx.channelId) {
+        const channel: any = global.client.channels.cache.get(ctx.channelId);
+        if (channel?.guildId === member.guild.id && channel.isTextBased?.()) textChannel = channel;
+      }
+
+      const result = await playForMember(member, query, textChannel);
+      const voice = `<#${result.music.channelId}>`;
+      let text: string;
+      if (result.playlistTitle) {
+        const left = result.found - result.added.length;
+        text = `Added ${result.added.length} songs from the playlist "${result.playlistTitle}" in ${voice}` +
+          (left > 0 ? ` (${left} didn't fit, the queue is full).` : ".") +
+          (result.startedNow ? ` Now playing ${this.describeTrack(result.added[0])}.` : "");
+      } else if (result.startedNow) {
+        text = `Now playing ${this.describeTrack(result.added[0])} in ${voice}.`;
+      } else {
+        text = `Queued ${this.describeTrack(result.added[0])} at position ${result.position} in ${voice}.`;
+      }
+      const notice = result.playlistTitle
+        ? `📃 Added playlist **${escapeMarkdown(result.playlistTitle)}**`
+        : `🎵 ${result.startedNow ? "Playing" : "Queued"} **${escapeMarkdown(result.added[0].title)}**`;
+      this.announceMusicChange(result.music, ctx, notice);
+      log.info(`User ${ctx.authorId} played "${query}" via Kraken AI`);
+      return text + ` A now-playing message with control buttons is in <#${result.music.textChannelId}>.`;
+    } catch (err) {
+      if (err instanceof MusicSourceError) return `Couldn't play that: ${err.message}`;
+      log.error("playMusic tool failed:", err);
+      return "Something went wrong starting the music. Please try again later.";
+    }
+  }
+
+  private getMusicQueueString(): string {
+    const music = GuildMusicPlayer.get(process.env.GUILD_ID!);
+    if (!music || !music.current) {
+      return music
+        ? "Nothing is playing; the queue is empty. The bot is still in the voice channel."
+        : "The music player is not running. Members can start it with playMusic or /play.";
+    }
+    const current = music.current;
+    const elapsed = formatDuration(Math.floor(music.position / 1000));
+    let text = `${music.paused ? "Paused" : "Now playing"} in <#${music.channelId}>: ${this.describeTrack(current)}, ` +
+      `${elapsed} in, requested by ${this.memberName(current.requestedBy)}.\n`;
+    text += `Volume ${music.volume}%, loop: ${music.loop}.\n`;
+    if (music.queue.length === 0) return text + "Nothing queued after it.";
+    const shown = music.queue.slice(0, 15);
+    text += `Up next (${music.queue.length} total):\n`;
+    text += shown.map((t, i) => `${i + 1}. ${this.describeTrack(t)}, requested by ${this.memberName(t.requestedBy)}`).join("\n");
+    if (music.queue.length > shown.length) text += `\n…and ${music.queue.length - shown.length} more.`;
+    return text;
+  }
+
+  private async controlMusicString(tool: string, rawArgs: string | object, ctx: ToolContext): Promise<string> {
+    const args = this.parseArgs(rawArgs) ?? {};
+    try {
+      const member = await this.getGuildMember(ctx.authorId);
+      if (!member) return "The member is not on the FlamingPalm server.";
+      const access = controllablePlayer(member);
+      if ("error" in access) {
+        return `Can't do that: ${access.error.replace("Use `/play` to start.", "They can ask you to play something.")}`;
+      }
+      const music = access.music;
+      const done = (result: string, notice: string) => {
+        this.announceMusicChange(music, ctx, notice);
+        log.info(`User ${ctx.authorId} used ${tool} via Kraken AI: ${result}`);
+        return result;
+      };
+
+      if (tool === "setMusicVolume") {
+        const percent = Math.round(Number(args.percent));
+        if (!Number.isFinite(percent) || percent < 1 || percent > 150) return "The volume must be between 1 and 150.";
+        music.setVolume(percent);
+        return done(`Volume set to ${percent}%.`, `🔊 Volume set to **${percent}%**`);
+      }
+      if (tool === "setMusicLoop") {
+        const mode = args.mode as LoopMode;
+        if (!["off", "track", "queue"].includes(mode)) return 'The loop mode must be "off", "track" or "queue".';
+        music.setLoop(mode);
+        const label = { off: "Looping turned off", track: "Looping the current song", queue: "Looping the whole queue" }[mode];
+        return done(`${label}.`, `🔁 ${label}`);
+      }
+
+      switch (args.action) {
+        case "skip": {
+          const skipped = music.current;
+          if (!skipped) return "Nothing is playing to skip.";
+          // Mirrors playNext(): a skip ignores track-loop; queue-loop re-adds the skipped song at the end.
+          const next = music.queue[0] ?? (music.loop === "queue" ? skipped : null);
+          music.skip();
+          return done(
+            `Skipped ${this.describeTrack(skipped)}.` + (next ? ` Next up: ${this.describeTrack(next)}.` : " The queue is now empty."),
+            `⏭️ Skipped **${escapeMarkdown(skipped.title)}**`
+          );
+        }
+        case "pause":
+          if (!music.pause()) return "The music is already paused (or nothing is playing).";
+          return done("Paused the music.", "⏸️ Paused");
+        case "resume":
+          if (!music.resume()) return "The music isn't paused.";
+          return done("Resumed the music.", "▶️ Resumed");
+        case "stop":
+          // destroy() turns the now-playing message into this notice.
+          music.destroy(`Music stopped by ${member.displayName} via Kraken.`);
+          log.info(`User ${ctx.authorId} stopped the music via Kraken AI`);
+          return "Stopped the music, cleared the queue and left the voice channel.";
+        case "shuffle":
+          if (music.queue.length < 2) return "There aren't enough songs in the queue to shuffle.";
+          music.shuffle();
+          return done(`Shuffled ${music.queue.length} songs.`, "🔀 Shuffled the queue");
+        case "clear": {
+          const count = music.clearQueue();
+          return done(`Removed ${count} upcoming songs; the current song keeps playing.`, `🧹 Cleared ${count} songs from the queue`);
+        }
+        case "remove": {
+          const position = Math.round(Number(args.position));
+          if (!Number.isFinite(position)) return "Give the position of the song to remove (from getMusicQueue).";
+          const removed = music.remove(position);
+          if (!removed) return `There's no song at position ${position}; the queue has ${music.queue.length}.`;
+          return done(`Removed ${this.describeTrack(removed)} from the queue.`, `🗑️ Removed **${escapeMarkdown(removed.title)}** from the queue`);
+        }
+        default:
+          return 'Unknown action. Use one of: skip, pause, resume, stop, shuffle, clear, remove.';
+      }
+    } catch (err) {
+      log.error(`${tool} tool failed:`, err);
+      return "Something went wrong controlling the music. Please try again later.";
     }
   }
 }

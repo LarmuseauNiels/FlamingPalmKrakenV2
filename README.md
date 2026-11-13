@@ -12,6 +12,7 @@ A Discord bot for the FlamingPalm gaming community, providing raid scheduling, a
 - **Web API** — Express server with Discord OAuth for a companion website
 - **Game Server Status** — Vintage Story and Pelican-managed game server monitoring
 - **Discord Activity** — in-Discord points storefront (see `docs/ACTIVITY_SETUP.md`)
+- **Music Player** — `/play` songs from YouTube, SoundCloud, Bandcamp and more in voice channels, with a queue and button controls — or just ask Kraken AI ("play some lofi", "skip this", "turn it down")
 
 ## Stack
 
@@ -29,6 +30,7 @@ A Discord bot for the FlamingPalm gaming community, providing raid scheduling, a
 
 - Node.js 21
 - MySQL database
+- `ffmpeg` and [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) on `PATH` for the music player (the Docker image installs both)
 
 ## Setup
 
@@ -73,6 +75,7 @@ A Discord bot for the FlamingPalm gaming community, providing raid scheduling, a
    | `ACTIVITY_ENABLED` | `true` to enable the Discord Activity (store, raid board links in scheduling DMs) (optional) |
    | `RAID_REMINDER_MINUTES` | Minutes before a raid that attendees get a reminder DM (optional, default 30) |
    | `RAID_VOICE_CHANNEL_ID` | Voice channel linked in raid reminders (optional, defaults to LFG) |
+| `YTDLP_PATH` / `FFMPEG_PATH` | Music player binaries (optional, default `yt-dlp` / `ffmpeg` on `PATH`) |
 | `CAPROVER_GIT_COMMIT_SHA` | Version tracking (optional) |
 
 4. **Run database migrations**

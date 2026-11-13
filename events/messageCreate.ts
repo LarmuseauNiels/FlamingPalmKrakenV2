@@ -72,6 +72,7 @@ export default class messageCreate implements IEvent {
         authorId: message.author.id,
         authorName: this.nameOf(message),
         isDM,
+        channelId: message.channelId,
         history: conversation?.messages,
       });
     } finally {

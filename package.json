@@ -14,6 +14,7 @@
   "dependencies": {
     "@bugsnag/js": "^7.20.2",
     "@bugsnag/plugin-express": "^7.19.0",
+    "@discordjs/voice": "^0.19.2",
     "@napi-rs/canvas": "^0.1.29",
     "@prisma/client": "^4.12.0",
     "@types/passport": "^1.0.12",
@@ -27,6 +28,7 @@
     "moment-timezone": "^0.5.45",
     "node-cron": "^3.0.0",
     "openai": "^6.34.0",
+    "opusscript": "^0.1.1",
     "passport": "^0.7.0",
     "passport-discord-auth": "^1.2.0",
     "prisma": "^4.12.0",

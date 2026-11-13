@@ -14,6 +14,7 @@ AI assistant guide for the FlamingPalm Discord bot codebase.
 - Ollama-powered community assistant (gemma4:cloud)
 - Web API with Discord OAuth for a companion website
 - Game server monitoring (Vintage Story + Pelican-managed servers)
+- Voice-channel music player (`/play`, `/music`) backed by yt-dlp + ffmpeg
 
 **Stack:** TypeScript · Node.js 21 · Discord.js 14 · Prisma + MySQL · Express · Ollama (gemma4:cloud, OpenAI-compatible API) · CapRover Docker deployment
 
@@ -57,6 +58,11 @@ FlamingPalmKrakenV2/
 │   ├── SparkReminder.ts      # Weekly DM reminder to admins about Saturday Spark points
 │   ├── RaidReminders.ts      # "Raid starts soon" DM to attendees (cron, once per raid)
 │   ├── TimezonePrompt.ts     # One-click timezone picker (locale-hinted select menu)
+│   ├── Music/                # Voice music player — see "Music Player" below
+│   │   ├── MusicPlayer.ts    # GuildMusicPlayer: voice connection, queue, loop, prefetch, auto-leave
+│   │   ├── MusicSource.ts    # yt-dlp lookups (search/URL/playlist) + yt-dlp → ffmpeg PCM stream
+│   │   ├── MusicService.ts   # playForMember() / controllablePlayer() — checks shared by /play, /music and the AI tools
+│   │   └── MusicEmbeds.ts    # Now-playing embed + control buttons, queue embed
 │   ├── profile.js            # Profile image generation (legacy JS)
 │   └── ApiFunctions/         # Organized Express route handlers
 │       ├── AdminEndPoints.ts
@@ -167,6 +173,7 @@ const raids = await global.client.prisma.raids.findMany(...);
 | `RAID_VOICE_CHANNEL_ID` | Voice channel linked in raid reminders (optional; falls back to the LFG channel) |
 | `ISLANDER_AWARD_POINTS` | `true` to award community Points for Islander milestones (optional, default off) |
 | `ISLANDER_POINTS_EXCHANGE` | `true` to enable the Points→island-Currency exchange button (optional, default off) |
+| `YTDLP_PATH` / `FFMPEG_PATH` | Music player binaries (optional, default `yt-dlp` / `ffmpeg` on `PATH`) |
 | `CAPROVER_GIT_COMMIT_SHA` | Version tracking (optional) |
 
 ### Scripts
@@ -234,6 +241,19 @@ With `discord_channel`, the channel name gets the player count as a suffix (`val
 
 ---
 
+## Music Player
+
+`/play <query>` joins the caller's voice channel and plays a YouTube search result or a link (YouTube video/playlist, SoundCloud, Bandcamp, anything yt-dlp supports). `/music` has `skip`, `pause`, `resume`, `stop`, `queue`, `nowplaying`, `volume`, `shuffle`, `loop`, `remove` and `clear`. The now-playing message carries `music_<action>` buttons (`buttons/music.ts`).
+
+- **One player per guild**, in memory only (`GuildMusicPlayer` in `modules/Music/MusicPlayer.ts`) — a restart drops the queue. Only members in the bot's voice channel can change playback; `queue`/`nowplaying` work from anywhere.
+- **Audio path:** `yt-dlp -o -` piped into `ffmpeg` → 48 kHz s16le PCM → `@discordjs/voice` with inline volume, Opus-encoded by `opusscript` (pure JS; no native build on Alpine). Voice E2EE (DAVE) comes from `@snazzah/davey`, bundled with `@discordjs/voice` 0.19+. ffmpeg reading the googlevideo URL directly gets a 403, so keep yt-dlp doing the download.
+- **yt-dlp needs a JS runtime** for YouTube's player challenges; it is run with `--js-runtimes node`. It breaks whenever YouTube changes, so the Docker image installs it from PyPI *after* the commit-SHA `ARG` — every deploy pulls the latest. If music stops working, a redeploy is the first fix.
+- **Gaps between songs:** starting a stream takes yt-dlp ~4–9 s, so the next track's pipeline is started 20 s before the current one ends and parked by pipe backpressure. A track that stops within 3 s without a skip is retried once, then announced as failed and skipped.
+- **Auto-leave:** 5 min after the queue runs out, or 2 min after the last listener leaves (`events/voiceStateUpdate.ts`).
+- **Kraken AI tools:** `playMusic`, `getMusicQueue`, `controlMusic` (skip/pause/resume/stop/shuffle/clear/remove), `setMusicVolume`, `setMusicLoop`. They act immediately (not in `CONFIRMED_TOOLS`) and go through `MusicService`, so the same voice-channel rules apply — they also work from DMs, using the member's voice state on `GUILD_ID`. When asked from a channel other than the player's (e.g. a DM), the player posts a "… — @member via Kraken" notice so listeners see who changed it. Tool output names members by display name, never `<@id>`, because AI replies allow user pings.
+- **Pause while loading:** pausing during the first seconds (player still `Buffering`) sets `pendingPause`, applied when playback starts.
+- **URL guard:** links must be `http(s)` to a public host; localhost, single-label hosts and private IPs are refused, so members can't point yt-dlp's generic extractor at the host's network.
+
 ## Kraken AI Assistant
 
 `events/messageCreate.ts` answers DMs, @-mentions and replies to an earlier AI answer via `OllamaAI.ask()`.
@@ -242,6 +262,7 @@ With `discord_channel`, the channel name gets the player count as a suffix (`val
 - **Long answers** are split into ≤2000-char messages (`utils/DiscordText.ts`).
 - **Confirm buttons:** `createRaid`, `joinRaid`, `leaveRaid`, `manageGameServer` and `suggestRaidTime` (`CONFIRMED_TOOLS`) never act when the model calls them. They are pre-checked, queued as `PendingAction`s and shown as buttons (`aiConfirm_<index>` / `aiConfirm_cancel`, handled in `interactionHandlers/buttons/aiConfirm.ts`). Only the requesting member can press them; the tool runs (and re-validates) on press. To make a new tool need confirmation, add it to `CONFIRMED_TOOLS` and give it a case in `checkConfirmable`.
 - **Times** in tool output use `formatTime()`: member-local time plus a `<t:…:F>` Discord tag.
+- **Music tools** act without a Confirm button; see [Music Player](#music-player).
 
 ---
 
@@ -315,6 +336,7 @@ await interaction.editReply({ content: '...' });
 | `modules/SparkReminder.ts` | Saturday 21:00 Europe/Brussels DM reminder to `ADMIN_IDS` |
 | `modules/RaidReminders.ts` | Every minute: DMs attendees of raids starting within `RAID_REMINDER_MINUTES`, claimed via `Raids.ReminderSent`; DM failures are pinged in LFG |
 | `modules/TimezonePrompt.ts` | Timezone picker shown once after a first sign-up/vote (`Members.TimezonePromptedAt`) and before "Suggest Custom Time" when no timezone is set; handled by `selects/timezonePick.ts`. Zone names must be in `Intl.supportedValuesOf("timeZone")` (Node uses legacy names like `Europe/Kiev`) |
+| `modules/Music/MusicPlayer.ts` | Per-guild music player (queue, playback, now-playing message, auto-leave) |
 | `modules/ApiFunctions/` | Route handlers organized by domain |
 | `modules/ApiFunctions/ActivityEndPoints.ts` | Discord Activity OAuth code exchange + static hosting of `activity/dist` |
 | `activity/` | Discord Activity SPA — separate Vite build, excluded from the bot's `tsc` |
