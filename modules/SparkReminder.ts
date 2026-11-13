@@ -4,7 +4,7 @@ import { FpgClient } from "../components/FpgClient";
 import { getAdminIds } from "./ApiFunctions/Helpers";
 import { createLogger } from "../utils/logger";
 
-const log = createLogger("PartyNightReminder");
+const log = createLogger("SparkReminder");
 
 // sec min hour day-of-month month day-of-week — Saturday 21:00 Brussels time
 const REMINDER_CRON = "0 0 21 * * 6";
@@ -12,10 +12,10 @@ const REMINDER_TIMEZONE = "Europe/Brussels";
 
 function buildReminderEmbed(): EmbedBuilder {
   return new EmbedBuilder()
-    .setTitle("Party Night points reminder")
+    .setTitle("Saturday Spark points reminder")
     .setDescription(
-      "Don't forget to hand out the Party Night points!\n\n" +
-        "Use `/give-event` with the hour the party started (24h, Brussels time) " +
+      "Don't forget to hand out the Spark points!\n\n" +
+        "Use `/give-event` with the hour the Spark started (24h, Brussels time) " +
         "and `daysago: 0` to pick the attendees from voice presence."
     )
     .setColor("#FD8612")
@@ -25,7 +25,7 @@ function buildReminderEmbed(): EmbedBuilder {
 async function sendReminders(client: FpgClient): Promise<void> {
   const adminIds = getAdminIds();
   if (adminIds.length === 0) {
-    log.warn("No ADMIN_IDS configured — skipping Party Night reminder");
+    log.warn("No ADMIN_IDS configured — skipping Spark reminder");
     return;
   }
 
@@ -44,26 +44,26 @@ async function sendReminders(client: FpgClient): Promise<void> {
       // Warn rather than error: this is expected and recoverable, and log.error
       // would raise a Bugsnag report every week for the same blocked DM.
       log.warn(
-        `Failed to DM Party Night reminder to ${adminIds[index]}:`,
+        `Failed to DM Spark reminder to ${adminIds[index]}:`,
         result.reason
       );
     }
   });
 
   const sent = results.filter((r) => r.status === "fulfilled").length;
-  log.info(`Sent Party Night reminder to ${sent}/${adminIds.length} admins`);
+  log.info(`Sent Spark reminder to ${sent}/${adminIds.length} admins`);
 }
 
 module.exports = function (client: FpgClient) {
   log.info(
-    `Loading Party Night reminder module (${REMINDER_CRON} ${REMINDER_TIMEZONE})`
+    `Loading Spark reminder module (${REMINDER_CRON} ${REMINDER_TIMEZONE})`
   );
 
   cron.schedule(
     REMINDER_CRON,
     () => {
       sendReminders(client).catch((error) =>
-        log.error("Party Night reminder cron job error:", error)
+        log.error("Spark reminder cron job error:", error)
       );
     },
     { timezone: REMINDER_TIMEZONE }

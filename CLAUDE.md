@@ -54,7 +54,7 @@ FlamingPalmKrakenV2/
 │   ├── PelicanStatusMonitor.ts # Pelican panel game server monitoring
 │   ├── ValheimPlayerLog.ts   # Valheim online-player tracking from the Pelican console websocket
 │   ├── NotificationLevels.ts # User notification preferences
-│   ├── PartyNightReminder.ts # Weekly DM reminder to admins about Party Night points
+│   ├── SparkReminder.ts      # Weekly DM reminder to admins about Saturday Spark points
 │   ├── RaidReminders.ts      # "Raid starts soon" DM to attendees (cron, once per raid)
 │   ├── TimezonePrompt.ts     # One-click timezone picker (locale-hinted select menu)
 │   ├── profile.js            # Profile image generation (legacy JS)
@@ -150,7 +150,7 @@ const raids = await global.client.prisma.raids.findMany(...);
 | `GUILD_ID` | Discord server (guild) ID |
 | `DATABASE_URL` | MySQL connection string |
 | `OAUTHSECRET` | Discord OAuth client secret |
-| `ADMIN_IDS` | Comma-separated Discord IDs — admin web API access + Party Night reminder DMs |
+| `ADMIN_IDS` | Comma-separated Discord IDs — admin web API access + Saturday Spark reminder DMs |
 | `CALLBACK_URL` | OAuth redirect URL |
 | `JWT_SECRET` | JWT signing secret |
 | `OLLAMA_AI_KEY` | Ollama cloud API key |
@@ -312,7 +312,7 @@ await interaction.editReply({ content: '...' });
 | `modules/AchievementsModule.ts` | Achievement logic + canvas profile image generation |
 | `modules/WebApi.ts` | Express app, Passport OAuth, JWT auth middleware |
 | `modules/PelicanStatusMonitor.ts` | Pelican panel game server status + Discord embeds |
-| `modules/PartyNightReminder.ts` | Saturday 21:00 Europe/Brussels DM reminder to `ADMIN_IDS` |
+| `modules/SparkReminder.ts` | Saturday 21:00 Europe/Brussels DM reminder to `ADMIN_IDS` |
 | `modules/RaidReminders.ts` | Every minute: DMs attendees of raids starting within `RAID_REMINDER_MINUTES`, claimed via `Raids.ReminderSent`; DM failures are pinged in LFG |
 | `modules/TimezonePrompt.ts` | Timezone picker shown once after a first sign-up/vote (`Members.TimezonePromptedAt`) and before "Suggest Custom Time" when no timezone is set; handled by `selects/timezonePick.ts`. Zone names must be in `Intl.supportedValuesOf("timeZone")` (Node uses legacy names like `Europe/Kiev`) |
 | `modules/ApiFunctions/` | Route handlers organized by domain |

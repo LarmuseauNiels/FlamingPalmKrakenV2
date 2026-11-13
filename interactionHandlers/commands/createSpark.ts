@@ -9,17 +9,17 @@ import moment from "moment-timezone";
 import { IHandler } from "../../interfaces/IHandler";
 import { createLogger } from "../../utils/logger";
 
-const log = createLogger("CreatePartyCommand");
+const log = createLogger("CreateSparkCommand");
 
-const PARTY_TIMEZONE = "Europe/Brussels";
-const PARTY_DAY = 6; // Saturday
-const PARTY_START_HOUR = 20;
+const SPARK_TIMEZONE = "Europe/Brussels";
+const SPARK_DAY = 6; // Saturday
+const SPARK_START_HOUR = 20;
 
-export default class CreatePartyCommand implements IHandler {
-  name: string = "create-party";
+export default class CreateSparkCommand implements IHandler {
+  name: string = "create-spark";
   data = new SlashCommandBuilder()
-    .setName("create-party")
-    .setDescription("Create a party night event")
+    .setName("create-spark")
+    .setDescription("Create a Saturday Spark event")
     .addStringOption((option) =>
       option
         .setName("steamurl")
@@ -79,13 +79,13 @@ export default class CreatePartyCommand implements IHandler {
         "base64"
       )}`;
 
-      const eventDate = this.getNextPartyStart();
+      const eventDate = this.getNextSparkStart();
 
       // Optionally, set an end time (here, 2 hours after the start)
       const eventEndDate = new Date(eventDate.getTime() + 2 * 60 * 60 * 1000);
 
       // Create a post in the forum channel
-      const forumChannelId = "1128667504428994641"; //party channel ID
+      const forumChannelId = "1128667504428994641"; // Saturday Spark forum channel ID
       const forumChannel = await interaction.guild.channels.fetch(
         forumChannelId
       );
@@ -109,14 +109,14 @@ export default class CreatePartyCommand implements IHandler {
 
       // Create the scheduled event on the guild
       const scheduledEvent = await interaction.guild.scheduledEvents.create({
-        name: "Party Night",
+        name: `Saturday Spark: ${gameName}`,
         scheduledStartTime: eventDate,
         scheduledEndTime: eventEndDate,
         privacyLevel: GuildScheduledEventPrivacyLevel.GuildOnly,
         entityType: GuildScheduledEventEntityType.External,
         // For external events, entityMetadata is required (set location as desired)
         entityMetadata: { location: "Online" },
-        description: `Party ${gameName}\nJoin the discussion here:\n ${postLink}`,
+        description: `${gameName}\nJoin the discussion here:\n ${postLink}`,
         image: base64Image,
       });
 
@@ -135,15 +135,15 @@ export default class CreatePartyCommand implements IHandler {
   }
   isGuild?: boolean = true;
 
-  // The upcoming party slot in Brussels time, so it stays at the same wall-clock
+  // The upcoming Spark slot in Brussels time, so it stays at the same wall-clock
   // hour across DST changes whatever timezone the server runs in. Once this
   // week's start has passed, it rolls over to next week.
-  private getNextPartyStart(now: Date = new Date()): Date {
-    const current = moment.tz(now, PARTY_TIMEZONE);
+  private getNextSparkStart(now: Date = new Date()): Date {
+    const current = moment.tz(now, SPARK_TIMEZONE);
     const start = current
       .clone()
-      .day(PARTY_DAY)
-      .hour(PARTY_START_HOUR)
+      .day(SPARK_DAY)
+      .hour(SPARK_START_HOUR)
       .startOf("hour");
     if (!start.isAfter(current)) {
       start.add(7, "days");
