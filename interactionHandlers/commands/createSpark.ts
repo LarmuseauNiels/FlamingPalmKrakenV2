@@ -68,7 +68,8 @@ export default class CreateSparkCommand implements IHandler {
         });
         return;
       }
-      const gameName = titleMatch[1];
+      // Steam's og:title is "<game> on Steam"; keep just the game name.
+      const gameName = titleMatch[1].replace(/\s+on Steam$/i, "").trim();
 
       // Fetch the banner image and convert it to a base64 string
       const imageResponse = await fetch(bannerUrl);
