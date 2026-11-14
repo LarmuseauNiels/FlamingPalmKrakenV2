@@ -1,6 +1,10 @@
-import { spawn } from "child_process";
+import { ChildProcessWithoutNullStreams, spawn } from "child_process";
 import { Readable } from "stream";
 import net from "net";
+import fs from "fs";
+import os from "os";
+import path from "path";
+import crypto from "crypto";
 import { createLogger } from "../../utils/logger";
 
 const log = createLogger("MusicSource");
@@ -14,6 +18,99 @@ const FFMPEG = process.env.FFMPEG_PATH || "ffmpeg";
 // is always present (it runs the bot), but yt-dlp only enables Deno by default.
 // --ignore-config keeps a stray config file from changing what gets spawned.
 const BASE_ARGS = ["--ignore-config", "--no-warnings", "--js-runtimes", "node"];
+
+/*
+ * YouTube answers most datacenter IPs with "Sign in to confirm you're not a
+ * bot". Two ways around it, both optional:
+ * - YTDLP_COOKIES: a Netscape-format cookies.txt of a (throwaway) YouTube
+ *   account, either pasted as-is or base64-encoded. YTDLP_COOKIES_FILE points
+ *   at such a file instead (e.g. on a CapRover persistent directory).
+ * - YTDLP_PROXY: route yt-dlp through a residential connection,
+ *   e.g. http://user:pass@home.example.com:3128 or socks5://...
+ */
+const PROXY = process.env.YTDLP_PROXY || "";
+const COOKIE_HEADER = /^#\s*(Netscape\s+)?HTTP Cookie File/i;
+let cookiesBase: string | null | undefined;
+
+/** Path of the configured cookies file, written once to tmp; null when none is set. */
+function cookiesSource(): string | null {
+  if (cookiesBase !== undefined) return cookiesBase;
+  cookiesBase = null;
+  try {
+    let content: string | null = null;
+    if (process.env.YTDLP_COOKIES_FILE) {
+      content = fs.readFileSync(process.env.YTDLP_COOKIES_FILE, "utf8");
+    } else if (process.env.YTDLP_COOKIES) {
+      const raw = process.env.YTDLP_COOKIES.trim();
+      content = raw.includes("\t") || COOKIE_HEADER.test(raw) ? raw : Buffer.from(raw, "base64").toString("utf8");
+    }
+    if (!content) return null;
+    // Some env editors turn newlines into literal "\n".
+    if (!content.includes("\n") && content.includes("\\n")) content = content.replace(/\\n/g, "\n");
+    if (!content.includes("\t")) {
+      log.error("YTDLP_COOKIES doesn't look like a Netscape cookies.txt (no tab-separated lines); ignoring it");
+      return null;
+    }
+    // yt-dlp refuses files without the header line, which some exporters leave out.
+    if (!COOKIE_HEADER.test(content)) content = "# Netscape HTTP Cookie File\n" + content;
+    const file = path.join(os.tmpdir(), "kraken-ytdlp-cookies.txt");
+    fs.writeFileSync(file, content.endsWith("\n") ? content : content + "\n", { mode: 0o600 });
+    cookiesBase = file;
+    log.info("yt-dlp will use the configured YouTube cookies");
+  } catch (err) {
+    log.error("Couldn't load the yt-dlp cookies", err);
+  }
+  return cookiesBase;
+}
+
+/**
+ * Spawns yt-dlp with the auth options. yt-dlp writes cookies back on exit, so
+ * each process gets its own copy: concurrent runs (lookup + prefetch) can't
+ * clobber the file, and the original stays as exported.
+ */
+function spawnYtdlp(args: string[]): ChildProcessWithoutNullStreams {
+  const extra: string[] = [];
+  if (PROXY) extra.push("--proxy", PROXY);
+  const source = cookiesSource();
+  let copy: string | null = null;
+  if (source) {
+    copy = path.join(os.tmpdir(), `kraken-ytdlp-cookies-${crypto.randomBytes(6).toString("hex")}.txt`);
+    try {
+      fs.copyFileSync(source, copy);
+      fs.chmodSync(copy, 0o600);
+      extra.push("--cookies", copy);
+    } catch (err) {
+      log.error("Couldn't copy the yt-dlp cookies file", err);
+      copy = null;
+    }
+  }
+  // Options must come before the "--" that ends them in `args`.
+  const proc = spawn(YTDLP, [...BASE_ARGS, ...extra, ...args], { stdio: ["ignore", "pipe", "pipe"] }) as any;
+  if (copy) {
+    const cleanup = () => fs.rm(copy!, { force: true }, () => {});
+    proc.once("close", cleanup);
+    proc.once("error", cleanup);
+  }
+  return proc;
+}
+
+/** Whether cookies or a proxy are set up, for error messages. */
+export function hasYoutubeWorkaround(): boolean {
+  return !!PROXY || cookiesSource() !== null;
+}
+
+let botCheckReported = false;
+
+/** Tells the admins (bot log channel) once per process when YouTube's bot check blocks playback. */
+function reportBotCheck(message: string) {
+  if (botCheckReported || !/sign in to confirm|not a bot/i.test(message)) return;
+  botCheckReported = true;
+  const hint = hasYoutubeWorkaround()
+    ? "YouTube's bot check is blocking music even though YTDLP_COOKIES / YTDLP_PROXY is set. The cookies have probably expired or been rotated: export fresh ones (see CLAUDE.md, Music Player)."
+    : "YouTube's bot check is blocking music playback from this server's IP. Set YTDLP_COOKIES (base64 cookies.txt from a throwaway YouTube account) or YTDLP_PROXY. See CLAUDE.md, Music Player.";
+  log.warn(hint);
+  (global as any).client?.log?.(hint);
+}
 
 export const MAX_PLAYLIST_TRACKS = 100;
 const RESOLVE_TIMEOUT_MS = 30_000;
@@ -58,7 +155,6 @@ export async function resolveQuery(
   const target = isUrl ? trimmed : `ytsearch1:${trimmed}`;
 
   const info = await runJson([
-    ...BASE_ARGS,
     "-J",
     "--flat-playlist",
     // For "watch?v=…&list=…" links, take the video rather than the playlist.
@@ -146,21 +242,16 @@ function isPrivateIp(ip: string): boolean {
 
 /** Starts streaming a track. The returned stream is raw PCM for @discordjs/voice. */
 export function createTrackStream(track: Track): TrackStream {
-  const ytdlp = spawn(
-    YTDLP,
-    [
-      ...BASE_ARGS,
-      "--quiet",
-      "--no-playlist",
-      "-f",
-      "bestaudio[acodec=opus]/bestaudio/best",
-      "-o",
-      "-",
-      "--",
-      track.url,
-    ],
-    { stdio: ["ignore", "pipe", "pipe"] }
-  );
+  const ytdlp = spawnYtdlp([
+    "--quiet",
+    "--no-playlist",
+    "-f",
+    "bestaudio[acodec=opus]/bestaudio/best",
+    "-o",
+    "-",
+    "--",
+    track.url,
+  ]);
   const ffmpeg = spawn(
     FFMPEG,
     [
@@ -185,7 +276,10 @@ export function createTrackStream(track: Track): TrackStream {
   ffmpeg.stderr.on("data", (chunk) => log.debug(`ffmpeg: ${chunk.toString().trim()}`));
   ytdlp.on("exit", (code) => {
     ytdlpExit = code;
-    if (code) log.warn(`yt-dlp exited ${code} for ${track.url}: ${lastError(ytdlpStderr)}`);
+    if (code) {
+      log.warn(`yt-dlp exited ${code} for ${track.url}: ${lastError(ytdlpStderr)}`);
+      reportBotCheck(ytdlpStderr);
+    }
   });
   ytdlp.on("error", (err) => {
     spawnError = `yt-dlp could not be started (${err.message})`;
@@ -220,7 +314,7 @@ export function createTrackStream(track: Track): TrackStream {
 
 function runJson(args: string[]): Promise<any> {
   return new Promise((resolve, reject) => {
-    const proc = spawn(YTDLP, args, { stdio: ["ignore", "pipe", "pipe"] });
+    const proc = spawnYtdlp(args);
     let stdout = "";
     let stderr = "";
     const timer = setTimeout(() => {
@@ -240,6 +334,7 @@ function runJson(args: string[]): Promise<any> {
       if (code !== 0) {
         const message = lastError(stderr);
         log.warn(`yt-dlp lookup failed (${code}): ${message}`);
+        reportBotCheck(message);
         reject(new MusicSourceError(friendlyError(message)));
         return;
       }
@@ -262,11 +357,13 @@ function lastError(stderr: string): string {
 export function friendlyError(message: string): string {
   if (/unsupported url/i.test(message)) return "I can't play music from that site.";
   if (/sign in to confirm (you|your)['’]?re not a bot|not a bot/i.test(message))
-    return "YouTube is blocking the bot right now (it wants a sign-in). Try another link or try again later.";
+    return "YouTube is blocking the bot right now (it wants a sign-in), so YouTube songs won't play. SoundCloud links still work; the admins have been told.";
   if (/age[- ]restricted|confirm your age|inappropriate for some users/i.test(message))
     return "That video is age-restricted, so I can't play it.";
   if (/private video|unavailable|has been removed|not available|HTTP Error 404/i.test(message))
     return "That video or link is unavailable.";
+  if (/proxy|connection refused|timed out|name or service not known|network is unreachable/i.test(message))
+    return "I couldn't reach the music site right now. Try again in a moment.";
   if (/requested format is not available|no video formats/i.test(message))
     return "I couldn't find any audio in that link.";
   return "Couldn't load that track.";

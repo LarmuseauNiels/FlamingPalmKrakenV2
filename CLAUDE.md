@@ -174,6 +174,9 @@ const raids = await global.client.prisma.raids.findMany(...);
 | `ISLANDER_AWARD_POINTS` | `true` to award community Points for Islander milestones (optional, default off) |
 | `ISLANDER_POINTS_EXCHANGE` | `true` to enable the Points→island-Currency exchange button (optional, default off) |
 | `YTDLP_PATH` / `FFMPEG_PATH` | Music player binaries (optional, default `yt-dlp` / `ffmpeg` on `PATH`) |
+| `YTDLP_COOKIES` | YouTube cookies.txt (Netscape format) for yt-dlp, **base64-encoded** (raw also accepted). Needed on datacenter IPs, see "YouTube bot check" below (optional) |
+| `YTDLP_COOKIES_FILE` | Path to a cookies.txt instead of `YTDLP_COOKIES`, e.g. on a CapRover persistent directory (optional) |
+| `YTDLP_PROXY` | Proxy for all yt-dlp traffic, e.g. `http://user:pass@host:3128` or `socks5://…` — a residential IP avoids the bot check (optional) |
 | `CAPROVER_GIT_COMMIT_SHA` | Version tracking (optional) |
 
 ### Scripts
@@ -252,6 +255,8 @@ With `discord_channel`, the channel name gets the player count as a suffix (`val
 - **Auto-leave:** 5 min after the queue runs out, or 2 min after the last listener leaves (`events/voiceStateUpdate.ts`).
 - **Kraken AI tools:** `playMusic`, `getMusicQueue`, `controlMusic` (skip/pause/resume/stop/shuffle/clear/remove), `setMusicVolume`, `setMusicLoop`. They act immediately (not in `CONFIRMED_TOOLS`) and go through `MusicService`, so the same voice-channel rules apply — they also work from DMs, using the member's voice state on `GUILD_ID`. When asked from a channel other than the player's (e.g. a DM), the player posts a "… — @member via Kraken" notice so listeners see who changed it. Tool output names members by display name, never `<@id>`, because AI replies allow user pings.
 - **Pause while loading:** pausing during the first seconds (player still `Buffering`) sets `pendingPause`, applied when playback starts.
+- **YouTube bot check:** from datacenter IPs (the CapRover server) YouTube answers playback with "Sign in to confirm you're not a bot"; searches still work. Fix with `YTDLP_COOKIES` or `YTDLP_PROXY`. The first time it happens in a process, a hint is posted to the bot log channel. Each yt-dlp run gets its own temp copy of the cookies (yt-dlp rewrites the file on exit), so the exported cookies are never rotated by the bot.
+  To export cookies: use a **throwaway** Google account (YouTube may flag it). Open a private/incognito window, log in to YouTube, navigate to `https://www.youtube.com/robots.txt` in that same tab, export the youtube.com cookies with a cookies.txt extension (e.g. "Get cookies.txt LOCALLY"), then close the private window immediately so the browser never rotates that session. Base64 it (`base64 -w0 cookies.txt`, or PowerShell `[Convert]::ToBase64String([IO.File]::ReadAllBytes("cookies.txt"))`) and set it as `YTDLP_COOKIES` in CapRover. Pasting raw cookies into a web form usually turns tabs into spaces; the loader rejects that with an error log. Cookies typically last weeks to months; when the log-channel hint says they expired, export fresh ones.
 - **URL guard:** links must be `http(s)` to a public host; localhost, single-label hosts and private IPs are refused, so members can't point yt-dlp's generic extractor at the host's network.
 
 ## Kraken AI Assistant
