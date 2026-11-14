@@ -110,7 +110,7 @@ export default class CreateSparkCommand implements IHandler {
 
       // Create the scheduled event on the guild
       const scheduledEvent = await interaction.guild.scheduledEvents.create({
-        name: `Saturday Spark: ${gameName}`,
+        name: `Spark: ${gameName}`,
         scheduledStartTime: eventDate,
         scheduledEndTime: eventEndDate,
         privacyLevel: GuildScheduledEventPrivacyLevel.GuildOnly,

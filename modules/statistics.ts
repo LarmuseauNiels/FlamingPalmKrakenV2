@@ -6,6 +6,14 @@ import { createLogger } from "../utils/logger";
 
 const log = createLogger("Statistics");
 
+// Event text → role to tag, for events whose name doesn't contain the role
+// name itself. Checked before the generic "role name appears in the event"
+// match. /create-spark names events "Spark: <game>" (older ones
+// "Saturday Spark: <game>"), but the role is called "Sparks".
+const EVENT_ROLE_ALIASES: { text: string; roleName: string }[] = [
+  { text: "Spark:", roleName: "Sparks" },
+];
+
 interface Member {
   ID: string;
   DisplayName?: string;
@@ -169,9 +177,15 @@ module.exports = async function (client: FpgClient) {
                       client.channels
                         .fetch("1128266086119374848")
                         .then((announcements: TextChannel) => {
-                          let role = roles.find((role) =>
-                            eventText.includes(role.name)
+                          const alias = EVENT_ROLE_ALIASES.find((a) =>
+                            eventText.includes(a.text)
                           );
+                          let role =
+                            (alias &&
+                              roles.find((r) => r.name === alias.roleName)) ||
+                            roles.find((role) =>
+                              eventText.includes(role.name)
+                            );
                           if (role) {
                             announcements
                               .send({
