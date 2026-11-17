@@ -167,10 +167,9 @@ async function announceUpcomingEvents(client: FpgClient, guild: Guild): Promise<
   client.events = events;
 
   const now = Date.now();
-  const dueEvents = [...events.values()].filter((event) => {
-    const minutesToGo = (event.scheduledStartTimestamp - now) / 60_000;
-    return minutesToGo > ANNOUNCE_WINDOW_MIN_MINUTES && minutesToGo <= ANNOUNCE_WINDOW_MAX_MINUTES;
-  });
+  const dueEvents = [...events.values()].filter((event) =>
+    isDueForAnnouncement((event.scheduledStartTimestamp - now) / 60_000)
+  );
   if (dueEvents.length === 0) return;
 
   const roles = await guild.roles.fetch();
@@ -198,6 +197,13 @@ async function announceUpcomingEvents(client: FpgClient, guild: Guild): Promise<
     }
   }
 }
+
+/** Whether a tick that sees an event `minutesToGo` minutes out should announce it. */
+function isDueForAnnouncement(minutesToGo: number): boolean {
+  return minutesToGo > ANNOUNCE_WINDOW_MIN_MINUTES && minutesToGo <= ANNOUNCE_WINDOW_MAX_MINUTES;
+}
+module.exports.isDueForAnnouncement = isDueForAnnouncement;
+module.exports.STATISTICS_INTERVAL_MINUTES = STATISTICS_INTERVAL_MINUTES;
 
 function cleanString(input: string | null | undefined): string {
   if (input === null || input === undefined) return "";

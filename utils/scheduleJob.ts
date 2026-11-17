@@ -29,27 +29,36 @@ export function scheduleJob(
     throw new Error(`scheduleJob(${name}): invalid cron expression "${expression}"`);
   }
 
+  const tick = createExclusiveRunner(name, job);
+  cron.schedule(expression, () => void tick(), options.timezone ? { timezone: options.timezone } : undefined);
+}
+
+/**
+ * Wraps `job` so calls while a run is in progress are skipped, and so the
+ * returned promise always resolves — `true` if this call ran the job, `false`
+ * if it was skipped. Separate from the cron wiring so it can be tested.
+ */
+export function createExclusiveRunner(name: string, job: () => Promise<void>): () => Promise<boolean> {
   let running = false;
   let skipped = 0;
 
-  cron.schedule(
-    expression,
-    () => {
-      if (running) {
-        skipped++;
-        log.warn(`${name}: previous run still in progress, skipping tick (${skipped} skipped so far)`);
-        return;
-      }
-      running = true;
-      const startedAt = Date.now();
-      job()
-        .catch((error) => log.error(`${name} failed:`, error))
-        .finally(() => {
-          running = false;
-          const elapsedMs = Date.now() - startedAt;
-          if (elapsedMs > SLOW_RUN_WARN_MS) log.warn(`${name}: run took ${elapsedMs} ms`);
-        });
-    },
-    options.timezone ? { timezone: options.timezone } : undefined
-  );
+  return async () => {
+    if (running) {
+      skipped++;
+      log.warn(`${name}: previous run still in progress, skipping tick (${skipped} skipped so far)`);
+      return false;
+    }
+    running = true;
+    const startedAt = Date.now();
+    try {
+      await job();
+    } catch (error) {
+      log.error(`${name} failed:`, error);
+    } finally {
+      running = false;
+      const elapsedMs = Date.now() - startedAt;
+      if (elapsedMs > SLOW_RUN_WARN_MS) log.warn(`${name}: run took ${elapsedMs} ms`);
+    }
+    return true;
+  };
 }

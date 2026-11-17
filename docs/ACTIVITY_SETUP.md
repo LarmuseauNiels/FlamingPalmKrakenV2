@@ -108,9 +108,9 @@ the `.discordsays.com` host.
 
 ## Things this spike deliberately did not do
 
-- **CORS is still wide open.** `WebApi.ts` uses a bare `cors()`. Tightening it
-  to the `discordsays.com` origin is the right follow-up, but it touches the
-  Angular site's access too, so it shouldn't ride along with this change.
+- ~~CORS is still wide open.~~ Done: `WebApi.ts` now allows only the website
+  origins in `CORS_ORIGINS`. The Activity needed no entry — its requests go
+  through Discord's proxy, which serves them from the API's own origin.
 - **No `rpc.activities.write` scope**, so no `setActivity()` presence ("Shopping
   in the store" in the member list). Adding it means a second scope on the
   consent screen — worth it for Islander, not for a storefront.

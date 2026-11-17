@@ -6,7 +6,7 @@ import cors from "cors";
 import passport from "passport";
 import jwt from "jsonwebtoken";
 import { legacyEndPoints } from "./ApiFunctions/LegacyEndPoints";
-import { jsonify } from "./ApiFunctions/Helpers";
+import { jsonify, JWT_MAX_AGE } from "./ApiFunctions/Helpers";
 import { memberEndPoints } from "./ApiFunctions/MemberEndPoints";
 import { profileEndPoints } from "./ApiFunctions/ProfileEndPoints";
 import { shopEndPoints } from "./ApiFunctions/ShopEndPoints";
@@ -51,7 +51,7 @@ export class WebApi {
     );
 
     app.use(middleware.requestHandler);
-    app.use(cors());
+    app.use(cors({ origin: allowedOrigins() }));
     app.use(passport.initialize());
     app.use(bodyParser.urlencoded({ extended: false }));
     app.use(bodyParser.json());
@@ -76,7 +76,8 @@ export class WebApi {
             username: profile.username,
             avatar: profile.avatar,
           },
-          process.env.JWT_SECRET
+          process.env.JWT_SECRET,
+          { expiresIn: JWT_MAX_AGE }
         );
         res.send(jsonify(token));
       } // auth success
@@ -115,6 +116,24 @@ export class WebApi {
     // A port clash would otherwise be an uncaught 'error' event.
     server.on("error", (err) => log.error("WebApi server error:", err));
   }
+}
+
+/**
+ * Sites allowed to call the API from a browser: the website. The Activity
+ * doesn't need an entry — Discord's proxy serves it from this same origin.
+ * Requests without an Origin header (server-side rendering, curl) are not
+ * affected by CORS at all.
+ */
+const DEFAULT_CORS_ORIGINS = ["https://flamingpalm.com", "https://www.flamingpalm.com", "http://localhost:4200"];
+
+function allowedOrigins(): string[] {
+  const configured = (process.env.CORS_ORIGINS ?? "")
+    .split(",")
+    .map((origin) => origin.trim().replace(/\/$/, ""))
+    .filter(Boolean);
+  const origins = configured.length > 0 ? configured : DEFAULT_CORS_ORIGINS;
+  log.info(`CORS allowed origins: ${origins.join(", ")}`);
+  return origins;
 }
 
 async function logDiscordLogin(profile) {

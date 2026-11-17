@@ -47,6 +47,17 @@ JWT payload:
 Only users who are members of the configured Discord guild (`GUILD_ID`) can
 log in. Non-members receive a `null` profile and are denied a token.
 
+Tokens expire **30 days** after they are issued (`exp`; Activity tokens after 7
+days). The server also rejects any token whose `iat` is older than 30 days, which
+covers tokens issued before expiry was added. Expired or invalid tokens get `401`.
+
+### CORS
+
+Browsers may only call the API from the origins in `CORS_ORIGINS` (comma-separated;
+default `https://flamingpalm.com`, `https://www.flamingpalm.com`,
+`http://localhost:4200`). The Discord Activity is served from the API's own origin
+through Discord's proxy, so it needs no entry.
+
 ### Admin Access
 
 Admin endpoints require the authenticated user's Discord ID to appear in the
@@ -1519,6 +1530,6 @@ Profile image endpoints return `Content-Type: image/png`.
 | Status | Meaning |
 |--------|---------|
 | `400` | Bad request (missing fields, out of stock, insufficient points, blocked) |
-| `401` | Missing `Authorization` header / no token |
-| `403` | Invalid or expired JWT |
+| `401` | Missing, invalid or expired JWT — sign in again |
+| `403` | Signed in, but not allowed (e.g. not an admin) |
 | `500` | Unhandled server error |

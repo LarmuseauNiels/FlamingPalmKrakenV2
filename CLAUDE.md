@@ -160,7 +160,8 @@ const raids = await global.client.prisma.raids.findMany(...);
 | `OAUTHSECRET` | Discord OAuth client secret |
 | `ADMIN_IDS` | Comma-separated Discord IDs — admin web API access + Saturday Spark reminder DMs |
 | `CALLBACK_URL` | OAuth redirect URL |
-| `JWT_SECRET` | JWT signing secret |
+| `JWT_SECRET` | JWT signing secret. Tokens are valid for 30 days (`JWT_MAX_AGE` in `ApiFunctions/Helpers.ts`) |
+| `CORS_ORIGINS` | Comma-separated browser origins allowed to call the API (optional; defaults to flamingpalm.com, www.flamingpalm.com and localhost:4200) |
 | `OLLAMA_AI_KEY` | Ollama cloud API key |
 | `OLLAMA_MODEL` | Ollama model name (optional, defaults to gemma4:cloud) |
 | `OLLAMA_BASE_URL` | Ollama OpenAI-compatible endpoint (optional, defaults to https://ollama.com/v1) |
@@ -184,6 +185,7 @@ const raids = await global.client.prisma.raids.findMany(...);
 ### Scripts
 ```bash
 npm run build    # Compile TypeScript → ./bin/
+npm test         # Compile, then run __tests__/*.test.ts with Node's built-in test runner
 npm start        # Apply pending DB migrations (prisma migrate deploy) + run the bot
 npm run migrate  # Apply pending DB migrations only (prisma migrate deploy)
 npm run deploy   # Build + register slash commands with Discord
@@ -202,7 +204,10 @@ npm --prefix activity run build   # -> activity/dist, served at /activity
 > `migrate deploy`. Both steps are idempotent. When you add a migration that is
 > already reflected in the live schema, append its name to `LEGACY_MIGRATIONS`.
 
-> **Note:** There is no test suite — tests were removed in a previous refactor. `tsconfig.test.json` is a leftover artifact.
+> **Tests** live in `__tests__/*.test.ts` and use `node:test` + `node:assert` (no
+> extra dependencies). They compile with the rest of the bot and run from `bin/`.
+> Keep tested logic pure and exported — e.g. `createExclusiveRunner()` is split
+> out of `scheduleJob()` so the overlap guard is testable without a cron clock.
 
 ### Database
 ```bash
@@ -401,7 +406,7 @@ Key models and their purpose:
 ## CI/CD
 
 - **CodeQL** runs automatically on push/PR to `master` (`.github/workflows/codeql.yml`)
-- No automated test pipeline (tests were removed)
+- No CI test workflow yet — run `npm test` locally before pushing
 - Deployment is manual via CapRover git push
 
 ---

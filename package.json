@@ -7,6 +7,7 @@
     "start": "node prisma/migrate-deploy.js && node ./bin/index.js",
     "migrate": "node prisma/migrate-deploy.js",
     "build": "npx tsc",
+    "test": "npx tsc && node --test \"bin/__tests__/*.test.js\"",
     "deploy": "npx tsc && node bin/deploy-commands.js"
   },
   "author": "Niels Larmuseau",
@@ -18,7 +19,7 @@
     "@napi-rs/canvas": "^0.1.29",
     "@prisma/client": "^4.12.0",
     "@types/passport": "^1.0.12",
-    "axios": "1.18.0",
+    "axios": "1.21.1",
     "cors": "^2.8.5",
     "discord.js": "^14.25.1",
     "dotenv": "^17.2.3",
@@ -35,8 +36,8 @@
     "ws": "^8.22.0"
   },
   "overrides": {
-    "fast-xml-parser": "^5.8.0",
-    "undici": "^6.28.0",
+    "fast-xml-parser": "^5.12.1",
+    "undici": "^6.29.1",
     "formdata-node": "^6.0.3"
   },
   "devDependencies": {
