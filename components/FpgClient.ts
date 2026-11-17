@@ -82,10 +82,6 @@ export class FpgClient extends Client {
     // AI assistant from Ollama
     this.ollamaAI = new OllamaAI();
 
-    this.logChannel;
-    this.updateChannel;
-    this.contextMenus = new Collection();
-    this.modals = new Collection();
     this.achievementsModule = new AchievementsModule();
     this.webapi = new WebApi();
     this.loadEvents();
@@ -108,32 +104,45 @@ export class FpgClient extends Client {
     return this.users.cache.get(id)?.username ?? null;
   }
 
-  private async loadCommands(): Promise<void> {
-    this.commands = await this.loadInteractionActions("commands");
-    this.buttons = await this.loadInteractionActions("buttons");
-    this.selects = await this.loadInteractionActions("selects");
-    this.modals = await this.loadInteractionActions("modals");
-    this.contextMenus = await this.loadInteractionActions("contextmenus");
+  /**
+   * Loads every handler synchronously in the constructor, so the collections
+   * are complete before login and no interaction can see a half-filled map.
+   */
+  private loadCommands(): void {
+    this.commands = this.loadInteractionActions("commands");
+    this.buttons = this.loadInteractionActions("buttons");
+    this.selects = this.loadInteractionActions("selects");
+    this.modals = this.loadInteractionActions("modals");
+    this.contextMenus = this.loadInteractionActions("contextmenus");
   }
 
-  private async loadInteractionActions(type: string): Promise<interactionSet> {
+  private loadInteractionActions(type: string): interactionSet {
     const actions = new Collection<string, IHandler>();
-    const actionFiles: Array<string> = fs
-      .readdirSync(path.join(__dirname, `../interactionHandlers/${type}`))
-      .filter((file) => file.endsWith(".js"));
+    const directory = path.join(__dirname, `../interactionHandlers/${type}`);
+    if (!fs.existsSync(directory)) return actions;
+
+    const actionFiles = fs.readdirSync(directory).filter((file) => file.endsWith(".js"));
     for (const file of actionFiles) {
+      let handler: IHandler;
       try {
-        const fileLocation = path.join(
-          __dirname,
-          `../interactionHandlers/${type}/${file}`
-        );
-        const handlerSource = require(fileLocation);
-        const handler: IHandler = new handlerSource.default();
-        actions.set(handler.name, handler);
-        logger.info(`Loaded ${type} ${handler.name}`);
+        const handlerSource = require(path.join(directory, file));
+        handler = new handlerSource.default();
       } catch (error) {
-        logger.error(`Failed to load ${type} ${file}: ${error}`);
+        // One broken handler shouldn't take the whole bot down.
+        logger.error(`Failed to load ${type} ${file}:`, error);
+        continue;
       }
+      // These are programmer errors, not runtime conditions: a handler with no
+      // name can never be routed to, and a duplicate name silently replaced
+      // the earlier handler. Fail the boot so they are fixed, not shipped.
+      if (!handler.name) {
+        throw new Error(`${type}/${file} exports a handler without a name`);
+      }
+      if (actions.has(handler.name)) {
+        throw new Error(`Duplicate ${type} handler name "${handler.name}" in ${file}`);
+      }
+      actions.set(handler.name, handler);
+      logger.info(`Loaded ${type} ${handler.name}`);
     }
     return actions;
   }
@@ -152,10 +161,16 @@ export class FpgClient extends Client {
         if (eventSource.default && typeof eventSource.default === "function") {
           const event: IEvent = new eventSource.default();
 
+          // execute() is async; a rejection here would otherwise be unhandled.
+          const listener = (...args) => {
+            Promise.resolve()
+              .then(() => event.execute(...args))
+              .catch((error) => logger.error(`Event ${event.name} (${file}) failed:`, error));
+          };
           if (event.once) {
-            this.once(event.name, (...args) => event.execute(...args));
+            this.once(event.name, listener);
           } else {
-            this.on(event.name, (...args) => event.execute(...args));
+            this.on(event.name, listener);
           }
         } else {
           logger.error(

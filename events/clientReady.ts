@@ -32,11 +32,13 @@ export default class ready implements IEvent {
         client.user!.tag
       }, version ${(process.env.CAPROVER_GIT_COMMIT_SHA ?? "unknown").slice(0, 7)}`
     );
-    require("../modules/statistics.js")(client);
-    require("../modules/VintageStoryStatus.js")(client);
-    require("../modules/PelicanStatusMonitor.js")(client);
-    require("../modules/SparkReminder.js")(client);
-    require("../modules/RaidReminders.js")(client);
+    // Some of these are async (initial fetches before scheduling); a failed
+    // start must be logged, not left as an unhandled rejection.
+    for (const moduleName of ["statistics", "VintageStoryStatus", "PelicanStatusMonitor", "SparkReminder", "RaidReminders"]) {
+      Promise.resolve()
+        .then(() => require(`../modules/${moduleName}.js`)(client))
+        .catch((error) => log.error(`Failed to start module ${moduleName}:`, error));
+    }
     // Collection is an enhanced Map which we are going to save our invites to.
     const guildInvites: Collection<string, any> = new Collection();
     client.invites = guildInvites;

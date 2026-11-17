@@ -12,6 +12,7 @@ import { RaidEmbeds } from "./RaidEmbeds";
 import { RaidModule } from "./RaidModule";
 import { ChannelUpdates } from "../islander/ChannelUpdates";
 import { createLogger } from "../utils/logger";
+import { envInt } from "../utils/config";
 
 const log = createLogger("RaidScheduler");
 
@@ -22,7 +23,7 @@ const log = createLogger("RaidScheduler");
 export const MAX_SCHEDULING_OPTIONS = 25;
 
 /** Open/Scheduling raids with no activity for this many days are expired. */
-export const RAID_EXPIRY_DAYS = parseInt(process.env.RAID_EXPIRY_DAYS || "21");
+export const RAID_EXPIRY_DAYS = envInt("RAID_EXPIRY_DAYS", 21, 1, 365);
 
 /** A rule the caller broke (not a server fault) — safe to show to the user. */
 export class RaidRuleError extends Error {}

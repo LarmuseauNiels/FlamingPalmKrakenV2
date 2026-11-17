@@ -11,6 +11,13 @@ const TYPING_REFRESH_MS = 8000;
 /** How much of a replied-to message to show the AI. */
 const MAX_REFERENCED_CHARS = 1500;
 
+/**
+ * Members with an AI answer in progress. One at a time per member: an answer
+ * can take several model rounds, and parallel ones would race on the stored
+ * conversation (the later save silently drops the earlier turn).
+ */
+const membersAwaitingAnswer = new Set<string>();
+
 export default class messageCreate implements IEvent {
   name = "messageCreate";
   async execute(message: Message) {
@@ -65,6 +72,20 @@ export default class messageCreate implements IEvent {
     }
     if (!question) question = "(The member mentioned you without saying anything else.)";
 
+    if (membersAwaitingAnswer.has(message.author.id)) {
+      await message.reply("I'm still working on your previous message — one at a time, please!");
+      return;
+    }
+    membersAwaitingAnswer.add(message.author.id);
+    try {
+      await this.answer(message, question, isDM, conversation);
+    } finally {
+      membersAwaitingAnswer.delete(message.author.id);
+    }
+  }
+
+  /** Asks the model, sends the (possibly split) answer and stores the conversation. */
+  private async answer(message: Message, question: string, isDM: boolean, conversation: StoredConversation | null) {
     const stopTyping = this.keepTyping(message);
     let result;
     try {

@@ -18,6 +18,17 @@ const PelicanStatusMonitor: any = require("../modules/PelicanStatusMonitor.js");
 
 const log = createLogger("OllamaAI");
 
+/**
+ * Per-request timeout. The SDK default is 10 minutes, far past the point where
+ * a member waiting on "Kraken is typing…" has given up.
+ */
+const OLLAMA_REQUEST_TIMEOUT_MS = 60_000;
+/**
+ * Most tool calls the model may make in one round. Each runs a DB query or an
+ * API call, so a model looping on calls must not fan out without limit.
+ */
+const MAX_TOOL_CALLS_PER_ROUND = 8;
+
 /** Who is asking and what conversation they are continuing. */
 export interface AskContext {
   authorId: string;
@@ -57,6 +68,10 @@ export class OllamaAI {
     this.openai = new OpenAI({
       baseURL: process.env.OLLAMA_BASE_URL || "https://ollama.com/v1",
       apiKey: process.env.OLLAMA_AI_KEY || "",
+      timeout: OLLAMA_REQUEST_TIMEOUT_MS,
+      // ask() and parseDate() run their own backoff; SDK retries on top of
+      // those multiplied the attempts (and the wait) up to 3x.
+      maxRetries: 0,
     });
 
     this.tools = [
@@ -599,7 +614,17 @@ export class OllamaAI {
 
         log.debug("Ollama requested tool calls:", responseMessage.tool_calls);
 
-        for (const call of responseMessage.tool_calls) {
+        for (const [index, call] of responseMessage.tool_calls.entries()) {
+          if (index >= MAX_TOOL_CALLS_PER_ROUND) {
+            // Every tool_call_id still needs a reply or the next request is invalid.
+            messages.push({
+              tool_call_id: call.id,
+              role: "tool",
+              name: call.type === "function" ? call.function.name : "unknown",
+              content: `Skipped: at most ${MAX_TOOL_CALLS_PER_ROUND} tool calls per step.`,
+            });
+            continue;
+          }
           if (call.type === "function") {
             const output = await this.handleFunctionCall(call.function, toolCtx);
             messages.push({

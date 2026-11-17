@@ -88,7 +88,9 @@ FlamingPalmKrakenV2/
 │   ├── ChannelUpdates.ts     # Generic update-channel helper (profile/raid messages)
 │   └── data/balance.ts       # Game balance constants (mirrors docs/ISLANDER_BALANCE.md)
 ├── utils/
-│   └── logger.ts             # Color-coded logger with Bugsnag integration
+│   ├── logger.ts             # Color-coded logger with Bugsnag integration
+│   ├── scheduleJob.ts        # cron wrapper: no overlapping runs, errors always logged
+│   └── config.ts             # assertRequiredEnv() at boot, envInt() for bounded numeric env vars
 ├── assets/                   # Images and badge files for profile generation
 ├── fonts/                    # TTF fonts used by @napi-rs/canvas
 └── .github/workflows/
@@ -302,6 +304,24 @@ All async operations must be wrapped in try/catch. Never let promises fail silen
 someAsyncOp().catch(err => logger.error('op failed', err));
 ```
 
+### Recurring Jobs
+Schedule recurring work with `scheduleJob(name, cronExpression, asyncJob)` from
+`utils/scheduleJob.ts`, never `cron.schedule` directly. A tick that arrives while
+the previous run is still going is skipped, so a slow Discord/panel API can't stack
+overlapping runs (duplicate status messages, races), and a failing run is logged
+instead of becoming an unhandled rejection.
+
+### Configuration
+- Required variables (`TOKEN`, `CLIENT_ID`, `GUILD_ID`, `DATABASE_URL`, `JWT_SECRET`)
+  are checked by `assertRequiredEnv()` at boot; the bot refuses to start without them.
+- Read numeric variables with `envInt(name, fallback, min, max)`: an invalid value
+  fails the boot instead of turning into `NaN` deep inside a query.
+
+### Limits
+Put an explicit bound on anything that can grow: timeouts on every outbound call,
+caps on loops over external input (e.g. `MAX_TOOL_CALLS_PER_ROUND`, one in-flight AI
+answer per member), and name the limit as a constant with its unit (`_MS`, `_MINUTES`).
+
 ### Interaction Replies
 Always reply to interactions — Discord requires a response within 3 seconds:
 ```typescript
@@ -319,6 +339,10 @@ await interaction.editReply({ content: '...' });
 1. Create `interactionHandlers/buttons/my-button.ts`
 2. Export a default object implementing `IHandler` where `name` matches the button's `customId`
 3. No deploy step needed — buttons are matched by `customId` at runtime
+
+Handler names must be unique per directory: a duplicate or missing `name` stops the
+bot at boot (it used to silently replace the earlier handler). Errors thrown by any
+handler are reported and answered with an ephemeral error message by `interactionCreate.ts`.
 
 ---
 

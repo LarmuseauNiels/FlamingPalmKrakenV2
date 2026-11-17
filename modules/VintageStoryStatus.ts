@@ -1,8 +1,8 @@
-import cron from "node-cron";
 import { ActivityType, BaseGuildTextChannel } from "discord.js";
 import axios from "axios";
 import { FpgClient } from "../components/FpgClient";
 import { createLogger } from "../utils/logger";
+import { scheduleJob } from "../utils/scheduleJob";
 
 const log = createLogger("VintageStoryStatus");
 
@@ -22,58 +22,50 @@ async function fetchVintageStoryServers(): Promise<any> {
 }
 
 const VS_CHANNEL_ID = "1423193044567462009";
+const VS_CHANNEL_BASE_NAME = "🏕️┃vintage-story";
+const VS_MAX_PLAYERS = 8;
+
+/**
+ * Discord allows 2 channel renames per 10 minutes and discord.js queues the
+ * rest, so renaming every minute grew an ever-longer queue of stale renames.
+ * Only rename (and set the presence) when the wanted value changes.
+ */
+let lastChannelName: string | null = null;
+let lastActivityText: string | null = null;
+
+async function applyStatus(client: FpgClient, players: number | null): Promise<void> {
+  const activityText = players === null ? "flamingpalm.com" : `VintageStory ${players}/${VS_MAX_PLAYERS}`;
+  if (activityText !== lastActivityText) {
+    client.user.setActivity(activityText, {
+      type: players === null ? ActivityType.Watching : ActivityType.Playing,
+    });
+    lastActivityText = activityText;
+  }
+
+  const channelName = players === null ? VS_CHANNEL_BASE_NAME : `${VS_CHANNEL_BASE_NAME}-${players}`;
+  if (channelName === lastChannelName) return;
+
+  const channel = (await client.channels.fetch(VS_CHANNEL_ID)) as BaseGuildTextChannel;
+  if (channel.name !== channelName) await channel.setName(channelName);
+  lastChannelName = channelName;
+}
+
+async function updateStatus(client: FpgClient): Promise<void> {
+  let players: number | null = null;
+  try {
+    const data = await fetchVintageStoryServers();
+    const server = data.data.find((s) => s.serverName === process.env.VS_SERVER_NAME);
+    if (server) {
+      players = server.players;
+    } else {
+      log.debug(`No server found for ${process.env.VS_SERVER_NAME} — server may be offline`);
+    }
+  } catch (err) {
+    log.warn("Failed to fetch Vintage Story servers:", (err as any)?.message ?? err);
+  }
+  await applyStatus(client, players);
+}
 
 module.exports = function (client: FpgClient) {
-  cron.schedule("10 * * * * *", () => {
-    fetchVintageStoryServers()
-      .then((data) => {
-        log.info("Fetched Vintage Story servers");
-        let server = data.data.find(
-          (s) => s.serverName === process.env.VS_SERVER_NAME
-        );
-        if (!server) {
-          log.warn(`No server found for ${process.env.VS_SERVER_NAME} — server may be offline`);
-          global.client.user.setActivity("flamingpalm.com", {
-            type: ActivityType.Watching,
-          });
-          client.channels
-            .fetch(VS_CHANNEL_ID)
-            .then((channel) => {
-              (channel as BaseGuildTextChannel).setName("🏕️┃vintage-story");
-            })
-            .catch((error) =>
-              log.error("Failed to reset VS channel name:", error)
-            );
-          return;
-        }
-        global.client.user.setActivity(
-          "VintageStory " + server.players + "/8",
-          { type: ActivityType.Playing }
-        );
-        client.channels
-          .fetch(VS_CHANNEL_ID)
-          .then((channel) => {
-            (channel as BaseGuildTextChannel).setName(
-              "🏕️┃vintage-story-" + server.players
-            );
-          })
-          .catch((error) =>
-            log.error("Failed to update VS channel name:", error)
-          );
-      })
-      .catch((err) => {
-        log.error("Failed to fetch Vintage Story servers:", err);
-        global.client.user.setActivity("flamingpalm.com", {
-          type: ActivityType.Watching,
-        });
-        client.channels
-          .fetch(VS_CHANNEL_ID)
-          .then((channel) => {
-            (channel as BaseGuildTextChannel).setName("🏕️┃vintage-story");
-          })
-          .catch((error) =>
-            log.error("Failed to reset VS channel name:", error)
-          );
-      });
-  });
+  scheduleJob("Vintage Story status", "10 * * * * *", () => updateStatus(client));
 };

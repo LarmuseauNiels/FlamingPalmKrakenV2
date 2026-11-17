@@ -1,4 +1,4 @@
-import cron from "node-cron";
+import { scheduleJob } from "../utils/scheduleJob";
 import axios from "axios";
 import { GameDig } from "gamedig";
 import {
@@ -599,9 +599,7 @@ module.exports = async function (client: FpgClient) {
 
   // Initial update on startup, then refresh every minute
   await updateStatus();
-  cron.schedule("0 * * * * *", () => {
-    updateStatus().catch((err) => log.error("Pelican status cron error:", err));
-  });
+  scheduleJob("Pelican status", "0 * * * * *", updateStatus);
 };
 
 module.exports.getServerStatuses = async function (): Promise<string> {

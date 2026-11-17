@@ -224,7 +224,7 @@ FROM (
   }
 
   async checkAchievements(members) {
-    global.client.prisma.achievements
+    return global.client.prisma.achievements
       .findMany()
       .then((achievements) => {
         let DailyLoginAchievement = achievements.find(
@@ -233,7 +233,8 @@ FROM (
         );
         let startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
-        if (DailyLoginAchievement !== null) {
+        // Array.find returns undefined, not null, when there is no such achievement.
+        if (DailyLoginAchievement) {
           members
             .filter(
               (m) =>

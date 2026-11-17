@@ -1,8 +1,8 @@
-import cron from "node-cron";
 import { EmbedBuilder } from "discord.js";
 import { FpgClient } from "../components/FpgClient";
 import { getAdminIds } from "./ApiFunctions/Helpers";
 import { createLogger } from "../utils/logger";
+import { scheduleJob } from "../utils/scheduleJob";
 
 const log = createLogger("SparkReminder");
 
@@ -60,13 +60,7 @@ module.exports = function (client: FpgClient) {
     `Loading Spark reminder module (${REMINDER_CRON} ${REMINDER_TIMEZONE})`
   );
 
-  cron.schedule(
-    REMINDER_CRON,
-    () => {
-      sendReminders(client).catch((error) =>
-        log.error("Spark reminder cron job error:", error)
-      );
-    },
-    { timezone: REMINDER_TIMEZONE }
-  );
+  scheduleJob("Spark reminder", REMINDER_CRON, () => sendReminders(client), {
+    timezone: REMINDER_TIMEZONE,
+  });
 };

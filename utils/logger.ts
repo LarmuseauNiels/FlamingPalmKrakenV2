@@ -21,8 +21,8 @@ const COLORS: Record<number, string> = {
 
 const RESET = "\x1b[0m";
 
-function getConfiguredLevel(): LogLevel {
-  switch (process.env.LOG_LEVEL?.toUpperCase()) {
+function parseLevel(value: string | undefined): LogLevel {
+  switch (value?.toUpperCase()) {
     case "DEBUG": return LogLevel.DEBUG;
     case "WARN":  return LogLevel.WARN;
     case "ERROR": return LogLevel.ERROR;
@@ -30,14 +30,43 @@ function getConfiguredLevel(): LogLevel {
   }
 }
 
+/** Read once: the environment doesn't change while the process runs. */
+const CONFIGURED_LEVEL = parseLevel(process.env.LOG_LEVEL);
+
+/** Longest serialized object argument; a whole Discord Collection is megabytes. */
+const MAX_OBJECT_CHARS = 4000;
+
+/**
+ * Logging must never throw. JSON.stringify throws on circular structures
+ * (most discord.js objects) and on BigInt, so fall back to a safe form.
+ */
+function describeArg(arg: unknown): string {
+  if (arg instanceof Error) return arg.stack ?? arg.message;
+  if (typeof arg !== "object" || arg === null) return String(arg);
+  let text: string;
+  try {
+    const seen = new WeakSet<object>();
+    text = JSON.stringify(arg, (_key, value) => {
+      if (typeof value === "bigint") return value.toString();
+      if (typeof value === "object" && value !== null) {
+        if (seen.has(value)) return "[Circular]";
+        seen.add(value);
+      }
+      return value;
+    });
+  } catch {
+    text = Object.prototype.toString.call(arg);
+  }
+  if (text === undefined) return String(arg);
+  return text.length > MAX_OBJECT_CHARS ? text.slice(0, MAX_OBJECT_CHARS) + "…(truncated)" : text;
+}
+
 function formatMessage(level: LogLevel, context: string, args: any[]): string {
   const timestamp = new Date().toISOString();
   const color = COLORS[level];
   const label = LEVEL_NAMES[level].padEnd(5);
   const ctx = context ? ` [${context}]` : "";
-  const body = args
-    .map((a) => (a instanceof Error ? a.stack ?? a.message : typeof a === "object" ? JSON.stringify(a) : String(a)))
-    .join(" ");
+  const body = args.map(describeArg).join(" ");
   return `${color}[${timestamp}] [${label}]${ctx} ${body}${RESET}`;
 }
 
@@ -45,7 +74,7 @@ class Logger {
   constructor(private readonly context: string = "") {}
 
   private shouldLog(level: LogLevel): boolean {
-    return level >= getConfiguredLevel();
+    return level >= CONFIGURED_LEVEL;
   }
 
   debug(...args: any[]): void {

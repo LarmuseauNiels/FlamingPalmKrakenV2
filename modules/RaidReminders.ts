@@ -1,12 +1,13 @@
-import cron from "node-cron";
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from "discord.js";
 import { FpgClient } from "../components/FpgClient";
 import { createLogger } from "../utils/logger";
+import { envInt } from "../utils/config";
+import { scheduleJob } from "../utils/scheduleJob";
 
 const log = createLogger("RaidReminders");
 
 /** How long before a scheduled raid its attendees get the "starts soon" DM. */
-const REMINDER_MINUTES = parseInt(process.env.RAID_REMINDER_MINUTES || "30");
+const REMINDER_MINUTES = envInt("RAID_REMINDER_MINUTES", 30, 1, 24 * 60);
 
 /**
  * DMs every attendee shortly before a scheduled raid starts, with a link to
@@ -100,7 +101,5 @@ async function remindRaid(raidId: number, title: string, start: Date, memberIds:
 
 module.exports = function (client: FpgClient) {
   log.info(`Loading raid reminder module (${REMINDER_MINUTES} min before start)`);
-  cron.schedule("15 * * * * *", () => {
-    sendDueReminders().catch((error) => log.error("Raid reminder cron job error:", error));
-  });
+  scheduleJob("Raid reminders", "15 * * * * *", sendDueReminders);
 };

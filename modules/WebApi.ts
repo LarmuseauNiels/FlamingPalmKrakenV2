@@ -19,6 +19,7 @@ import { activityEndPoints } from "./ApiFunctions/ActivityEndPoints";
 import { Strategy as DiscordStrategy } from "passport-discord-auth";
 const app = express();
 const prompt = "consent";
+const WEB_API_PORT = 3000;
 
 export class WebApi {
   constructor() {
@@ -98,14 +99,21 @@ export class WebApi {
     gameServerEndPoints(app);
     activityEndPoints(app);
 
+    // Bugsnag's handler must come first: it reports with request context and
+    // passes the error on with next(err). Ours ends the chain, so when it ran
+    // first Bugsnag never saw any API error.
+    app.use(middleware.errorHandler);
     app.use(function (err, req, res, next) {
-      log.error("Unhandled Express error:", err.stack);
+      // Logged as text: Bugsnag already has the Error, don't report it twice.
+      log.error("Unhandled Express error:", String(err?.stack ?? err));
+      if (res.headersSent) return next(err);
       res.status(500).send("Something broke!");
     });
-    app.use(middleware.errorHandler);
-    app.listen(3000, () => {
-      log.info("WebApi listening on port 3000");
+    const server = app.listen(WEB_API_PORT, () => {
+      log.info(`WebApi listening on port ${WEB_API_PORT}`);
     });
+    // A port clash would otherwise be an uncaught 'error' event.
+    server.on("error", (err) => log.error("WebApi server error:", err));
   }
 }
 
