@@ -1,9 +1,6 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
+import { ChatInputCommandInteraction, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
 import { RaidModule } from "../../modules/RaidModule";
-import { createLogger } from "../../utils/logger";
-
-const log = createLogger("EventSummary");
 
 export default class EventSummaryHandler implements IHandler {
   name = "event-summary";
@@ -20,49 +17,29 @@ export default class EventSummaryHandler implements IHandler {
       PermissionFlagsBits.Administrator
     ) as SlashCommandBuilder;
   isGuild = true;
-  async execute(interaction) {
-    const channel = interaction.guild.channels.cache.get(
-      interaction.options.get("channel")?.value || interaction.channel.id
-    );
-
-    if (!channel) {
-      return interaction.reply({
-        content: `\`❌\` Invalid channel.`,
-        ephemeral: true,
-      });
+  async execute(interaction: ChatInputCommandInteraction) {
+    if (!interaction.guild) {
+      await interaction.reply({ content: `\`❌\` This only works in the server.`, ephemeral: true });
+      return;
+    }
+    const channelId = interaction.options.getChannel("channel")?.id ?? interaction.channelId;
+    const channel = interaction.guild.channels.cache.get(channelId);
+    if (!channel || !channel.isTextBased()) {
+      await interaction.reply({ content: `\`❌\` Invalid channel.`, ephemeral: true });
+      return;
     }
 
-    interaction.guild.scheduledEvents
-      .fetch()
-      .then(async (events) => {
-        events = events.sort((e) => e.scheduledStartTimestamp).reverse();
-        global.client.events = events;
-        var contentText = "Upcoming events!\n";
+    const events = await interaction.guild.scheduledEvents.fetch();
+    // The old code first ran a sort with a one-argument comparator (a no-op)
+    // and reversed it; only this ascending sort ever mattered.
+    global.client.events = events.sort((a, b) => (a.scheduledStartTimestamp ?? 0) - (b.scheduledStartTimestamp ?? 0));
+    let contentText = "Upcoming events!\n";
+    global.client.events.forEach((event) => {
+      contentText += `${event.url}\n`;
+    });
 
-        let sortedEvents = global.client.events.sort((a, b) => {
-          return a.scheduledStartTimestamp - b.scheduledStartTimestamp;
-        });
-        sortedEvents.forEach((event) => {
-          contentText += `${event.url}\n`;
-        });
-
-        let raids = await RaidModule.getRaidMessage();
-        channel
-          .send({
-            content: contentText,
-            embeds: raids.embeds,
-            components: raids.components,
-          })
-          .catch((err) => log.error("Failed to send event summary:", err));
-        interaction
-          .reply({ content: `\`✅\` Event summary sent.`, ephemeral: true })
-          .catch((err) => log.error("Failed to reply:", err));
-      })
-      .catch((err) => {
-        log.error("Failed to fetch scheduled events:", err);
-        interaction
-          .reply({ content: `\`❌\` Failed to fetch events.`, ephemeral: true })
-          .catch((e) => log.error("Failed to reply with error:", e));
-      });
+    const raids = await RaidModule.getRaidMessage();
+    await channel.send({ content: contentText, embeds: raids.embeds, components: raids.components });
+    await interaction.reply({ content: `\`✅\` Event summary sent.`, ephemeral: true });
   }
 }

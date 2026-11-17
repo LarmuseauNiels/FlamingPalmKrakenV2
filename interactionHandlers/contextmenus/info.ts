@@ -36,7 +36,7 @@ export default class InfoHandler implements IHandler {
       },
     });
 
-    const lastOnline: any = await global.client.prisma.$queryRaw`
+    const lastOnline = await global.client.prisma.$queryRaw<{ date: string; hours: number }[]>`
       select DATE_FORMAT(date(TimeStamp), '%Y-%m-%d' ) as date, count(*)/4 as hours  
       from VoiceConnected 
       where ID = ${interaction.targetId}
@@ -50,18 +50,19 @@ export default class InfoHandler implements IHandler {
     const chart = `https://quickchart.io/chart/render/zm-45881e0a-49bc-4498-8b62-d64ff3adb44a?labels=${labels}&data1=${data}`;
     log.debug("Chart URL generated:", chart);
 
+    if (!interaction.guild) throw new Error("info context menu used outside a server");
     const member = await interaction.guild.members.fetch(interaction.targetId);
     const embed = new EmbedBuilder()
       .setTitle(member.user.username)
       .setAuthor({
         name: member.user.username,
-        iconURL: member.user.avatarURL(),
+        iconURL: member.user.avatarURL() ?? undefined,
       })
       .addFields(
         { name: "ID", value: `${member.id}`, inline: false },
         {
           name: "Joined",
-          value: `${member.joinedAt.toISOString()}`,
+          value: member.joinedAt?.toISOString() ?? "Unknown",
           inline: false,
         },
         {

@@ -8,7 +8,16 @@ import {
 import { RaidAttendees, Raids, RaidSchedulingOption } from "@prisma/client";
 
 export abstract class RaidEmbeds {
-  static getUniCodeEmoji(char: string) {
+  /**
+   * Raids.Title is nullable. Embed field names and select labels must be
+   * non-empty, so one untitled raid made discord.js throw for the whole list.
+   */
+  static title(raid: Pick<Raids, "Title">): string {
+    return raid.Title?.trim() || "Untitled raid";
+  }
+
+  static getUniCodeEmoji(char: string | null) {
+    if (char === null) return "?";
     switch (char) {
       case "A": return "🇦";
       case "B": return "🇧";
@@ -42,10 +51,9 @@ export abstract class RaidEmbeds {
     // Scheduling stays open until every proposed slot has passed — the raid is
     // only cancelled once no upcoming slot remains (see RaidScheduler.scheduleRaid),
     // so the close time is the latest option, not the earliest.
-    const latestTimestamp = Math.max(
-      ...raid.RaidSchedulingOption.map((o) => o.Timestamp.getTime())
-    );
-    let finishTime = new Date(latestTimestamp);
+    const times = raid.RaidSchedulingOption.flatMap((o) => (o.Timestamp ? [o.Timestamp.getTime()] : []));
+    // Math.max() of nothing is -Infinity: an Invalid Date discord.js rejects.
+    const finishTime = times.length > 0 ? new Date(Math.max(...times)) : null;
 
     let participants = "";
     raid.RaidAttendees.forEach((attendee) => {
@@ -53,7 +61,7 @@ export abstract class RaidEmbeds {
     });
 
     let embed = new EmbedBuilder()
-      .setTitle("Scheduling for raid: " + raid.Title)
+      .setTitle("Scheduling for raid: " + this.title(raid))
       .setDescription(
         "Select all the time slots you are available for in the dropdown below! \n The raid will be scheduled for the first time that suits enough people.\n Participants: \n" +
           participants
@@ -67,10 +75,9 @@ export abstract class RaidEmbeds {
       .setColor("#0099ff");
 
     raid.RaidSchedulingOption.forEach((option) => {
-      let unixTime = Math.floor(option.Timestamp.getTime() / 1000);
       embed.addFields({
         name: this.getUniCodeEmoji(option.Option),
-        value: "<t:" + unixTime + ":F>",
+        value: option.Timestamp ? "<t:" + Math.floor(option.Timestamp.getTime() / 1000) + ":F>" : "No time set",
         inline: true,
       });
     });
@@ -106,23 +113,23 @@ export abstract class RaidEmbeds {
           participants += "<@" + attendee.MemberId + "> ";
         });
         embed.addFields({
-          name: raid.Title,
+          name: this.title(raid),
           value: `Attendees: ${raid.RaidAttendees.length}/${raid.MinPlayers} \n ${participants} \n`,
           inline: false,
         });
         select.addOptions({
-          label: raid.Title,
+          label: this.title(raid),
           value: raid.ID.toString(),
         });
       });
 
-      const row = new ActionRowBuilder().addComponents(select);
+      const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
       return { embeds: [embed], components: [row] };
     } else {
       embed.setDescription(
         "No available raids at the moment. Please check back later or create a new raid using /create-raid."
       );
-      return { embeds: [embed] };
+      return { embeds: [embed], components: [] };
     }
   }
 
@@ -165,11 +172,13 @@ export abstract class RaidEmbeds {
   static buildNewTimeNotice(raid: Raids, timestamp: Date, suggesterId: string) {
     const unix = Math.floor(timestamp.getTime() / 1000);
     const embed = new EmbedBuilder()
-      .setTitle("New time suggested: " + raid.Title)
+      .setTitle("New time suggested: " + this.title(raid))
       .setDescription(`<@${suggesterId}> suggested <t:${unix}:F> (<t:${unix}:R>). Can you make it?`)
       .setColor("#0099ff");
-    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      this.buildRaidBoardButton(raid.ID, "Vote on the raid board"),
+    const row = new ActionRowBuilder<ButtonBuilder>();
+    const board = this.buildRaidBoardButton(raid.ID, "Vote on the raid board");
+    if (board) row.addComponents(board);
+    row.addComponents(
       new ButtonBuilder()
         .setCustomId(`raidResendMenu_${raid.ID}`)
         .setLabel("Vote here instead")
@@ -196,7 +205,7 @@ export abstract class RaidEmbeds {
       // We therefore label options by their letter only and let users read
       // the localized times from the message.
       select.addOptions({
-        label: option.Option,
+        label: option.Option ?? "?",
         value: option.ID.toString(),
         default: userSelectedOptions.includes(option.ID),
       });

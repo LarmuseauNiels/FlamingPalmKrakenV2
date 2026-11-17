@@ -34,7 +34,7 @@ export default class WebsiteHandler implements IHandler {
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setURL(
-          `https://discord.com/oauth2/authorize?scope=identify+guilds&response_type=code&approval_prompt=auto&client_id=${process.env.CLIENT_ID}&redirect_uri=${encodeURIComponent(process.env.CALLBACK_URL)}`
+          `https://discord.com/oauth2/authorize?scope=identify+guilds&response_type=code&approval_prompt=auto&client_id=${process.env.CLIENT_ID}&redirect_uri=${encodeURIComponent(process.env.CALLBACK_URL ?? "")}`
         )
         .setLabel("login into website")
         .setStyle(ButtonStyle.Link)

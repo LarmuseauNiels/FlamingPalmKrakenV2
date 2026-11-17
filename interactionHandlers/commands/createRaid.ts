@@ -37,6 +37,6 @@ export default class CreateRaidCommand implements IHandler {
           "Successfully created a new raid! Check out the updated list by typing /raids.",
         ephemeral: true,
       })
-      .catch((err) => log.error("Failed to reply:", err));
+      .catch((err: unknown) => log.error("Failed to reply:", err));
   }
 }

@@ -68,6 +68,10 @@ export default class MusicCommand implements IHandler {
 
   async execute(interaction: ChatInputCommandInteraction) {
     const sub = interaction.options.getSubcommand();
+    if (!interaction.guildId) {
+      await interaction.reply({ content: "Music only works in the server.", ephemeral: true });
+      return;
+    }
     const music = GuildMusicPlayer.get(interaction.guildId);
     if (!music) {
       await interaction.reply({ content: "Nothing is playing. Use `/play` to start.", ephemeral: true });

@@ -22,6 +22,13 @@ const log = createLogger("RaidScheduler");
  */
 export const MAX_SCHEDULING_OPTIONS = 25;
 
+/** Raids.MinPlayers is nullable; this is the column's database default. */
+export const DEFAULT_MIN_PLAYERS = 4;
+
+function minPlayersOf(raid: Pick<Raids, "MinPlayers">): number {
+  return raid.MinPlayers ?? DEFAULT_MIN_PLAYERS;
+}
+
 /** Open/Scheduling raids with no activity for this many days are expired. */
 export const RAID_EXPIRY_DAYS = envInt("RAID_EXPIRY_DAYS", 21, 1, 365);
 
@@ -63,10 +70,11 @@ export abstract class RaidScheduler {
       "Raid found with " +
         raid.RaidAttendees.length +
         " attendees out of " +
-        raid.MinPlayers +
+        minPlayersOf(raid) +
         " required"
     );
-    if (raid.RaidAttendees.length >= raid.MinPlayers) {
+    // A null MinPlayers used to compare as 0, starting scheduling at one sign-up.
+    if (raid.RaidAttendees.length >= minPlayersOf(raid)) {
       log.info("Raid is starting scheduling");
 
       await global.client.prisma.raids.update({
@@ -136,7 +144,7 @@ export abstract class RaidScheduler {
         orderBy: { ID: "desc" },
       });
 
-    let lastOption = lastSchedulingOption ? lastSchedulingOption.Option : "@"; // '@' is ASCII before 'A'
+    let lastOption = lastSchedulingOption?.Option ?? "@"; // '@' is ASCII before 'A'
     let nextOption = String.fromCharCode(lastOption.charCodeAt(0) + 1);
 
     try {
@@ -319,7 +327,8 @@ export abstract class RaidScheduler {
    * back pre-selected.
    */
   static async SendSchedulingDMs(raidId: number) {
-    let raid = await this.getRaid(raidId);
+    // const, so the callbacks below see it as non-null after the check.
+    const raid = await this.getRaid(raidId);
     if (raid == null) {
       log.warn("Raid not found for scheduling DMs: " + raidId);
       return;
@@ -438,7 +447,7 @@ export abstract class RaidScheduler {
       // Only schedule a slot that is still in the future — a slot whose time has
       // already passed can't be played even if it reached enough votes. (Slots
       // can outlive their time now that raids stay open until every slot passes.)
-      if (value.length >= raid.MinPlayers && key.Timestamp.getTime() > now) {
+      if (value.length >= minPlayersOf(raid) && key.Timestamp !== null && key.Timestamp.getTime() > now) {
         consensusVotes.set(key, value);
       }
     });
@@ -465,8 +474,9 @@ export abstract class RaidScheduler {
       // slot (seeded or custom-suggested) is still upcoming, keep the raid open
       // so people can still reach consensus on it — otherwise suggesting a later
       // time would be pointless if the original earliest-slot deadline had passed.
+      // Options without a time can never be played, so they don't keep it open.
       const latestTimestamp = Math.max(
-        ...raid.RaidSchedulingOption.map((o) => o.Timestamp.getTime())
+        ...raid.RaidSchedulingOption.flatMap((o) => (o.Timestamp ? [o.Timestamp.getTime()] : []))
       );
       if (
         raid.RaidSchedulingOption.length > 0 &&
@@ -510,6 +520,12 @@ export abstract class RaidScheduler {
       RaidSchedulingOption: RaidSchedulingOption[];
     }
   ) {
+    // Consensus only picks options with a time (see checkSchedules); assert it
+    // before claiming, so a bad call can't leave a raid "scheduled" at no time.
+    const startTime = key.Timestamp;
+    if (!startTime) throw new Error(`CreateRaid: option ${key.ID} of raid ${raid.ID} has no time`);
+    const title = RaidEmbeds.title(raid);
+
     // Claim the raid atomically: votes now arrive from the DM menu, the board
     // and the periodic check, and two of those can reach consensus at the same
     // moment. Only the caller that flips 2 → 3 sends the confirmations.
@@ -532,10 +548,10 @@ export abstract class RaidScheduler {
     // confirmation DMs/announcement below.
     try {
       const guild = await global.client.guilds.fetch(process.env.GUILD_ID!);
-      const start = key.Timestamp;
+      const start = startTime;
       const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
       await guild.scheduledEvents.create({
-        name: raid.Title,
+        name: title,
         scheduledStartTime: start,
         scheduledEndTime: end,
         privacyLevel: GuildScheduledEventPrivacyLevel.GuildOnly,
@@ -565,7 +581,7 @@ export abstract class RaidScheduler {
     });
     embed.addFields({
       name: "Time",
-      value: "<t:" + Math.floor(key.Timestamp.getTime() / 1000) + ":F>",
+      value: "<t:" + Math.floor(startTime.getTime() / 1000) + ":F>",
       inline: false,
     });
 
@@ -593,7 +609,7 @@ export abstract class RaidScheduler {
       "Raid scheduled: " +
         raid.Title +
         " at <t:" +
-        Math.floor(key.Timestamp.getTime() / 1000) +
+        Math.floor(startTime.getTime() / 1000) +
         ":F>"
     );
     global.client.lfg

@@ -181,7 +181,7 @@ async function fetchPlayers(server: PelicanServer): Promise<PlayerInfo | null> {
       checkOldIDs: true,
     });
     const online = state.numplayers ?? state.players.length;
-    let names = state.players.map((p) => p.name).filter(Boolean);
+    let names = state.players.map((p) => p.name).filter((name): name is string => Boolean(name));
     // Valheim reports blank names over A2S; fall back to the console tracker
     const tracker = playerTrackers.get(server.identifier);
     if (names.length === 0 && tracker) names = tracker.namesFor(online) ?? [];
@@ -402,6 +402,7 @@ function buildStatusLine(res: ServerResources | undefined, players: PlayerInfo |
   if (state === "starting") return "🟡 Starting…";
   if (state === "stopping") return "🟠 Stopping…";
   if (state !== "running") return "🔴 Offline";
+  if (!players) return "🟢 Online";
   if (players.online === 0) return "🟢 Online · nobody playing";
   if (players.names.length === 0) return `🟢 ${players.online} online`;
   return `🟢 ${players.online} online: ${players.names.join(", ")}`;
@@ -423,13 +424,14 @@ async function updateServerChannel(
   if (res?.current_state === "running" && !players) return;
 
   const channelId = server.statusChannelId;
+  if (!channelId) return;
   const edits = channelEdits.get(channelId) ?? { lastEdit: 0, inFlight: false };
   channelEdits.set(channelId, edits);
   if (edits.inFlight || Date.now() - edits.lastEdit < CHANNEL_EDIT_INTERVAL_MS) return;
 
   const channel = (await client.channels.fetch(channelId)) as TextChannel;
   const baseName = channel.name.replace(/-\d+$/, "");
-  const name = res?.current_state === "running" ? `${baseName}-${players.online}` : baseName;
+  const name = res?.current_state === "running" && players ? `${baseName}-${players.online}` : baseName;
 
   const rest = (channel.topic ?? "").split("\n");
   if (STATUS_LINE_RE.test(rest[0])) rest.shift();
@@ -449,16 +451,21 @@ async function updateServerChannel(
 // ── Module entry ──────────────────────────────────────────────────────────────
 
 module.exports = async function (client: FpgClient) {
-  const baseUrl   = process.env.PELICAN_URL?.replace(/\/$/, "");
-  const apiKey    = process.env.PELICAN_API_KEY;
-  const channelId = process.env.PELICAN_STATUS_CHANNEL_ID;
+  const configuredUrl       = process.env.PELICAN_URL?.replace(/\/$/, "");
+  const configuredKey       = process.env.PELICAN_API_KEY;
+  const configuredChannelId = process.env.PELICAN_STATUS_CHANNEL_ID;
 
-  if (!baseUrl || !apiKey || !channelId) {
+  if (!configuredUrl || !configuredKey || !configuredChannelId) {
     log.warn(
       "Pelican status monitor disabled — set PELICAN_URL, PELICAN_API_KEY, and PELICAN_STATUS_CHANNEL_ID to enable"
     );
     return;
   }
+
+  // Typed as plain strings so the nested functions below don't need re-checks.
+  const baseUrl: string = configuredUrl;
+  const apiKey: string = configuredKey;
+  const channelId: string = configuredChannelId;
 
   // Map of server identifier → Discord message ID
   const serverMessages = new Map<string, string>();

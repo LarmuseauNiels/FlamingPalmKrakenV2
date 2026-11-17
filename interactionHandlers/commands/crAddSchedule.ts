@@ -1,7 +1,8 @@
-import { SlashCommandBuilder } from "discord.js";
+import { AutocompleteInteraction, ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import moment from 'moment-timezone';
 import { RaidScheduler } from "../../modules/RaidScheduler";
 import { IHandler } from "../../interfaces/IHandler";
+import { respondWithOwnCustomRaids } from "../../modules/RaidAutocomplete";
 
 export default class CrAddScheduleCommand implements IHandler {
   name = "cr-add-schedule";
@@ -111,13 +112,13 @@ export default class CrAddScheduleCommand implements IHandler {
         )
     ) as SlashCommandBuilder;
 
-  async execute(interaction: any) {
-    const raidId = interaction.options.getInteger("raid");
-    const timezone = interaction.options.getString("timezone");
-    const month = interaction.options.getInteger("month");
-    const day = interaction.options.getInteger("day");
-    const hour = interaction.options.getInteger("hour");
-    const minute = interaction.options.getInteger("minute");
+  async execute(interaction: ChatInputCommandInteraction) {
+    const raidId = interaction.options.getInteger("raid", true);
+    const timezone = interaction.options.getString("timezone", true);
+    const month = interaction.options.getInteger("month", true);
+    const day = interaction.options.getInteger("day", true);
+    const hour = interaction.options.getInteger("hour", true);
+    const minute = interaction.options.getInteger("minute", true);
     let year = new Date().getFullYear();
     const currentMonth = new Date().getMonth() + 1;
     if (month < currentMonth) {
@@ -125,40 +126,26 @@ export default class CrAddScheduleCommand implements IHandler {
     }
     const schedule = `${year}-${month}-${day} ${hour}:${minute}`;
     const date = moment.tz(schedule, "YYYY-M-D h:m", timezone);
+    // "Day" allows 1–31 in every month, so 31 June parses as an invalid date
+    // that used to reach the database as a bad value.
+    if (!date.isValid()) {
+      await interaction.reply({ content: `${year}-${month}-${day} is not a valid date.`, ephemeral: true });
+      return;
+    }
+    if (date.valueOf() <= Date.now()) {
+      await interaction.reply({ content: `<t:${date.unix()}:f> is in the past.`, ephemeral: true });
+      return;
+    }
     date.utc();
     await RaidScheduler.AddSingleSchedulingOptionToRaid(raidId, date.toDate());
 
-    interaction.reply({
+    await interaction.reply({
       content: `Successfully added a scheduling option <t:${date.unix()}:f> to raid ${raidId}!`,
       ephemeral: true,
     });
   }
 
-  async autocomplete(interaction: any) {
-    global.client.prisma.raids
-      .findMany({
-        where: {
-          Status: 5,
-          Creator: interaction.user.id,
-        },
-        select: {
-          ID: true,
-          Title: true,
-        },
-      })
-      .then(async (raids) => {
-        const focusedValue = interaction.options.getFocused();
-        const options = raids
-          .filter((raid) =>
-            raid.Title.toLowerCase().includes(focusedValue.toLowerCase())
-          )
-          .map((raid) => {
-            return {
-              name: raid.Title,
-              value: raid.ID.toString(),
-            };
-          });
-        interaction.respond(options);
-      });
+  async autocomplete(interaction: AutocompleteInteraction) {
+    await respondWithOwnCustomRaids(interaction);
   }
 }

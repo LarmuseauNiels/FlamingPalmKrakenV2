@@ -1,5 +1,11 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
+import {
+  AutocompleteInteraction,
+  ChatInputCommandInteraction,
+  PermissionFlagsBits,
+  SlashCommandBuilder,
+} from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
+import { respondWithManualAchievements } from "../../modules/AchievementAutocomplete";
 import { createLogger } from "../../utils/logger";
 
 const log = createLogger("GiveAchievementCommand");
@@ -33,10 +39,14 @@ export default class GiveAchievementCommand implements IHandler {
     .setDefaultMemberPermissions(
       PermissionFlagsBits.Administrator
     ) as SlashCommandBuilder;
-  async execute(interaction) {
-    const user = interaction.options.getUser("user");
-    const achievement = +interaction.options.getString("achievement");
-    const description = interaction.options.getString("description");
+  async execute(interaction: ChatInputCommandInteraction) {
+    const user = interaction.options.getUser("user", true);
+    const achievement = parseInt(interaction.options.getString("achievement", true), 10);
+    const description = interaction.options.getString("description") ?? undefined;
+    if (!Number.isInteger(achievement)) {
+      await interaction.reply({ ephemeral: true, content: "Pick an achievement from the list." });
+      return;
+    }
     log.debug("Giving achievement:", achievement, interaction.options.getString("achievement"));
     await global.client.achievementsModule.GiveAchievement(
       user.id,
@@ -49,23 +59,10 @@ export default class GiveAchievementCommand implements IHandler {
       content: `gave ${achievement} to ${user.username}`,
     });
   }
-  async autocomplete(interaction) {
-    global.client.achievementsModule
-      .GetManualAchievements()
-      .then(async (achievements) => {
-        const focusedValue = interaction.options.getFocused();
-        const options = achievements
-          .filter((achievement) =>
-            achievement.Name.toLowerCase().includes(focusedValue.toLowerCase())
-          )
-          .map((achievement) => {
-            return {
-              name: achievement.Name,
-              value: achievement.ID.toString(),
-            };
-          });
-        await interaction.respond(options);
-      });
+  async autocomplete(interaction: AutocompleteInteraction) {
+    await respondWithManualAchievements(interaction);
   }
-  isGuild: true;
+  // Was `isGuild: true;` — a type annotation, so it was never set. (Nothing
+  // reads isGuild today; fixed for consistency with the other commands.)
+  isGuild = true;
 }

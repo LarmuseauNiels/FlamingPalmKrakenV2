@@ -295,16 +295,18 @@ With `discord_channel`, the channel name gets the player count as a suffix (`val
 - **Handler `name` property:** must exactly match the Discord command/button/select custom ID
 
 ### TypeScript
-- `strict: false` in `tsconfig.json`, but **strict mode is being adopted folder by folder**.
-  `scripts/strict-check.js` type-checks with `strict: true` and fails on errors in its
-  `STRICT_PATHS` allowlist (`index.ts`, `utils/`, `interfaces/`, `islander/`, `components/`,
-  `events/`, `modules/Music/` and a few modules). `npm test` runs it. Code in those paths
-  must be strict-clean; to move another area over, fix its errors and add it to the list.
-  `npm run strict-check -- --all` shows the remaining error count per folder.
+- `strict: true` — the whole project compiles in strict mode (adopted Nov 2026). Type new
+  parameters, handle `null` from Prisma's nullable columns, and type route handlers through
+  `app: Express` so `req`/`res` are inferred.
+- On authenticated routes read the member with `authUser(req)` (`ApiFunctions/Helpers.ts`), not
+  `req.user` — it throws if the route is missing `authenticateToken`.
+- Async Express handlers don't need their own try/catch for unexpected errors:
+  `forwardAsyncErrors` (`modules/WebApiAsyncErrors.ts`) sends rejections to the error handler
+  (Bugsnag + 500). Express 4 would otherwise leave the request hanging.
 - Prefer a real check over `!`: e.g. `client.requireUser()` instead of `client.user!`. Use `!`
   only right after code that guarantees the value, with a comment saying why.
 - Target: ES2020, module resolution: Node16
-- Global declarations for `client` and `bugsnag` are in `index.ts`
+- Global declarations for `client` and `bugsnag` are in `index.ts`; `Express.User` (the JWT payload) is declared in `ApiFunctions/Helpers.ts`
 - Use `allowJs: true` — some modules (e.g., `profile.js`) are plain JavaScript
 
 ### Error Handling
@@ -336,6 +338,8 @@ instead of becoming an unhandled rejection.
   are checked by `assertRequiredEnv()` at boot; the bot refuses to start without them.
 - Read numeric variables with `envInt(name, fallback, min, max)`: an invalid value
   fails the boot instead of turning into `NaN` deep inside a query.
+- Read a required variable with `requiredEnv("JWT_SECRET")` to get a definite `string`
+  (strict mode won't accept `process.env.X` where a string is needed).
 
 ### Limits
 Put an explicit bound on anything that can grow: timeouts on every outbound call,

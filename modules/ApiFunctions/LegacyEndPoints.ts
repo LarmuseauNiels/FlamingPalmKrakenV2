@@ -1,13 +1,15 @@
+import type { Express } from "express";
 import { jsonify } from "./Helpers";
+import { requiredEnv } from "../../utils/config";
 import { createLogger } from "../../utils/logger";
 
 const log = createLogger("LegacyEndPoints");
 
-export function legacyEndPoints(app) {
+export function legacyEndPoints(app: Express) {
   app.get("/events", function (req, res) {
     if (globalThis.client.events == null) {
       globalThis.client.guilds
-        .fetch(process.env.GUILD_ID)
+        .fetch(requiredEnv("GUILD_ID"))
         .then((guild) => {
           guild.scheduledEvents
             .fetch()

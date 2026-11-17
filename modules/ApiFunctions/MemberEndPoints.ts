@@ -1,5 +1,6 @@
-import { authenticateToken, jsonify } from "./Helpers";
-import { DashBoardModel } from "./ViewModels/dash-board-model";
+import type { Express } from "express";
+import { authenticateToken, jsonify, authUser } from "./Helpers";
+import type { DashBoardModel } from "./ViewModels/dash-board-model";
 import { RaidModule } from "../../modules/RaidModule";
 import { createLogger } from "../../utils/logger";
 
@@ -9,7 +10,7 @@ const log = createLogger("MemberEndPoints");
  * Core member endpoints: user profile data and the dashboard aggregate.
  * Points/shop lives in ShopEndPoints; profile card image in ProfileEndPoints.
  */
-export function memberEndPoints(app) {
+export function memberEndPoints(app: Express) {
   let apiPrefix = "/members/";
 
   app.post(apiPrefix + "profile", authenticateToken, function (req, res) {
@@ -20,33 +21,35 @@ export function memberEndPoints(app) {
     apiPrefix + "dashboard",
     authenticateToken,
     async function (req, res) {
-      let dashboard = new DashBoardModel();
-
-      let points = await global.client.prisma.points.findFirst({
-        where: { userid: req.user.id },
+      const userId = authUser(req).id;
+      const points = await global.client.prisma.points.findFirst({
+        where: { userid: userId },
       });
-      dashboard.dashboardPoints = points?.TotalPoints ?? 0;
 
-      let raids = await global.client.prisma.raids.findMany({
+      const raids = await global.client.prisma.raids.findMany({
         include: { RaidAttendees: true },
         where: { Status: { equals: 1 } },
         take: 5,
       });
-      dashboard.raids = raids.map((raid) => ({
-        ID: raid.ID,
-        Title: raid.Title,
-        MinPlayers: raid.MinPlayers,
-        CreationTime: raid.CreationTime,
-        Status: raid.Status,
-        Attending: raid.RaidAttendees.length,
-      }));
 
-      let pointHistory = await global.client.prisma.pointHistory.findMany({
-        where: { userid: req.user.id },
+      const pointHistory = await global.client.prisma.pointHistory.findMany({
+        where: { userid: userId },
         take: 5,
         orderBy: { TimeStamp: "desc" } as any,
       });
-      dashboard.pointHistory = pointHistory;
+
+      const dashboard: DashBoardModel = {
+        dashboardPoints: points?.TotalPoints ?? 0,
+        raids: raids.map((raid) => ({
+          ID: raid.ID,
+          Title: raid.Title,
+          MinPlayers: raid.MinPlayers,
+          CreationTime: raid.CreationTime,
+          Status: raid.Status,
+          Attending: raid.RaidAttendees.length,
+        })),
+        pointHistory,
+      };
 
       res.send(jsonify(dashboard));
     }
@@ -56,7 +59,7 @@ export function memberEndPoints(app) {
   app.get(apiPrefix + "referrals", authenticateToken, async function (req, res) {
     try {
       const referrals = await global.client.prisma.refferals.findMany({
-        where: { refferer: req.user.id },
+        where: { refferer: authUser(req).id },
         include: {
           Members_MembersToRefferals_userid: {
             select: { DisplayName: true, avatar: true },
@@ -86,7 +89,7 @@ export function memberEndPoints(app) {
   app.post(apiPrefix + "raids/:id/join", authenticateToken, async function (req, res) {
     try {
       const raidId = parseInt(req.params.id, 10);
-      const userId: string = req.user.id;
+      const userId: string = authUser(req).id;
 
       const raid = await global.client.prisma.raids.findUnique({
         where: { ID: raidId },
@@ -114,7 +117,7 @@ export function memberEndPoints(app) {
 
   //getLibrary for user
   app.get(apiPrefix + "library", authenticateToken, function (req, res) {
-    let user = req.user;
+    const user = authUser(req);
     global.client.prisma.rewardItem
       .findMany({
         where: {

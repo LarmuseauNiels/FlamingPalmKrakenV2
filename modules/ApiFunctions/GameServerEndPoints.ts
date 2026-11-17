@@ -1,5 +1,6 @@
+import type { Express } from "express";
 import { PermissionFlagsBits } from "discord.js";
-import { authenticateToken, jsonify } from "./Helpers";
+import { authenticateToken, jsonify, authUser } from "./Helpers";
 import { createLogger } from "../../utils/logger";
 
 const log = createLogger("GameServerEndPoints");
@@ -34,7 +35,7 @@ async function getPowerAccess(userId: string): Promise<PowerAccess> {
 }
 
 /** Game server dashboard behind the Activity's Servers tab. */
-export function gameServerEndPoints(app) {
+export function gameServerEndPoints(app: Express) {
   const apiPrefix = "/members/servers";
 
   // GET /members/servers — every server's live status + what you may do.
@@ -43,7 +44,7 @@ export function gameServerEndPoints(app) {
       const snapshot = PelicanStatusMonitor.getServerSnapshot();
       if (!snapshot) return res.status(503).send("Game server monitoring is not configured");
 
-      const [servers, access] = await Promise.all([snapshot, getPowerAccess(req.user.id)]);
+      const [servers, access] = await Promise.all([snapshot, getPowerAccess(authUser(req).id)]);
       res.send(jsonify({ canStart: access.start, canManage: access.manage, servers }));
     } catch (err) {
       log.error("Failed to load game servers:", err);
@@ -61,14 +62,14 @@ export function gameServerEndPoints(app) {
     }
 
     try {
-      const access = await getPowerAccess(req.user.id);
+      const access = await getPowerAccess(authUser(req).id);
       const allowed = signal === "start" ? access.start : access.manage;
       if (!allowed) {
         return res.status(403).send(`You don't have permission to ${signal} game servers`);
       }
 
       const result = await PelicanStatusMonitor.powerServerById(serverId, signal);
-      log.info(`${req.user.username} (${req.user.id}) sent "${signal}" to ${serverId} from the Activity: ${result.message}`);
+      log.info(`${authUser(req).username} (${authUser(req).id}) sent "${signal}" to ${serverId} from the Activity: ${result.message}`);
       if (!result.ok) return res.status(409).send(result.message);
       res.send(jsonify({ message: result.message }));
     } catch (err) {

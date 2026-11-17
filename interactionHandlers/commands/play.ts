@@ -35,6 +35,10 @@ export default class PlayCommand implements IHandler {
       await interaction.reply({ content: "Join a voice channel first, then try again.", ephemeral: true });
       return;
     }
+    if (!interaction.guildId) {
+      await interaction.reply({ content: "Music only works in the server.", ephemeral: true });
+      return;
+    }
     const existing = GuildMusicPlayer.get(interaction.guildId);
     if (existing?.channelId && existing.channelId !== member.voice.channelId) {
       await interaction.reply({

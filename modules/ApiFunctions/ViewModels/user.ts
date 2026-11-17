@@ -1,6 +1,6 @@
-export class User {
-  public userid: string;
-  public username: string;
-  public avatar: string;
-  public points: number;
+export interface User {
+  userid: string;
+  username: string;
+  avatar: string;
+  points: number;
 }

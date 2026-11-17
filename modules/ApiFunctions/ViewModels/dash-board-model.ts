@@ -1,15 +1,16 @@
 import { PointHistory } from ".prisma/client";
 
-export class RaidVM {
+/** A raid as the website dashboard shows it. Nullable where the Raids columns are. */
+export interface RaidVM {
   ID: number;
-  Title: string;
-  MinPlayers: number;
-  CreationTime: Date;
-  Status: number;
+  Title: string | null;
+  MinPlayers: number | null;
+  CreationTime: Date | null;
+  Status: number | null;
   Attending: number;
 }
 
-export class DashBoardModel {
+export interface DashBoardModel {
   dashboardPoints: number;
   raids: RaidVM[];
   pointHistory: PointHistory[];

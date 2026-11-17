@@ -471,10 +471,18 @@ Discord channel.
 ```
 
 - **Error responses:**
-  - `400 No rewardId` — missing body field
+  - `400 No rewardId` — missing body field, or not a positive integer
   - `400 No items left` — out of stock
+  - `400 No points account found` — the member has no `Points` row
   - `400 You are blocked from redeeming items` — user is blocked
   - `400 Not enough points` — insufficient balance
+  - `400 That item was just taken — please try again` — another redemption claimed the
+    same key at the same moment; nothing was charged
+  - `500 Failed to process redemption` — database error; nothing was charged
+
+Claiming the key and deducting the points happen in one database transaction, so a
+redemption either completes fully or not at all. The Discord purchase notification is
+sent after the response and never affects it.
 
 ---
 
@@ -572,6 +580,8 @@ Returns the authenticated user's current XP level object.
 
 _(Exact field names may vary; treat this as indicative.)_
 
+- **Error responses:** `404 Member not found` — no `Members` row for the caller
+
 ---
 
 #### `GET /members/getBadgeUnlocks`
@@ -589,6 +599,8 @@ Each badge unlocks after more than 5 grants of its achievement: `party5`
 ```json
 ["badge-veteran", "badge-raider", "badge-supporter"]
 ```
+
+- **Error responses:** `404 Member not found` — no `Members` row for the caller
 
 ---
 
@@ -1532,4 +1544,4 @@ Profile image endpoints return `Content-Type: image/png`.
 | `400` | Bad request (missing fields, out of stock, insufficient points, blocked) |
 | `401` | Missing, invalid or expired JWT — sign in again |
 | `403` | Signed in, but not allowed (e.g. not an admin) |
-| `500` | Unhandled server error |
+| `500` | Unhandled server error — every route answers it, including async handlers that throw (they used to leave the request hanging) |

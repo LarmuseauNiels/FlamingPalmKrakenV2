@@ -1,4 +1,5 @@
-import { authenticateAdmin, jsonify } from "./Helpers";
+import type { Express } from "express";
+import { authenticateAdmin, jsonify, authUser } from "./Helpers";
 import { createLogger } from "../../utils/logger";
 
 const log = createLogger("RaidEndPoints");
@@ -17,7 +18,7 @@ function toRaidDto(raid: any) {
   };
 }
 
-export function raidEndPoints(app) {
+export function raidEndPoints(app: Express) {
   const apiPrefix = "/admin/";
 
   // GET /admin/raids — list all raids
@@ -47,7 +48,7 @@ export function raidEndPoints(app) {
         return res.status(400).send("Missing required fields: title, minPlayers");
       }
 
-      const user: any = (req as any).user;
+      const user = authUser(req);
       const creatorId: string = user?.id ?? "admin";
 
       const raid = await global.client.prisma.raids.create({

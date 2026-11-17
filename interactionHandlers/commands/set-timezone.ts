@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from "discord.js";
+import { AutocompleteInteraction, ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
 import { createLogger } from "../../utils/logger";
 
@@ -21,9 +21,9 @@ export default class SetTimezoneCommand implements IHandler {
         .setAutocomplete(true)
     ) as SlashCommandBuilder;
 
-  async execute(interaction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply({ ephemeral: true });
-    const timezone = interaction.options.getString("timezone");
+    const timezone = interaction.options.getString("timezone", true);
 
     if (!IANA_TIMEZONES.includes(timezone)) {
       await interaction.editReply({
@@ -50,7 +50,7 @@ export default class SetTimezoneCommand implements IHandler {
     }
   }
 
-  async autocomplete(interaction) {
+  async autocomplete(interaction: AutocompleteInteraction) {
     try {
       const focusedValue = interaction.options.getFocused().toLowerCase();
       const filtered = IANA_TIMEZONES.filter((tz) =>

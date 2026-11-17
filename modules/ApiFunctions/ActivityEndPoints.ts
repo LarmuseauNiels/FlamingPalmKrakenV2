@@ -1,8 +1,10 @@
+import type { Express } from "express";
 import axios from "axios";
 import express from "express";
 import jwt from "jsonwebtoken";
 import path from "path";
 import { jsonify } from "./Helpers";
+import { requiredEnv } from "../../utils/config";
 import { createLogger } from "../../utils/logger";
 
 const log = createLogger("ActivityEndPoints");
@@ -30,7 +32,7 @@ const ACTIVITY_DIST = path.join(__dirname, "..", "..", "..", "activity", "dist")
  * Guild membership is checked against the bot's own guild cache rather than the
  * `guilds` OAuth scope, so the Activity only ever needs `identify`.
  */
-export function activityEndPoints(app) {
+export function activityEndPoints(app: Express) {
   const apiPrefix = "/api/activity/";
 
   // GET /api/activity/config — bootstrap values the SPA needs before it can
@@ -194,7 +196,7 @@ export function activityEndPoints(app) {
  */
 async function isGuildMember(userId: string): Promise<boolean> {
   try {
-    const guild = global.client.guilds.cache.get(process.env.GUILD_ID);
+    const guild = global.client.guilds.cache.get(requiredEnv("GUILD_ID"));
     if (!guild) {
       log.error("GUILD_ID is not in the bot's guild cache — cannot verify membership");
       return false;
@@ -211,7 +213,7 @@ async function isGuildMember(userId: string): Promise<boolean> {
  * Mirrors logDiscordLogin in WebApi.ts, but best-effort: uses updateMany so a
  * member row that doesn't exist yet doesn't throw P2025.
  */
-async function recordActivityLogin(profile) {
+async function recordActivityLogin(profile: { id: string; username: string; avatar?: string | null }) {
   const result = await global.client.prisma.login_History.create({
     data: {
       UserID: profile.id,
@@ -235,7 +237,7 @@ const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
  * capped in size. Upstream failures become a 404 — the page drops broken
  * images anyway, and a dead Steam link isn't our error to page Bugsnag about.
  */
-async function sendProxiedImage(url: string, res): Promise<void> {
+async function sendProxiedImage(url: string, res: express.Response): Promise<void> {
   let parsed: URL;
   try {
     parsed = new URL(url);

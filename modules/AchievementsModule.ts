@@ -1,4 +1,4 @@
-import { AttachmentBuilder, Embed, EmbedBuilder, User } from "discord.js";
+import { AttachmentBuilder, Collection, EmbedBuilder, GuildMember, User } from "discord.js";
 import Rank from "./profile";
 import { ChannelUpdates } from "../islander/ChannelUpdates";
 import type * as Prisma from "@prisma/client";
@@ -7,19 +7,29 @@ import type * as Prisma from "@prisma/client";
 // add_saturday_spark_achievement migration). Admins hand it out with /give-event.
 export const SPARK_ACHIEVEMENT_NAME = "Saturday Spark";
 
+/** Joining this voice channel each day earns the daily login achievement. */
+const DAILY_LOGIN_VOICE_CHANNEL_ID = "530537522921734178";
+/** Recorded as the granter of automatic daily login achievements. */
+const DAILY_LOGIN_GRANTED_BY_ID = "178435947816419328";
+
 export class AchievementsModule {
   async GiveAchievement(
     memberID: string,
     achievementID: number,
     grantedBy: string,
-    description: string
+    description?: string | null
   ) {
     // get achievement
-    let achievement = await global.client.prisma.achievements.findFirst({
+    const achievement = await global.client.prisma.achievements.findFirst({
       where: {
         ID: achievementID,
       },
     });
+    if (!achievement) throw new Error(`GiveAchievement: no achievement with ID ${achievementID}`);
+    const xpIncrease = achievement.XpIncrease ?? 0;
+    const points = achievement.points ?? 0;
+    // Shown after the name; absent used to print "null"/"undefined".
+    const descriptionSuffix = description ? ` \n${description}` : "";
 
     global.client.log(
       "Giving achievement: " +
@@ -36,21 +46,21 @@ export class AchievementsModule {
       },
     });
 
-    if (achievement.XpIncrease > 0) {
+    if (xpIncrease > 0) {
       // get member
       await global.client.prisma.members.update({
         where: {
           ID: memberID,
         },
         data: {
-          XP: { increment: achievement.XpIncrease },
+          XP: { increment: xpIncrease },
         },
       });
     }
     //check if achievement gives points
-    if (achievement.points > 0) {
+    if (points > 0) {
       ChannelUpdates.MessageWithProfile(
-        `<@${memberID}> received an achievement!: ${achievement.Name} \n${description}`,
+        `<@${memberID}> received an achievement!: ${achievement.Name}${descriptionSuffix}`,
         memberID
       ).catch((err) =>
         global.client.log("Failed to send achievement profile message for " + memberID + ": " + err)
@@ -61,7 +71,7 @@ export class AchievementsModule {
           userid: memberID,
         },
         data: {
-          TotalPoints: { increment: achievement.points },
+          TotalPoints: { increment: points },
           lastComment:
             achievement.Name + (description != null ? " " + description : ""),
         },
@@ -87,15 +97,16 @@ export class AchievementsModule {
               .setTitle(`Achievement received: ${achievement.Name}`)
               .setURL("https://flamingpalm.com/")
               .addFields(
-                { name: "Description", value: achievement.Description },
+                // Field values must be non-empty, or the DM silently failed.
+                { name: "Description", value: achievement.Description || "—" },
                 {
                   name: "Points",
-                  value: achievement.points.toString(),
+                  value: points.toString(),
                   inline: true,
                 },
                 {
                   name: "XP",
-                  value: achievement.XpIncrease.toString(),
+                  value: xpIncrease.toString(),
                   inline: true,
                 }
               );
@@ -141,7 +152,7 @@ export class AchievementsModule {
   }
 
   async GetLoginStreak(memberID: string) {
-    let a = await global.client.prisma.$queryRaw`SELECT MAX(streak) as streak
+    const a = await global.client.prisma.$queryRaw<{ streak: number | null }[]>`SELECT MAX(streak) as streak
 FROM (
   SELECT AchievementID, UserId, Timestamp,
          DATEDIFF(NOW(), Timestamp),
@@ -177,7 +188,8 @@ FROM (
 
     const rank = new Rank()
       .setUsername(guildMember.username)
-      .setAvatar(guildMember.avatarURL())
+      // Members without a custom avatar have avatarURL() === null.
+      .setAvatar(guildMember.avatarURL() ?? guildMember.displayAvatarURL())
       .setCurrentXP(this.getCurrentLevelXp(member.XP))
       .setRequiredXP(this.getRequiredXp(this.getLevel(member.XP)))
       .setRank(1, "RANK", false)
@@ -223,7 +235,7 @@ FROM (
     return await rank.build();
   }
 
-  async checkAchievements(members) {
+  async checkAchievements(members: Collection<string, GuildMember>) {
     return global.client.prisma.achievements
       .findMany()
       .then((achievements) => {
@@ -235,18 +247,19 @@ FROM (
         startOfToday.setHours(0, 0, 0, 0);
         // Array.find returns undefined, not null, when there is no such achievement.
         if (DailyLoginAchievement) {
+          const dailyLogin = DailyLoginAchievement;
           members
             .filter(
               (m) =>
                 m.voice.channel != null &&
-                m.voice.channelId === "530537522921734178"
+                m.voice.channelId === DAILY_LOGIN_VOICE_CHANNEL_ID
             )
             .forEach((member) => {
               global.client.prisma.achievement_History
                 .findFirst({
                   where: {
                     UserID: member.id,
-                    AchievementID: DailyLoginAchievement.ID,
+                    AchievementID: dailyLogin.ID,
                     TimeStamp: {
                       gte: startOfToday,
                     },
@@ -256,8 +269,8 @@ FROM (
                   if (achievement == null) {
                     this.GiveAchievement(
                       member.id,
-                      DailyLoginAchievement.ID,
-                      "178435947816419328",
+                      dailyLogin.ID,
+                      DAILY_LOGIN_GRANTED_BY_ID,
                       new Date().toDateString()
                     ).catch((err) =>
                       global.client.log(

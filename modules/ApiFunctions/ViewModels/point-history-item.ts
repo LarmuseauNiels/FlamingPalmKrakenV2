@@ -1,5 +1,5 @@
-export class PointHistoryItem {
-  public timestamp: string;
-  public comment: string;
-  public points: number;
+export interface PointHistoryItem {
+  timestamp: string;
+  comment: string;
+  points: number;
 }

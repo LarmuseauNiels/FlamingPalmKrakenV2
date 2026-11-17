@@ -1,4 +1,5 @@
-import { jsonify, authenticateToken, authenticateAdmin } from "./Helpers";
+import type { Express } from "express";
+import { jsonify, authenticateToken, authenticateAdmin, prismaErrorCode } from "./Helpers";
 import { createLogger } from "../../utils/logger";
 
 const log = createLogger("AdminEndPoints");
@@ -21,7 +22,7 @@ interface yearOverviewItem {
   activity: number;
 }
 
-export function adminEndPoints(app) {
+export function adminEndPoints(app: Express) {
   let apiPrefix = "/admin/";
 
   app.get(
@@ -163,7 +164,7 @@ export function adminEndPoints(app) {
 
       res.send(jsonify(toShopItemDto(updated)));
     } catch (err) {
-      if (err?.code === "P2025") return res.status(404).send("Shop item not found");
+      if (prismaErrorCode(err) === "P2025") return res.status(404).send("Shop item not found");
       log.error("Failed to update shop item:", err);
       res.status(500).send("Failed to update shop item");
     }
@@ -217,7 +218,7 @@ export function adminEndPoints(app) {
       await global.client.prisma.reward.delete({ where: { RewardID: rewardId } });
       res.status(204).send();
     } catch (err) {
-      if (err?.code === "P2025") return res.status(404).send("Shop item not found");
+      if (prismaErrorCode(err) === "P2025") return res.status(404).send("Shop item not found");
       log.error("Failed to delete shop item:", err);
       res.status(500).send("Failed to delete shop item");
     }
@@ -273,7 +274,7 @@ export function adminEndPoints(app) {
       });
       res.status(200).send(jsonify({ success: true }));
     } catch (err) {
-      if (err?.code === "P2025") return res.status(404).send("Referral not found");
+      if (prismaErrorCode(err) === "P2025") return res.status(404).send("Referral not found");
       log.error("Failed to validate referral:", err);
       res.status(500).send("Failed to validate referral");
     }
@@ -306,7 +307,7 @@ export function adminEndPoints(app) {
 
       res.status(200).send(jsonify({ success: true, pointsAwarded: pointsToAward }));
     } catch (err) {
-      if (err?.code === "P2025") return res.status(404).send("Referral not found");
+      if (prismaErrorCode(err) === "P2025") return res.status(404).send("Referral not found");
       log.error("Failed to give regular reward:", err);
       res.status(500).send("Failed to give regular reward");
     }
@@ -339,7 +340,7 @@ export function adminEndPoints(app) {
 
       res.status(200).send(jsonify({ success: true, pointsAwarded: pointsToAward }));
     } catch (err) {
-      if (err?.code === "P2025") return res.status(404).send("Referral not found");
+      if (prismaErrorCode(err) === "P2025") return res.status(404).send("Referral not found");
       log.error("Failed to give member reward:", err);
       res.status(500).send("Failed to give member reward");
     }

@@ -1,9 +1,11 @@
 import {
+  AutocompleteInteraction,
   SlashCommandBuilder,
   CommandInteraction,
   ChatInputCommandInteraction,
 } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
+import { CUSTOM_RAID_STATUS, respondWithOwnCustomRaids } from "../../modules/RaidAutocomplete";
 import { RaidScheduler } from "../../modules/RaidScheduler";
 
 export default class CrScheduleCommand implements IHandler {
@@ -20,7 +22,7 @@ export default class CrScheduleCommand implements IHandler {
     ) as SlashCommandBuilder;
 
   async execute(interaction: ChatInputCommandInteraction) {
-    const raidId = interaction.options.getInteger("raid");
+    const raidId = interaction.options.getInteger("raid", true);
 
     //get raid
     const raid = await global.client.prisma.raids.findUnique({
@@ -34,23 +36,27 @@ export default class CrScheduleCommand implements IHandler {
         RaidSchedulingOption: true,
       },
     });
+    if (!raid) {
+      await interaction.reply({ content: `Raid ${raidId} not found.`, ephemeral: true });
+      return;
+    }
     // check if raid is status 5 and has atleast 2 attendees and 2 scheduling options
-    if (raid.Status !== 5) {
-      interaction.reply({
+    if (raid.Status !== CUSTOM_RAID_STATUS) {
+      await interaction.reply({
         content: `Raid ${raidId} is not in the correct status to start scheduling!`,
         ephemeral: true,
       });
       return;
     }
     if (raid.RaidAttendees.length < 2) {
-      interaction.reply({
+      await interaction.reply({
         content: `Raid ${raidId} needs at least 2 attendees to start scheduling!`,
         ephemeral: true,
       });
       return;
     }
     if (raid.RaidSchedulingOption.length < 1) {
-      interaction.reply({
+      await interaction.reply({
         content: `Raid ${raidId} needs at least 1 scheduling options to start scheduling!`,
         ephemeral: true,
       });
@@ -68,37 +74,13 @@ export default class CrScheduleCommand implements IHandler {
 
     await RaidScheduler.SendSchedulingMessage(raidId);
 
-    interaction.reply({
+    await interaction.reply({
       content: `Successfully started scheduling for raid ${raidId}!`,
       ephemeral: true,
     });
   }
 
-  async autocomplete(interaction) {
-    global.client.prisma.raids
-      .findMany({
-        where: {
-          Status: 5,
-          Creator: interaction.user.id,
-        },
-        select: {
-          ID: true,
-          Title: true,
-        },
-      })
-      .then(async (raids) => {
-        const focusedValue = interaction.options.getFocused();
-        const options = raids
-          .filter((raid) =>
-            raid.Title.toLowerCase().includes(focusedValue.toLowerCase())
-          )
-          .map((raid) => {
-            return {
-              name: raid.Title,
-              value: raid.ID.toString(),
-            };
-          });
-        interaction.respond(options);
-      });
+  async autocomplete(interaction: AutocompleteInteraction) {
+    await respondWithOwnCustomRaids(interaction);
   }
 }

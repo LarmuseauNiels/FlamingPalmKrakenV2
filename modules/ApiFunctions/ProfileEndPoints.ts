@@ -1,4 +1,5 @@
-import { authenticateAdmin, authenticateToken, jsonify } from "./Helpers";
+import type { Express } from "express";
+import { authenticateAdmin, authenticateToken, jsonify, authUser } from "./Helpers";
 import Rank from "../profile";
 import { createLogger } from "../../utils/logger";
 
@@ -61,7 +62,7 @@ function safeColor(value: unknown, fallback: string): string {
   return typeof value === "string" && HEX_COLOR.test(value) ? value : fallback;
 }
 
-export function profileEndPoints(app) {
+export function profileEndPoints(app: Express) {
   let apiPrefix = "/members/";
 
   // Dev tool: render a profile card with query-param overrides.
@@ -107,7 +108,7 @@ export function profileEndPoints(app) {
   });
 
   app.get(apiPrefix + "profileImage", authenticateToken, function (req, res) {
-    let user = req.user;
+    const user = authUser(req);
     global.client.achievementsModule
       .GetProfileBlob(user.id)
       .then((blob) => {
@@ -124,7 +125,7 @@ export function profileEndPoints(app) {
     apiPrefix + "setProfileImage",
     authenticateToken,
     function (req, res) {
-      let user = req.user;
+      const user = authUser(req);
       const { profile } = req.body;
       if (!profile) return res.status(400).send("No profile data");
       // @ts-ignore
@@ -164,7 +165,7 @@ export function profileEndPoints(app) {
   );
 
   app.post(apiPrefix + "setBackground", authenticateToken, function (req, res) {
-    let user = req.user;
+    const user = authUser(req);
     const body = req.body;
     if (!body) return res.status(400).send("No profile data");
     // @ts-ignore
@@ -184,7 +185,7 @@ export function profileEndPoints(app) {
   });
 
   app.post(apiPrefix + "setBadge", authenticateToken, function (req, res) {
-    let user = req.user;
+    const user = authUser(req);
     const body = req.body;
     if (!body) return res.status(400).send("No profile data");
 
@@ -209,8 +210,9 @@ export function profileEndPoints(app) {
 
   app.get(apiPrefix + "getLevel", authenticateToken, async function (req, res) {
     let member = await global.client.prisma.members.findFirst({
-      where: { ID: req.user.id },
+      where: { ID: authUser(req).id },
     });
+    if (!member) return res.status(404).send("Member not found");
     let level = global.client.achievementsModule.getLevel(member.XP);
     res.send(jsonify(level));
   });
@@ -220,9 +222,10 @@ export function profileEndPoints(app) {
     authenticateToken,
     async function (req, res) {
       let member = await global.client.prisma.members.findFirst({
-        where: { ID: req.user.id },
+        where: { ID: authUser(req).id },
         include: { Achievement_History: { include: { Achievements: true } } },
       });
+      if (!member) return res.status(404).send("Member not found");
       let badges = global.client.achievementsModule.getBadgeUnlocks(
         member.Achievement_History
       );

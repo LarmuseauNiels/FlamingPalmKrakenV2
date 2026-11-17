@@ -35,7 +35,7 @@ export default class PointsCommand implements IHandler {
       .setColor("#FD8612")
       .setTitle(`You have ${member.Points.TotalPoints} :palm_tree:`)
       .setAuthor({
-        name: member.DisplayName,
+        name: member.DisplayName ?? interaction.user.username,
         iconURL:
           "https://cdn.discordapp.com/avatars/" +
           member.ID +

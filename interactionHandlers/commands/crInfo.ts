@@ -1,9 +1,18 @@
 import {
+  AutocompleteInteraction,
   SlashCommandBuilder,
   EmbedBuilder,
   ChatInputCommandInteraction,
 } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
+import { RaidEmbeds } from "../../modules/RaidEmbeds";
+
+const EMBED_FIELD_MAX_CHARS = 1024;
+
+function truncate(text: string, maxChars: number): string {
+  return text.length > maxChars ? text.slice(0, maxChars - 1) + "…" : text;
+}
+import { respondWithOwnCustomRaids } from "../../modules/RaidAutocomplete";
 
 export default class CrInfoCommand implements IHandler {
   name = "cr-info";
@@ -18,7 +27,7 @@ export default class CrInfoCommand implements IHandler {
         .setRequired(true)
     ) as SlashCommandBuilder;
   async execute(interaction: ChatInputCommandInteraction) {
-    const raidId = interaction.options.getInteger("raid");
+    const raidId = interaction.options.getInteger("raid", true);
     const raid = await global.client.prisma.raids.findUnique({
       where: {
         ID: raidId,
@@ -48,16 +57,23 @@ export default class CrInfoCommand implements IHandler {
         },
       },
     });
-    let attendees = raid.RaidAttendees.map(
-      (attendee) => attendee.Members.DisplayName
-    ).join(",");
-    let scheduleOptions = raid.RaidSchedulingOption.map(
-      (option) => `${option.Option}:${option.Timestamp}`
-    ).join(",");
+    if (!raid) {
+      await interaction.reply({ content: `Raid ${raidId} not found.`, ephemeral: true });
+      return;
+    }
+    // Embed field values are capped at 1024 characters.
+    const attendees = truncate(
+      raid.RaidAttendees.map((attendee) => attendee.Members.DisplayName ?? attendee.MemberId).join(","),
+      EMBED_FIELD_MAX_CHARS
+    );
+    const scheduleOptions = truncate(
+      raid.RaidSchedulingOption.map((option) => `${option.Option}:${option.Timestamp}`).join(","),
+      EMBED_FIELD_MAX_CHARS
+    );
 
     const embed = new EmbedBuilder()
       .setColor("#FD8612")
-      .setTitle(raid.Title)
+      .setTitle(RaidEmbeds.title(raid))
       .addFields(
         {
           name: "Minimum Players",
@@ -80,34 +96,10 @@ export default class CrInfoCommand implements IHandler {
           inline: false,
         }
       );
-    interaction.reply({ embeds: [embed], ephemeral: true });
+    await interaction.reply({ embeds: [embed], ephemeral: true });
   }
 
-  async autocomplete(interaction) {
-    global.client.prisma.raids
-      .findMany({
-        where: {
-          Status: 5,
-          Creator: interaction.user.id,
-        },
-        select: {
-          ID: true,
-          Title: true,
-        },
-      })
-      .then(async (raids) => {
-        const focusedValue = interaction.options.getFocused();
-        const options = raids
-          .filter((raid) =>
-            raid.Title.toLowerCase().includes(focusedValue.toLowerCase())
-          )
-          .map((raid) => {
-            return {
-              name: raid.Title,
-              value: raid.ID.toString(),
-            };
-          });
-        interaction.respond(options);
-      });
+  async autocomplete(interaction: AutocompleteInteraction) {
+    await respondWithOwnCustomRaids(interaction);
   }
 }

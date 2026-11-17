@@ -7,6 +7,7 @@ import passport from "passport";
 import jwt from "jsonwebtoken";
 import { legacyEndPoints } from "./ApiFunctions/LegacyEndPoints";
 import { jsonify, JWT_MAX_AGE } from "./ApiFunctions/Helpers";
+import { requiredEnv } from "../utils/config";
 import { memberEndPoints } from "./ApiFunctions/MemberEndPoints";
 import { profileEndPoints } from "./ApiFunctions/ProfileEndPoints";
 import { shopEndPoints } from "./ApiFunctions/ShopEndPoints";
@@ -16,6 +17,7 @@ import { raidEndPoints } from "./ApiFunctions/RaidEndPoints";
 import { raidBoardEndPoints } from "./ApiFunctions/RaidBoardEndPoints";
 import { gameServerEndPoints } from "./ApiFunctions/GameServerEndPoints";
 import { activityEndPoints } from "./ApiFunctions/ActivityEndPoints";
+import { forwardAsyncErrors } from "./WebApiAsyncErrors";
 import { Strategy as DiscordStrategy } from "passport-discord-auth";
 const app = express();
 const prompt = "consent";
@@ -23,20 +25,26 @@ const WEB_API_PORT = 3000;
 
 export class WebApi {
   constructor() {
+    forwardAsyncErrors(app);
     const middleware = global.bugsnag.getPlugin("express");
+    // index.ts starts Bugsnag with the express plugin before creating the client.
+    if (!middleware) throw new Error("Bugsnag express plugin is not loaded");
+    if (!process.env.OAUTHSECRET || !process.env.CALLBACK_URL) {
+      log.warn("OAUTHSECRET or CALLBACK_URL is not set — website login via /auth and /login will fail");
+    }
     passport.use(
       new DiscordStrategy(
         {
-          clientId: process.env.CLIENT_ID,
-          clientSecret: process.env.OAUTHSECRET,
-          callbackUrl: process.env.CALLBACK_URL,
+          clientId: process.env.CLIENT_ID ?? "",
+          clientSecret: process.env.OAUTHSECRET ?? "",
+          callbackUrl: process.env.CALLBACK_URL ?? "",
           scope: ["identify", "guilds"],
         },
         function (accessToken, refreshToken, profile, done) {
           logDiscordLogin(profile).catch((err) =>
             log.error("Failed to log discord login for " + profile.username + ":", err)
           );
-          if (profile.guilds.map((g) => g.id).includes(process.env.GUILD_ID)) {
+          if (profile.guilds?.some((g) => g.id === process.env.GUILD_ID)) {
             process.nextTick(function () {
               return done(null, profile);
             });
@@ -76,7 +84,7 @@ export class WebApi {
             username: profile.username,
             avatar: profile.avatar,
           },
-          process.env.JWT_SECRET,
+          requiredEnv("JWT_SECRET"),
           { expiresIn: JWT_MAX_AGE }
         );
         res.send(jsonify(token));
@@ -104,7 +112,7 @@ export class WebApi {
     // passes the error on with next(err). Ours ends the chain, so when it ran
     // first Bugsnag never saw any API error.
     app.use(middleware.errorHandler);
-    app.use(function (err, req, res, next) {
+    app.use(function (err: any, req: express.Request, res: express.Response, next: express.NextFunction) {
       // Logged as text: Bugsnag already has the Error, don't report it twice.
       log.error("Unhandled Express error:", String(err?.stack ?? err));
       if (res.headersSent) return next(err);
@@ -136,7 +144,7 @@ function allowedOrigins(): string[] {
   return origins;
 }
 
-async function logDiscordLogin(profile) {
+async function logDiscordLogin(profile: { id: string; username: string; avatar?: string | null }) {
   let result = await global.client.prisma.login_History.create({
     data: {
       UserID: profile.id,

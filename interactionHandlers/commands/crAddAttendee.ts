@@ -5,6 +5,7 @@ import {
 } from "discord.js";
 import { RaidModule } from "../../modules/RaidModule";
 import { IHandler } from "../../interfaces/IHandler";
+import { respondWithOwnCustomRaids } from "../../modules/RaidAutocomplete";
 
 export default class CrAddAttendeeHandler implements IHandler {
   name = "cr-add-attendee";
@@ -26,42 +27,18 @@ export default class CrAddAttendeeHandler implements IHandler {
     ) as SlashCommandBuilder;
 
   async execute(interaction: ChatInputCommandInteraction) {
-    const raidId = interaction.options.getInteger("raid");
-    const user = interaction.options.getUser("attendee");
+    const raidId = interaction.options.getInteger("raid", true);
+    const user = interaction.options.getUser("attendee", true);
 
     await RaidModule.AddAttendeeToRaid(raidId, user.id);
 
-    interaction.reply({
+    await interaction.reply({
       content: `Successfully added ${user.username} to raid ${raidId}!`,
       ephemeral: true,
     });
   }
 
   async autocomplete(interaction: AutocompleteInteraction) {
-    global.client.prisma.raids
-      .findMany({
-        where: {
-          Status: 5,
-          Creator: interaction.user.id,
-        },
-        select: {
-          ID: true,
-          Title: true,
-        },
-      })
-      .then(async (raids) => {
-        const focusedValue = interaction.options.getFocused();
-        const options = raids
-          .filter((raid) =>
-            raid.Title.toLowerCase().includes(focusedValue.toLowerCase())
-          )
-          .map((raid) => {
-            return {
-              name: raid.Title,
-              value: raid.ID.toString(),
-            };
-          });
-        interaction.respond(options);
-      });
+    await respondWithOwnCustomRaids(interaction);
   }
 }

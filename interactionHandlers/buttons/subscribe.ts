@@ -1,42 +1,32 @@
+import { ButtonInteraction, GuildMember } from "discord.js";
 import { IHandler } from "../../interfaces/IHandler";
-import { createLogger } from "../../utils/logger";
-
-const log = createLogger("Subscribe");
 
 export default class Subscribe implements IHandler {
   name = "subscribe";
 
-  async execute(interaction) {
-    const role_name = interaction.customId.split("_")[1];
+  /** Toggles the role named in the custom id (`subscribe_<role name>`). */
+  async execute(interaction: ButtonInteraction) {
+    const roleName = interaction.customId.split("_")[1];
+    const member = interaction.member;
+    if (!interaction.guild || !(member instanceof GuildMember)) {
+      await interaction.reply({ ephemeral: true, content: "This button only works inside the server." });
+      return;
+    }
 
-    interaction.message.guild.roles
-      .fetch()
-      .then((roles) => {
-        const hasRole = interaction.member.roles.cache.some(
-          (role) => role.name === role_name
-        );
+    const roles = await interaction.guild.roles.fetch();
+    const role = roles.find((r) => r.name === roleName);
+    if (!role) {
+      // Used to reply "Added role" and then fail to add an undefined role.
+      throw new Error(`subscribe: no role named "${roleName}"`);
+    }
 
-        if (!hasRole) {
-          interaction.member.roles
-            .add(roles.find((val) => val.name === role_name))
-            .catch((err) => log.error("Failed to add role:", err));
-          interaction
-            .reply({ ephemeral: true, content: "Added role " + role_name })
-            .catch((err) => log.error("Failed to reply:", err));
-        } else {
-          interaction.member.roles
-            .remove(roles.find((val) => val.name === role_name))
-            .catch((err) => log.error("Failed to remove role:", err));
-          interaction
-            .reply({ ephemeral: true, content: "Removed role " + role_name })
-            .catch((err) => log.error("Failed to reply:", err));
-        }
-      })
-      .catch((err) => {
-        log.error("Failed to fetch roles:", err);
-        interaction
-          .reply({ ephemeral: true, content: "Failed to update role." })
-          .catch((e) => log.error("Failed to reply with error:", e));
-      });
+    // Reply only after the change went through, so the message is true.
+    if (member.roles.cache.has(role.id)) {
+      await member.roles.remove(role);
+      await interaction.reply({ ephemeral: true, content: "Removed role " + roleName });
+    } else {
+      await member.roles.add(role);
+      await interaction.reply({ ephemeral: true, content: "Added role " + roleName });
+    }
   }
 }

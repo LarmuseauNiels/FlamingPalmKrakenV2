@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { assertRequiredEnv, envInt } from "../utils/config";
+import { assertRequiredEnv, envInt, requiredEnv } from "../utils/config";
 
 function withEnv(values: Record<string, string | undefined>, body: () => void): void {
   const saved = { ...process.env };
@@ -42,4 +42,9 @@ test("assertRequiredEnv names every missing variable", () => {
   withEnv({ ...complete, TOKEN: undefined, JWT_SECRET: " " }, () =>
     assert.throws(() => assertRequiredEnv(), /TOKEN, JWT_SECRET/)
   );
+});
+
+test("requiredEnv returns the trimmed value or throws", () => {
+  withEnv({ JWT_SECRET: " secret " }, () => assert.equal(requiredEnv("JWT_SECRET"), "secret"));
+  withEnv({ JWT_SECRET: undefined }, () => assert.throws(() => requiredEnv("JWT_SECRET"), /JWT_SECRET/));
 });

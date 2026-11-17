@@ -1,4 +1,5 @@
-import { authenticateAdmin, authenticateToken, getAdminIds, jsonify } from "./Helpers";
+import type { Express } from "express";
+import { authenticateAdmin, authenticateToken, getAdminIds, jsonify, authUser } from "./Helpers";
 import {
   MAX_SCHEDULING_OPTIONS,
   RaidRuleError,
@@ -19,7 +20,7 @@ const MAX_MIN_PLAYERS = 50;
  * through the same RaidScheduler paths as the DM select menu and modal, so
  * consensus, DMs and LFG announcements behave identically either way.
  */
-export function raidBoardEndPoints(app) {
+export function raidBoardEndPoints(app: Express) {
   const apiPrefix = "/members/raids";
 
   // GET /members/raids — open and scheduling raids, for the board's picker.
@@ -31,7 +32,7 @@ export function raidBoardEndPoints(app) {
         orderBy: { CreationTime: "desc" } as any,
       });
 
-      const canClose = getAdminIds().includes(req.user.id);
+      const canClose = getAdminIds().includes(authUser(req).id);
       res.send(
         jsonify(
           raids.map((raid) => ({
@@ -40,7 +41,7 @@ export function raidBoardEndPoints(app) {
             minPlayers: raid.MinPlayers,
             status: raid.Status,
             attendeeCount: raid.RaidAttendees.length,
-            attending: raid.RaidAttendees.some((a) => a.MemberId === req.user.id),
+            attending: raid.RaidAttendees.some((a) => a.MemberId === authUser(req).id),
             canClose,
           }))
         )
@@ -64,7 +65,7 @@ export function raidBoardEndPoints(app) {
         return res.status(400).send(`Minimum players must be between 1 and ${MAX_MIN_PLAYERS}`);
       }
 
-      const raid = await RaidModule.CreateRaid(title, minPlayers, req.user.id);
+      const raid = await RaidModule.CreateRaid(title, minPlayers, authUser(req).id);
       res.status(201).send(jsonify({ id: raid.ID }));
     } catch (err) {
       log.error("Failed to create raid:", err);
@@ -100,8 +101,8 @@ export function raidBoardEndPoints(app) {
           status: raid.Status,
           maxOptions: MAX_SCHEDULING_OPTIONS,
           // Admins may close raids that are still open or picking a time.
-          canClose: getAdminIds().includes(req.user.id) && (raid.Status === 1 || raid.Status === 2),
-          attending: raid.RaidAttendees.some((a) => a.MemberId === req.user.id),
+          canClose: getAdminIds().includes(authUser(req).id) && (raid.Status === 1 || raid.Status === 2),
+          attending: raid.RaidAttendees.some((a) => a.MemberId === authUser(req).id),
           attendees: raid.RaidAttendees.map((a) => ({
             id: a.MemberId,
             name: a.Members?.DisplayName ?? "Unknown",
@@ -135,7 +136,7 @@ export function raidBoardEndPoints(app) {
           return res.status(400).send("Expected { optionId, available }");
         }
 
-        const denied = await checkSchedulingAttendee(raidId, req.user.id);
+        const denied = await checkSchedulingAttendee(raidId, authUser(req).id);
         if (denied) return res.status(denied.status).send(denied.message);
 
         const option = await global.client.prisma.raidSchedulingOption.findFirst({
@@ -143,7 +144,7 @@ export function raidBoardEndPoints(app) {
         });
         if (!option) return res.status(404).send("That time is not part of this raid");
 
-        await RaidScheduler.setAvailability(raidId, req.user.id, optionId, available);
+        await RaidScheduler.setAvailability(raidId, authUser(req).id, optionId, available);
         res.status(204).send();
       } catch (err) {
         log.error("Failed to set raid availability:", err);
@@ -165,10 +166,10 @@ export function raidBoardEndPoints(app) {
       // (RaidId, Timestamp) uniqueness used to spot duplicate suggestions.
       time.setSeconds(0, 0);
 
-      const denied = await checkSchedulingAttendee(raidId, req.user.id);
+      const denied = await checkSchedulingAttendee(raidId, authUser(req).id);
       if (denied) return res.status(denied.status).send(denied.message);
 
-      const option = await RaidScheduler.suggestTime(raidId, req.user.id, time);
+      const option = await RaidScheduler.suggestTime(raidId, authUser(req).id, time);
       res.status(201).send(jsonify({ id: option.ID }));
     } catch (err) {
       if (err instanceof RaidRuleError) return res.status(400).send(err.message);
@@ -183,7 +184,7 @@ export function raidBoardEndPoints(app) {
       const raidId = parseInt(req.params.id, 10);
       if (isNaN(raidId)) return res.status(400).send("Invalid raid ID");
 
-      await RaidScheduler.closeRaid(raidId, req.user.id);
+      await RaidScheduler.closeRaid(raidId, authUser(req).id);
       res.status(204).send();
     } catch (err) {
       if (err instanceof RaidRuleError) {

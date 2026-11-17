@@ -16,6 +16,16 @@ export function assertRequiredEnv(): void {
 }
 
 /**
+ * A variable from REQUIRED_ENV, typed as a definite string. assertRequiredEnv()
+ * already ran at boot, so a throw here means it was skipped (e.g. in a script).
+ */
+export function requiredEnv(name: (typeof REQUIRED_ENV)[number]): string {
+  const value = process.env[name]?.trim();
+  if (!value) throw new Error(`Missing required environment variable: ${name}`);
+  return value;
+}
+
+/**
  * An integer environment variable within [min, max], or `fallback` when unset.
  * A value that is set but invalid throws at module load, so a typo like
  * RAID_EXPIRY_DAYS=21d fails the deploy instead of breaking every query.

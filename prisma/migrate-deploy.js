@@ -19,6 +19,7 @@ const { execSync } = require("child_process");
 // applied rather than re-run.
 const LEGACY_MIGRATIONS = ["20260311000000_add_timezone_to_members"];
 
+/** @param {string} cmd */
 function run(cmd) {
   console.log(`[migrate] $ ${cmd}`);
   execSync(cmd, { stdio: "inherit" });
@@ -40,6 +41,6 @@ try {
   run("npx prisma migrate deploy");
   console.log("[migrate] migrations up to date");
 } catch (e) {
-  console.error("[migrate] migrate deploy failed — aborting startup:", e.message);
+  console.error("[migrate] migrate deploy failed — aborting startup:", e instanceof Error ? e.message : e);
   process.exit(1);
 }
