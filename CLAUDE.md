@@ -33,7 +33,14 @@ FlamingPalmKrakenV2/
 │   └── migrations/           # Prisma migration history
 ├── components/
 │   ├── FpgClient.ts          # Extended Discord.js Client — core hub class
-│   ├── OllamaAI.ts           # Ollama AI wrapper (OpenAI-compatible API) with tool-calling
+│   ├── OllamaAI.ts           # Ollama AI wrapper (OpenAI-compatible API): ask() loop, parseDate(), tool dispatch
+│   ├── ai/                   # Kraken AI tools — see "Kraken AI Assistant" below
+│   │   ├── toolDefinitions.ts # System prompt + tool definitions sent to the model
+│   │   ├── toolRegistry.ts   # Tool name → handler; checks definitions and handlers match at load
+│   │   ├── confirmation.ts   # CONFIRMED_TOOLS, pre-checks (checkConfirmable) and Confirm-button queueing
+│   │   ├── raidTools.ts / gameServerTools.ts / musicTools.ts / memberTools.ts  # Tool implementations by area
+│   │   ├── toolHelpers.ts    # parseArgs, formatTime, member/timezone lookups, role checks
+│   │   └── types.ts          # ToolContext, ToolHandler
 │   └── AiConversationStore.ts # Persists AI conversations + pending Confirm buttons (AiConversation table)
 ├── events/                   # Discord.js event handlers (8 files)
 ├── interactionHandlers/
@@ -272,8 +279,9 @@ With `discord_channel`, the channel name gets the player count as a suffix (`val
 
 - **Context:** each turn rebuilds the system prompt plus a context message (current date/time in the member's timezone, their name, DM vs. channel). Only the conversation after those is stored, in `AiConversation`, under every message the answer was sent as. Replying to one continues it for 24h; in DMs a plain message continues the latest conversation for 30 min.
 - **Long answers** are split into ≤2000-char messages (`utils/DiscordText.ts`).
-- **Confirm buttons:** `createRaid`, `joinRaid`, `leaveRaid`, `manageGameServer` and `suggestRaidTime` (`CONFIRMED_TOOLS`) never act when the model calls them. They are pre-checked, queued as `PendingAction`s and shown as buttons (`aiConfirm_<index>` / `aiConfirm_cancel`, handled in `interactionHandlers/buttons/aiConfirm.ts`). Only the requesting member can press them; the tool runs (and re-validates) on press. To make a new tool need confirmation, add it to `CONFIRMED_TOOLS` and give it a case in `checkConfirmable`.
-- **Times** in tool output use `formatTime()`: member-local time plus a `<t:…:F>` Discord tag.
+- **Confirm buttons:** `createRaid`, `joinRaid`, `leaveRaid`, `manageGameServer` and `suggestRaidTime` (`CONFIRMED_TOOLS`) never act when the model calls them. They are pre-checked, queued as `PendingAction`s and shown as buttons (`aiConfirm_<index>` / `aiConfirm_cancel`, handled in `interactionHandlers/buttons/aiConfirm.ts`). Only the requesting member can press them; the tool runs (and re-validates) on press. To make a new tool need confirmation, add it to `CONFIRMED_TOOLS` and give it a case in `checkConfirmable` (both in `components/ai/confirmation.ts`); a test fails if a confirmed tool has no case.
+- **Adding a tool:** add its definition to `components/ai/toolDefinitions.ts`, implement it in the matching `components/ai/*Tools.ts` file, and map it in `TOOL_HANDLERS` (`components/ai/toolRegistry.ts`). A definition without a handler (or the reverse) stops the bot at startup.
+- **Times** in tool output use `formatTime()` (`components/ai/toolHelpers.ts`): member-local time plus a `<t:…:F>` Discord tag.
 - **Music tools** act without a Confirm button; see [Music Player](#music-player).
 
 ---
@@ -358,7 +366,8 @@ handler are reported and answered with an ephemeral error message by `interactio
 | `index.ts` | Bot startup, Bugsnag init, loads FpgClient |
 | `deploy-commands.ts` | Registers/updates slash commands via Discord REST API |
 | `components/FpgClient.ts` | Core client: loads all handlers, holds all collections |
-| `components/OllamaAI.ts` | Ollama AI wrapper with tool-calling |
+| `components/OllamaAI.ts` | Ollama AI wrapper: ask loop, retries, tool dispatch |
+| `components/ai/toolRegistry.ts` | Every AI tool's handler, checked against the definitions at load |
 | `events/interactionCreate.ts` | Routes all interactions to the correct handler |
 | `events/clientReady.ts` | Post-login setup: channels, invites, event cache |
 | `modules/RaidModule.ts` | All raid database operations |
