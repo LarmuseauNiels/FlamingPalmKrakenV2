@@ -1,5 +1,6 @@
 import {
   Client,
+  ClientUser,
   GatewayIntentBits,
   Options,
   Partials,
@@ -88,7 +89,7 @@ export class FpgClient extends Client {
     this.loadCommands();
   }
 
-  log(loggText) {
+  log(loggText: unknown) {
     logger.info(loggText);
     // logChannel is assigned in clientReady; guard against the startup window
     // where it's still undefined. Also guard against log text that contains
@@ -100,7 +101,16 @@ export class FpgClient extends Client {
     );
   }
 
-  idToName(id) {
+  /**
+   * The bot's own user. Null only before login completes; every event and
+   * job runs after that, so a null here is a startup-order bug worth a throw.
+   */
+  requireUser(): ClientUser {
+    if (!this.user) throw new Error("Discord client used before login completed");
+    return this.user;
+  }
+
+  idToName(id: string) {
     return this.users.cache.get(id)?.username ?? null;
   }
 
@@ -162,7 +172,7 @@ export class FpgClient extends Client {
           const event: IEvent = new eventSource.default();
 
           // execute() is async; a rejection here would otherwise be unhandled.
-          const listener = (...args) => {
+          const listener = (...args: unknown[]) => {
             Promise.resolve()
               .then(() => event.execute(...args))
               .catch((error) => logger.error(`Event ${event.name} (${file}) failed:`, error));

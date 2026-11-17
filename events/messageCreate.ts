@@ -43,9 +43,10 @@ export default class messageCreate implements IEvent {
    * 3. Reply to one of the bot's AI answers (follow-up conversation)
    */
   private async handleAiMessage(message: Message) {
-    const botId = global.client.user.id;
+    const botUser = global.client.requireUser();
+    const botId = botUser.id;
     const isDM = !message.guild;
-    const isMention = message.mentions.has(global.client.user, { ignoreEveryone: true });
+    const isMention = message.mentions.has(botUser, { ignoreEveryone: true });
 
     let conversation: StoredConversation | null = null;
     if (message.reference?.messageId && message.mentions.repliedUser?.id === botId) {
@@ -66,7 +67,7 @@ export default class messageCreate implements IEvent {
     if (!conversation && message.reference?.messageId) {
       const referenced = await message.fetchReference().catch(() => null);
       const quoted = referenced ? this.describeMessage(referenced) : "";
-      if (quoted) {
+      if (referenced && quoted) {
         question = `(I'm replying to this message from ${this.nameOf(referenced)}:\n"""\n${quoted}\n""")\n\n${question}`;
       }
     }
@@ -125,7 +126,7 @@ export default class messageCreate implements IEvent {
 
   /** Strips the bot's own mention and turns other mentions into readable @names. */
   private cleanContent(message: Message): string {
-    const botId = global.client.user.id;
+    const botId = global.client.requireUser().id;
     const botRoleId = message.guild?.members.me?.roles.botRole?.id;
     let text = message.content.replace(new RegExp(`<@!?${botId}>`, "g"), "");
     if (botRoleId) text = text.replace(new RegExp(`<@&${botRoleId}>`, "g"), "");
@@ -158,7 +159,7 @@ export default class messageCreate implements IEvent {
   private keepTyping(message: Message): () => void {
     const channel: any = message.channel;
     if (typeof channel.sendTyping !== "function") return () => {};
-    const type = () => channel.sendTyping().catch((e) => log.debug("Failed to send typing indicator:", e));
+    const type = () => channel.sendTyping().catch((e: unknown) => log.debug("Failed to send typing indicator:", e));
     type();
     const timer = setInterval(type, TYPING_REFRESH_MS);
     return () => clearInterval(timer);

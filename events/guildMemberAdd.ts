@@ -30,11 +30,11 @@ export default class guildMemberAdd implements IEvent {
       });
       log.debug("New invites:", invitemap);
       const moreUses = invitemap.filter(
-        (a) => oldinvites.find((b) => b.code === a.code)?.uses! < a.uses
+        (a) => (oldinvites.find((b: { code: string }) => b.code === a.code)?.uses ?? 0) < (a.uses ?? 0)
       );
       log.debug("Invites with more uses:", moreUses);
       const removed = oldinvites.filter(
-        (a) => newInvites.find((b) => b.code === a.code) === undefined
+        (a: { code: string }) => newInvites.find((b) => b.code === a.code) === undefined
       );
       log.debug("Removed invites:", removed);
       let usedInvite: Invite | undefined;

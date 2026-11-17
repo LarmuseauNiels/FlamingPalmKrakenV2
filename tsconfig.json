@@ -124,6 +124,7 @@
     "<node_internals>/**",
     "bin",
     "activity",
+    "scripts",
     "sprites",
     "interactionHandlers/disabledCommands"
   ]

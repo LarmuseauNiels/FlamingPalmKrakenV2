@@ -50,12 +50,13 @@ async function sendReferralMessage(member: GuildMember, isMember: boolean) {
     .addFields(
       {
         name: "Referrer",
-        value: referrer.Members_MembersToRefferals_refferer.DisplayName,
+        // Embed field values must be non-empty strings, or discord.js throws.
+        value: referrer.Members_MembersToRefferals_refferer.DisplayName ?? "Unknown",
         inline: false,
       },
       {
         name: "Join date",
-        value: referrer.CreatedTimestamp.toString(),
+        value: referrer.CreatedTimestamp?.toString() ?? "Unknown",
         inline: false,
       }
     )

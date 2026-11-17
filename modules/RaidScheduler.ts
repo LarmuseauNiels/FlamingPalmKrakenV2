@@ -160,9 +160,12 @@ export abstract class RaidScheduler {
             timestamp.toISOString() +
             "; returning existing"
         );
-        return global.client.prisma.raidSchedulingOption.findFirst({
+        const winner = await global.client.prisma.raidSchedulingOption.findFirst({
           where: { RaidId: raidId, Timestamp: timestamp },
         });
+        // Gone again (deleted in between): surface the original error rather
+        // than return null to callers that use the option straight away.
+        if (winner) return winner;
       }
       throw error;
     }

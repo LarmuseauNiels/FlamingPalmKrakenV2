@@ -105,7 +105,7 @@ export default class interactionCreate implements IEvent {
         await interaction.reply({ content, ephemeral: true });
       }
     } catch (replyError) {
-      log.warn("Could not tell the member about the error:", replyError?.message ?? replyError);
+      log.warn("Could not tell the member about the error:", (replyError as Error)?.message ?? replyError);
     }
   }
 }

@@ -137,7 +137,7 @@ export class GuildMusicPlayer {
       }
     });
     this.player.on("error", (err) => {
-      log.error(`Playback error for ${err.resource?.metadata?.["url"] ?? "unknown track"}`, err);
+      log.error(`Playback error for ${(err.resource?.metadata as { url?: string } | undefined)?.url ?? "unknown track"}`, err);
       this.trackErrored = true;
     });
 
@@ -360,9 +360,10 @@ export class GuildMusicPlayer {
     // Like a skip on a paused player, a new track starts playing.
     this.pendingPause = false;
     this.current = next;
-    const prefetchedThis = this.prefetched?.track === next;
-    if (prefetchedThis && !fresh) {
-      this.stream = this.prefetched.stream;
+    const prefetched = this.prefetched;
+    const prefetchedThis = prefetched?.track === next;
+    if (prefetched && prefetchedThis && !fresh) {
+      this.stream = prefetched.stream;
       this.prefetched = null;
     } else {
       // A prefetch for some other track is stale now, unless this is a retry.
@@ -425,7 +426,7 @@ export class GuildMusicPlayer {
           allowedMentions: { parse: [] },
         });
       } catch (err) {
-        log.warn(`Couldn't update the now-playing message: ${err?.message ?? err}`);
+        log.warn(`Couldn't update the now-playing message: ${(err as Error)?.message ?? err}`);
       }
     });
   }

@@ -52,9 +52,12 @@ export abstract class RaidModule {
     let raid = await global.client.prisma.raids.findFirst({
       where: { ID: raidId },
     });
-    await ChannelUpdates.MessageWithRaid(
-      `<@${userId}> has joined the raid: ${raid.Title}`
-    );
+    // The raid can be deleted between the sign-up and this announcement.
+    if (raid) {
+      await ChannelUpdates.MessageWithRaid(
+        `<@${userId}> has joined the raid: ${raid.Title}`
+      );
+    }
     await RaidScheduler.SchedulingCreationCheck(raidId);
   }
 
@@ -118,10 +121,8 @@ export abstract class RaidModule {
       });
       embed.addFields({
         name:
-          RaidEmbeds.getUniCodeEmoji(key.Option) +
-          " <t:" +
-          Math.floor(key.Timestamp.getTime() / 1000) +
-          ":F>",
+          RaidEmbeds.getUniCodeEmoji(key.Option ?? "") +
+          (key.Timestamp ? " <t:" + Math.floor(key.Timestamp.getTime() / 1000) + ":F>" : " (no time set)"),
         value: participants,
         inline: false,
       });

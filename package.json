@@ -7,7 +7,8 @@
     "start": "node prisma/migrate-deploy.js && node ./bin/index.js",
     "migrate": "node prisma/migrate-deploy.js",
     "build": "npx tsc",
-    "test": "npx tsc && node --test \"bin/__tests__/*.test.js\"",
+    "test": "npx tsc && node scripts/strict-check.js && node --test \"bin/__tests__/*.test.js\"",
+    "strict-check": "node scripts/strict-check.js",
     "deploy": "npx tsc && node bin/deploy-commands.js"
   },
   "author": "Niels Larmuseau",

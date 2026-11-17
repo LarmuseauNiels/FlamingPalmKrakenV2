@@ -40,8 +40,9 @@ async function sendDueReminders(): Promise<void> {
     });
     if (claimed.count === 0) continue;
 
-    const start = raid.RaidSchedulingOption[0].Timestamp;
-    await remindRaid(raid.ID, raid.Title, start, raid.RaidAttendees.map((a) => a.MemberId));
+    // The query only matches selected options with a future Timestamp.
+    const start = raid.RaidSchedulingOption[0].Timestamp!;
+    await remindRaid(raid.ID, raid.Title ?? "Your raid", start, raid.RaidAttendees.map((a) => a.MemberId));
   }
 }
 
@@ -60,7 +61,7 @@ async function remindRaid(raidId: number, title: string, start: Date, memberIds:
     .addFields({ name: "Players", value: memberIds.map((id) => `<@${id}>`).join("\n") || "—" })
     .setColor("#0099ff");
 
-  const components = [];
+  const components: ActionRowBuilder<ButtonBuilder>[] = [];
   if (channelId) {
     components.push(
       new ActionRowBuilder<ButtonBuilder>().addComponents(

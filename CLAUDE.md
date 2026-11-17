@@ -295,7 +295,14 @@ With `discord_channel`, the channel name gets the player count as a suffix (`val
 - **Handler `name` property:** must exactly match the Discord command/button/select custom ID
 
 ### TypeScript
-- `strict: false` — type checks are lenient; don't break existing JS-style patterns
+- `strict: false` in `tsconfig.json`, but **strict mode is being adopted folder by folder**.
+  `scripts/strict-check.js` type-checks with `strict: true` and fails on errors in its
+  `STRICT_PATHS` allowlist (`index.ts`, `utils/`, `interfaces/`, `islander/`, `components/`,
+  `events/`, `modules/Music/` and a few modules). `npm test` runs it. Code in those paths
+  must be strict-clean; to move another area over, fix its errors and add it to the list.
+  `npm run strict-check -- --all` shows the remaining error count per folder.
+- Prefer a real check over `!`: e.g. `client.requireUser()` instead of `client.user!`. Use `!`
+  only right after code that guarantees the value, with a comment saying why.
 - Target: ES2020, module resolution: Node16
 - Global declarations for `client` and `bugsnag` are in `index.ts`
 - Use `allowJs: true` — some modules (e.g., `profile.js`) are plain JavaScript

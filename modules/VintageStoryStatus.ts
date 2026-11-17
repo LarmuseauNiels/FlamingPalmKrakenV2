@@ -36,7 +36,7 @@ let lastActivityText: string | null = null;
 async function applyStatus(client: FpgClient, players: number | null): Promise<void> {
   const activityText = players === null ? "flamingpalm.com" : `VintageStory ${players}/${VS_MAX_PLAYERS}`;
   if (activityText !== lastActivityText) {
-    client.user.setActivity(activityText, {
+    client.requireUser().setActivity(activityText, {
       type: players === null ? ActivityType.Watching : ActivityType.Playing,
     });
     lastActivityText = activityText;
@@ -54,7 +54,7 @@ async function updateStatus(client: FpgClient): Promise<void> {
   let players: number | null = null;
   try {
     const data = await fetchVintageStoryServers();
-    const server = data.data.find((s) => s.serverName === process.env.VS_SERVER_NAME);
+    const server = data.data.find((s: { serverName: string }) => s.serverName === process.env.VS_SERVER_NAME);
     if (server) {
       players = server.players;
     } else {

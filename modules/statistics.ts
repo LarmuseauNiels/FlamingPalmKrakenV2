@@ -18,9 +18,9 @@ interface VoiceConnected {
   ID: string;
   ChannelID: string;
   ChannelName: string;
-  deaf: boolean;
-  mute: boolean;
-  streaming: boolean;
+  deaf: boolean | null;
+  mute: boolean | null;
+  streaming: boolean | null;
 }
 
 interface PresenceData {
@@ -167,8 +167,9 @@ async function announceUpcomingEvents(client: FpgClient, guild: Guild): Promise<
   client.events = events;
 
   const now = Date.now();
-  const dueEvents = [...events.values()].filter((event) =>
-    isDueForAnnouncement((event.scheduledStartTimestamp - now) / 60_000)
+  const dueEvents = [...events.values()].filter(
+    (event) =>
+      event.scheduledStartTimestamp !== null && isDueForAnnouncement((event.scheduledStartTimestamp - now) / 60_000)
   );
   if (dueEvents.length === 0) return;
 
@@ -179,7 +180,8 @@ async function announceUpcomingEvents(client: FpgClient, guild: Guild): Promise<
       .setColor(0x0099ff)
       .setTitle(`Starting in ${ANNOUNCE_LEAD_MINUTES} min: ${event.name}`)
       .setURL(event.url)
-      .setAuthor({ name: event.creator.username, iconURL: event.creator.avatarURL() })
+      // Events created by an integration have no creator.
+      .setAuthor(event.creator ? { name: event.creator.username, iconURL: event.creator.avatarURL() ?? undefined } : null)
       .setDescription(event.description || null)
       .setImage(event.coverImageURL({ size: 512 }))
       .setTimestamp(event.scheduledStartTimestamp)

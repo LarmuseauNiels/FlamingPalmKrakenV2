@@ -18,7 +18,8 @@ if (process.env.DISABLE) {
 assertRequiredEnv();
 
 Bugsnag.start({
-  apiKey: process.env.BUGSNAG_API_KEY,
+  // Optional: unset keeps the previous behaviour (Bugsnag logs that it has no key).
+  apiKey: process.env.BUGSNAG_API_KEY as string,
   plugins: [BugsnagPluginExpress],
   appVersion: (process.env.CAPROVER_GIT_COMMIT_SHA ?? "unknown").slice(0, 7),
   releaseStage: process.env.NODE_ENV || "development",
@@ -51,7 +52,7 @@ for (const signal of ["SIGTERM", "SIGINT"]) {
       await global.client.destroy();
       await global.client.prisma.$disconnect();
     } catch (err) {
-      Bugsnag.notify(err);
+      Bugsnag.notify(err as Error);
     } finally {
       process.exit(0);
     }
@@ -60,4 +61,5 @@ for (const signal of ["SIGTERM", "SIGINT"]) {
 
 declare global {
   var client: FpgClient;
+  var bugsnag: typeof Bugsnag;
 }

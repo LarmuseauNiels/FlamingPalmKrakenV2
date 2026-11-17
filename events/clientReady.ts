@@ -43,7 +43,7 @@ export default class ready implements IEvent {
     const guildInvites: Collection<string, any> = new Collection();
     client.invites = guildInvites;
 
-    client.user.setActivity("flamingpalm.com", {
+    client.requireUser().setActivity("flamingpalm.com", {
       type: ActivityType.Watching,
     } as ActivityOptions);
 

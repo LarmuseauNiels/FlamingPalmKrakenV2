@@ -7,10 +7,13 @@ const log = createLogger("InviteCreate");
 export default class inviteCreate implements IEvent {
   name = "inviteCreate";
   execute(invite: Invite) {
-    (invite.guild as Guild)
-      .invites.fetch()
+    // Group-DM invites have no guild, so there's nothing to track.
+    const guild = invite.guild as Guild | null;
+    if (!guild) return;
+    guild.invites
+      .fetch()
       .then((invites) => {
-        global.client.invites.set(invite.guild.id, invites);
+        global.client.invites.set(guild.id, invites);
       })
       .catch((error) => log.error("Failed to fetch guild invites:", error));
   }

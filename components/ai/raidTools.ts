@@ -99,7 +99,7 @@ export async function getUpcomingRaidsString(timezone: string | null): Promise<s
 
   const upcoming = raids.filter((r) =>
     r.RaidSchedulingOption.some(
-      (opt) => opt.Timestamp > now
+      (opt) => opt.Timestamp !== null && opt.Timestamp > now
     )
   );
 
@@ -117,7 +117,7 @@ export async function getUpcomingRaidsString(timezone: string | null): Promise<s
   let string = "";
   upcoming.forEach((raid) => {
     const selectedOpt = raid.RaidSchedulingOption.find((o) => o.IsSelected);
-    const time = selectedOpt ? formatTime(selectedOpt.Timestamp, timezone) : "Unknown time";
+    const time = selectedOpt?.Timestamp ? formatTime(selectedOpt.Timestamp, timezone) : "Unknown time";
     string += `Raid: ${raid.Title} - ID: ${raid.ID} - When: ${time} - Attendees: ${raid.RaidAttendees.length}/${raid.MinPlayers ?? 4}\n`;
   });
   return string;
@@ -311,7 +311,7 @@ export async function getMyRaidsString(ctx: ToolContext): Promise<string> {
   const scheduling = raids.filter((r) => r.Status === 2);
   const scheduled = raids
     .map((r) => ({ raid: r, time: r.RaidSchedulingOption.find((o) => o.IsSelected)?.Timestamp }))
-    .filter((r) => r.time && r.time.getTime() > now)
+    .filter((r): r is { raid: (typeof r)["raid"]; time: Date } => r.time != null && r.time.getTime() > now)
     .sort((a, b) => a.time.getTime() - b.time.getTime());
 
   if (open.length + scheduling.length + scheduled.length === 0) {
@@ -373,7 +373,8 @@ export async function setRaidAvailabilityString(rawArgs: string | object, ctx: T
 
   try {
     for (const letter of available) {
-      const optionId = byLetter.get(letter).ID;
+      // Every letter was checked against byLetter above (unknown → early return).
+      const optionId = byLetter.get(letter)!.ID;
       await globalThis.client.prisma.raidAvailability.upsert({
         where: { SchedulingOptionId_MemberId: { SchedulingOptionId: optionId, MemberId: ctx.authorId } },
         create: { SchedulingOptionId: optionId, MemberId: ctx.authorId },
@@ -382,7 +383,7 @@ export async function setRaidAvailabilityString(rawArgs: string | object, ctx: T
     }
     if (unavailable.length > 0) {
       await globalThis.client.prisma.raidAvailability.deleteMany({
-        where: { MemberId: ctx.authorId, SchedulingOptionId: { in: unavailable.map((l) => byLetter.get(l).ID) } },
+        where: { MemberId: ctx.authorId, SchedulingOptionId: { in: unavailable.map((l) => byLetter.get(l)!.ID) } },
       });
     }
     await RaidModule.touchRaid(raidId);
